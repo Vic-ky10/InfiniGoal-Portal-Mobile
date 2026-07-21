@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { createNotification, notifyAdmins } from "@/features/notification";
 
 import {
   LEAVE_DURATION,
@@ -60,6 +61,15 @@ export async function createLeaveRequest(
       error: error.message,
     };
   }
+
+  await notifyAdmins({
+    title: "New Leave Request",
+    message: `A new ${values.leave_type} leave request has been submitted.`,
+    notificationType: "LEAVE_REQUEST",
+    referenceId: data.id,
+    actionUrl: "/(admin)/leave",
+    createdBy: profileId,
+  });
 
   return {
     success: true,
@@ -208,7 +218,23 @@ export async function reviewLeaveRequest(
     };
   }
 
-  // Notification logic will be added after the Notification module is migrated.
+  await createNotification({
+    profileId: existing.profile_id,
+    title:
+      values.status === LEAVE_STATUS.APPROVED
+        ? "Leave Request Approved"
+        : "Leave Request Rejected",
+    message: `Your leave request for ${existing.start_date} has been ${values.status.toLowerCase()}.${
+      values.review_comment ? ` Reason: ${values.review_comment}` : ""
+    }`,
+    notificationType:
+      values.status === LEAVE_STATUS.APPROVED
+        ? "LEAVE_APPROVED"
+        : "LEAVE_REJECTED",
+    referenceId: existing.id,
+    actionUrl: "/(employee)/leave",
+    createdBy: reviewerId,
+  });
 
   return {
     success: true,

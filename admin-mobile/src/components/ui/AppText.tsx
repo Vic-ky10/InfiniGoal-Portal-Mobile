@@ -1,7 +1,11 @@
-import { Text, TextProps } from "react-native";
+import {
+  Text,
+  TextProps,
+  useColorScheme,
+} from "react-native";
 
 import {
-  adminColors,
+  getAdminColors,
   typography,
 } from "@/theme";
 
@@ -32,18 +36,21 @@ const fontSizes = {
 export default function AppText({
   children,
   variant = "body",
-  color = adminColors.text,
+  color,
   weight = "400",
   style,
   ...props
 }: AppTextProps) {
+  const colors = getAdminColors(useColorScheme());
+
   return (
     <Text
       style={[
         {
           fontSize: fontSizes[variant],
-          color,
+          color: color ?? colors.text,
           fontWeight: weight,
+          lineHeight: Math.round(fontSizes[variant] * 1.35),
         },
         style,
       ]}

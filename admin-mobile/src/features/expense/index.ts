@@ -1,3 +1,3 @@
 export * from "./expense.service";
 export * from "./expense.types";
-export * from "./expense.validation";
+export { expenseSchema, UpdateExpenseSchema } from "./expense.validation";

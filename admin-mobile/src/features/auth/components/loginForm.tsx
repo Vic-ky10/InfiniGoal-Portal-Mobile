@@ -7,7 +7,7 @@ import {
   View,
 } from "react-native";
 
-import { login } from "@/features/auth/auth.service";
+import { loginAdmin } from "@/features/auth/auth.service";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -23,7 +23,7 @@ export default function LoginForm() {
     try {
       setLoading(true);
 
-      const { error } = await login(email, password);
+      const { error } = await loginAdmin(email, password);
 
       if (error) {
         Alert.alert("Login Failed", error.message);

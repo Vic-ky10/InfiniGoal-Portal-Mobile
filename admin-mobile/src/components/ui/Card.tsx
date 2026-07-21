@@ -1,8 +1,12 @@
 import { ReactNode } from "react";
-import { View } from "react-native";
+import {
+  View,
+  ViewStyle,
+  useColorScheme,
+} from "react-native";
 
 import {
-  adminColors,
+  getAdminColors,
   radius,
   shadows,
   spacing,
@@ -10,19 +14,28 @@ import {
 
 interface CardProps {
   children: ReactNode;
+  style?: ViewStyle;
 }
 
 export default function Card({
   children,
+  style,
 }: CardProps) {
+  const colors = getAdminColors(useColorScheme());
+
   return (
     <View
-      style={{
-        backgroundColor: adminColors.surface,
-        borderRadius: radius.lg,
-        padding: spacing.lg,
-        ...shadows.sm,
-      }}
+      style={[
+        {
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          borderRadius: radius.xl,
+          padding: spacing.xl,
+          ...shadows.sm,
+        },
+        style,
+      ]}
     >
       {children}
     </View>

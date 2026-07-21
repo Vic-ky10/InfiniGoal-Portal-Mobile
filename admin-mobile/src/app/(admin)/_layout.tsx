@@ -1,4 +1,5 @@
 import { Drawer } from "expo-router/drawer";
+import { Feather } from "@expo/vector-icons";
 
 export default function AdminLayout() {
   return (
@@ -7,10 +8,16 @@ export default function AdminLayout() {
         headerShown: false,
         drawerType: "front",
         drawerActiveTintColor: "#2563EB",
+        drawerActiveBackgroundColor: "#2563EB15",
         drawerInactiveTintColor: "#64748B",
+        drawerStyle: {
+          width: 280,
+          backgroundColor: "#FFFFFF",
+        },
         drawerLabelStyle: {
           fontSize: 15,
           fontWeight: "600",
+          marginLeft: -10,
         },
       }}
     >
@@ -18,6 +25,9 @@ export default function AdminLayout() {
         name="dashboard"
         options={{
           title: "Dashboard",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="grid" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -25,6 +35,9 @@ export default function AdminLayout() {
         name="employees"
         options={{
           title: "Employees",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="users" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -32,6 +45,9 @@ export default function AdminLayout() {
         name="attendance"
         options={{
           title: "Attendance",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="clock" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -39,6 +55,9 @@ export default function AdminLayout() {
         name="leave"
         options={{
           title: "Leave",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="calendar" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -46,6 +65,9 @@ export default function AdminLayout() {
         name="expenses"
         options={{
           title: "Expenses",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="dollar-sign" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -53,6 +75,9 @@ export default function AdminLayout() {
         name="projects"
         options={{
           title: "Projects",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="folder" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -60,6 +85,19 @@ export default function AdminLayout() {
         name="tasks"
         options={{
           title: "Tasks",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="check-square" size={size} color={color as string} />
+          ),
+        }}
+      />
+
+      <Drawer.Screen
+        name="incentives"
+        options={{
+          title: "Incentives",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="award" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -67,6 +105,9 @@ export default function AdminLayout() {
         name="announcements"
         options={{
           title: "Announcements",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="bell" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -74,6 +115,9 @@ export default function AdminLayout() {
         name="notifications"
         options={{
           title: "Notifications",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="message-square" size={size} color={color as string} />
+          ),
         }}
       />
 
@@ -81,6 +125,9 @@ export default function AdminLayout() {
         name="settings"
         options={{
           title: "Settings",
+          drawerIcon: ({ color, size }) => (
+            <Feather name="settings" size={size} color={color as string} />
+          ),
         }}
       />
     </Drawer>
