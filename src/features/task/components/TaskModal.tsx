@@ -219,9 +219,10 @@ export default function TaskModal({
                     );
                   })}
                 </ScrollView>
-              )}
+              )} 
             </View>
-
+              
+              
             {/* Select Assignee Member */}
             <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Assign to Employee (Project Member)
@@ -277,7 +278,8 @@ export default function TaskModal({
               numberOfLines={3}
             />
 
-            {/* Priority Selector */}
+           
+
             <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Priority
             </AppText>

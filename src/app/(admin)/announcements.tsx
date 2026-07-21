@@ -1,6 +1,8 @@
-import { useState, useMemo } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
 
+import { View, FlatList, TouchableOpacity } from "react-native";
+import { useState, useMemo } from "react";
+import AnnouncementModal from "@/features/announcement/components/AnnouncementModal";
+import { AnnouncementWithCreator } from "@/features/announcement/announcement.types";
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
@@ -13,15 +15,27 @@ const STATUS_FILTERS = ["All", "Published", "Draft"];
 export default function AnnouncementsScreen() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [modalVisible, setModalVisible] = useState(false);
 
-  const { announcements, loading, refreshing, refresh, handlePublish } = useAnnouncements();
+  const [selectedAnnouncement, setSelectedAnnouncement] =
+    useState<AnnouncementWithCreator | null>(null);
 
+  const {
+    announcements,
+    loading,
+    refreshing,
+    refresh,
+    handlePublish,
+    handleDelete,
+  } = useAnnouncements();
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((item) => {
       const matchesSearch =
         item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         item.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.announcement_type.toLowerCase().includes(searchQuery.toLowerCase());
+        item.announcement_type
+          .toLowerCase()
+          .includes(searchQuery.toLowerCase());
 
       const matchesStatus =
         statusFilter === "All" || item.status === statusFilter;
@@ -40,13 +54,16 @@ export default function AnnouncementsScreen() {
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader title="Announcements" subtitle="Company broadcasts & news" />
 
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
         {/* Status Filters */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.xs,
+            marginBottom: spacing.xs,
+          }}
+        >
           {STATUS_FILTERS.map((status) => {
             const isSelected = statusFilter === status;
             return (
@@ -57,9 +74,13 @@ export default function AnnouncementsScreen() {
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.xs,
                   borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
+                  backgroundColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.surface,
                   borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
+                  borderColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.border,
                 }}
               >
                 <AppText
@@ -74,6 +95,23 @@ export default function AnnouncementsScreen() {
           })}
         </View>
 
+        <TouchableOpacity
+          onPress={() => {
+            setSelectedAnnouncement(null);
+            setModalVisible(true);
+          }}
+          style={{
+            backgroundColor: adminColors.primary,
+            paddingVertical: spacing.md,
+            borderRadius: radius.md,
+            alignItems: "center",
+          }}
+        >
+          <AppText color="#FFFFFF" weight="700">
+            + Create Announcement
+          </AppText>
+        </TouchableOpacity>
+
         {/* Announcements List */}
         <FlatList
           data={filteredAnnouncements}
@@ -87,8 +125,26 @@ export default function AnnouncementsScreen() {
           }}
           ListEmptyComponent={<EmptyState title="No announcements found." />}
           renderItem={({ item }) => (
-            <AnnouncementCard announcement={item} onPublish={handlePublish} />
+            <AnnouncementCard
+              announcement={item}
+              onPublish={handlePublish}
+              onDelete={handleDelete}
+              onEdit={(announcement) => {
+                setSelectedAnnouncement(announcement);
+                setModalVisible(true);
+              }}
+            />
           )}
+        />
+
+        <AnnouncementModal
+          visible={modalVisible}
+          onClose={() => {
+            setModalVisible(false);
+            setSelectedAnnouncement(null);
+          }}
+          onSuccess={refresh}
+          announcementToEdit={selectedAnnouncement}
         />
       </View>
     </Screen>

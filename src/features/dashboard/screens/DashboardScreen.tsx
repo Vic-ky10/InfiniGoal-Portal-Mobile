@@ -36,7 +36,9 @@ export default function DashboardScreen() {
 
       <WelcomeCard name="Administrator" />
 
-      {/* Metrics Section */}
+     
+
+
       <AppText variant="h3" weight="700" style={{ marginTop: spacing.xl, marginBottom: spacing.md }}>
         Overview
       </AppText>
@@ -44,10 +46,12 @@ export default function DashboardScreen() {
       <View style={{ gap: spacing.md }}>
         <View style={{ flexDirection: "row", gap: spacing.md }}>
           <StatCard
+          
             title="Total Employees"
             value={data?.totalEmployees ?? 0}
             icon="users"
             color={adminColors.primary}
+            
           />
           <StatCard
             title="Present Today"
@@ -103,7 +107,8 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Quick Actions */}
+      {/* Quick Actions */} 
+
       <AppText variant="h3" weight="700" style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
         Quick Management
       </AppText>

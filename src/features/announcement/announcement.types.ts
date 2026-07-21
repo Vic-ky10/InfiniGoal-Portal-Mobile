@@ -24,11 +24,14 @@ export interface Announcement {
   id: string;
   title: string;
   message: string;
-  announcement_type: string;
-  target_audience: string;
+  announcement_type:
+  (typeof ANNOUNCEMENT_TYPE)[keyof typeof ANNOUNCEMENT_TYPE];
+  target_audience:
+  (typeof TARGET_AUDIENCE)[keyof typeof TARGET_AUDIENCE];
   department: string | null;
   attachment_url: string | null;
-  status: string;
+  status:
+  (typeof ANNOUNCEMENT_STATUS)[keyof typeof ANNOUNCEMENT_STATUS];
   is_pinned: boolean;
   publish_at: string | null;
   expires_at: string | null;
