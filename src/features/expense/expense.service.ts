@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { createNotification, notifyAdmins } from "@/features/notification";
 
 import {
   EXPENSE_STATUS,
@@ -136,6 +137,15 @@ export async function createExpense(
       error: error.message,
     };
   }
+
+  await notifyAdmins({
+    title: "New Expense Submission",
+    message: `Expense claim of ₹${values.amount} (${values.expense_type}) submitted.`,
+    notificationType: "EXPENSE_SUBMISSION",
+    referenceId: data.id,
+    actionUrl: "/(admin)/expenses",
+    createdBy: profileId,
+  });
 
   return {
     success: true,
@@ -372,7 +382,25 @@ export async function reviewExpense(
     };
   }
 
-  // Notification will be added after notification module migration.
+  await createNotification({
+    profileId: existing.profile_id,
+    title:
+      values.status === EXPENSE_STATUS.APPROVED
+        ? "Expense Claim Approved"
+        : "Expense Claim Rejected",
+    message: `Your expense claim (${existing.expense_code}) for ₹${
+      values.approved_amount ?? existing.amount
+    } has been ${values.status.toLowerCase()}.${
+      values.review_comment ? ` Comment: ${values.review_comment}` : ""
+    }`,
+    notificationType:
+      values.status === EXPENSE_STATUS.APPROVED
+        ? "EXPENSE_APPROVED"
+        : "EXPENSE_REJECTED",
+    referenceId: existing.id,
+    actionUrl: "/(employee)/expenses",
+    createdBy: reviewerId,
+  });
 
   return {
     success: true,

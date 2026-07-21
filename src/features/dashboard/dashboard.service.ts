@@ -1,7 +1,10 @@
 import { supabase } from "@/lib/supabase/client";
 
-
 export async function getDashboardStats() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const [
     employees,
     attendance,
@@ -9,6 +12,8 @@ export async function getDashboardStats() {
     expenses,
     projects,
     tasks,
+    announcements,
+    notifications,
   ] = await Promise.all([
     supabase.from("profiles").select("*", { count: "exact", head: true }),
     supabase
@@ -29,6 +34,16 @@ export async function getDashboardStats() {
     supabase
       .from("tasks")
       .select("*", { count: "exact", head: true }),
+    supabase
+      .from("announcements")
+      .select("*", { count: "exact", head: true }),
+    user
+      ? supabase
+          .from("notifications")
+          .select("*", { count: "exact", head: true })
+          .eq("profile_id", user.id)
+          .eq("is_read", false)
+      : Promise.resolve({ count: 0, error: null }),
   ]);
 
   return {
@@ -38,5 +53,7 @@ export async function getDashboardStats() {
     pendingExpenses: expenses.count ?? 0,
     activeProjects: projects.count ?? 0,
     totalTasks: tasks.count ?? 0,
+    totalAnnouncements: announcements.count ?? 0,
+    unreadNotifications: notifications.count ?? 0,
   };
 }

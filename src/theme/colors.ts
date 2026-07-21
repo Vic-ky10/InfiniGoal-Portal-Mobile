@@ -1,5 +1,3 @@
-
-
 export const adminColors = {
   primary: "#2563EB",
   primaryLight: "#3B82F6",
@@ -7,8 +5,8 @@ export const adminColors = {
 
   secondary: "#60A5FA",
 
-  background: "#F8FAFC",
-  surface: "#FFFFFF",
+  background: "#FFFFFF",
+  surface: "#F8FAFC",
 
   text: "#0F172A",
   textSecondary: "#64748B",
@@ -24,6 +22,12 @@ export const adminColors = {
   disabled: "#94A3B8",
 };
 
+export const adminDarkColors = adminColors;
+
+export function getAdminColors(_colorScheme?: string | null) {
+  return adminColors;
+}
+
 export const employeeColors = {
   primary: "#22C55E",
   primaryLight: "#4ADE80",
@@ -31,14 +35,14 @@ export const employeeColors = {
 
   secondary: "#86EFAC",
 
-  background: "#F9FEFB",
-  surface: "#FFFFFF",
+  background: "#FFFFFF",
+  surface: "#F8FAFC",
 
-  text: "#1E293B",
+  text: "#0F172A",
   textSecondary: "#64748B",
 
-  border: "#DCFCE7",
-  divider: "#D1FAE5",
+  border: "#E2E8F0",
+  divider: "#CBD5E1",
 
   success: "#22C55E",
   warning: "#F59E0B",
