@@ -3,10 +3,7 @@ import { createNotification } from "@/features/notification";
 
 import { Task, TaskWithProject } from "./task.types";
 
-import {
-  TaskInput,
-  UpdateTaskInput,
-} from "./task.validation";
+import { TaskInput, UpdateTaskInput } from "./task.validation";
 
 const TASK_SELECT = `
 id,
@@ -68,9 +65,7 @@ type TaskSelectRow = Task & {
   member: MaybeArray<TaskMemberRelation>;
 };
 
-function firstRelation<T>(
-  relation: MaybeArray<T>
-): T | null {
+function firstRelation<T>(relation: MaybeArray<T>): T | null {
   if (Array.isArray(relation)) {
     return relation[0] ?? null;
   }
@@ -78,9 +73,7 @@ function firstRelation<T>(
   return relation;
 }
 
-function normalizeTask(
-  row: TaskSelectRow
-): TaskWithProject {
+function normalizeTask(row: TaskSelectRow): TaskWithProject {
   const member = firstRelation(row.member);
 
   return {
@@ -95,9 +88,7 @@ function normalizeTask(
   };
 }
 
-function normalizeTasks(
-  rows: TaskSelectRow[] | null
-): TaskWithProject[] {
+function normalizeTasks(rows: TaskSelectRow[] | null): TaskWithProject[] {
   return (rows ?? []).map(normalizeTask);
 }
 
@@ -115,15 +106,9 @@ async function generateTaskCode() {
     return "TASK001";
   }
 
-  const lastNumber = parseInt(
-    data.task_code.replace("TASK", ""),
-    10
-  );
+  const lastNumber = parseInt(data.task_code.replace("TASK", ""), 10);
 
-  return `TASK${String(lastNumber + 1).padStart(
-    3,
-    "0"
-  )}`;
+  return `TASK${String(lastNumber + 1).padStart(3, "0")}`;
 }
 
 export async function getAuthenticatedProfileId() {
@@ -147,18 +132,13 @@ export async function getTasks(): Promise<TaskWithProject[]> {
     return [];
   }
 
-  return normalizeTasks(
-    data as unknown as TaskSelectRow[]
-  );
+  return normalizeTasks(data as unknown as TaskSelectRow[]);
 }
 
 export async function getEmployeeTasks(
-  profileId: string
+  profileId: string,
 ): Promise<TaskWithProject[]> {
-  const {
-    data: memberRecords,
-    error: memberError,
-  } = await supabase
+  const { data: memberRecords, error: memberError } = await supabase
     .from("project_members")
     .select("id")
     .eq("profile_id", profileId);
@@ -168,8 +148,7 @@ export async function getEmployeeTasks(
     return [];
   }
 
-  const memberIds =
-    memberRecords?.map((m) => m.id) ?? [];
+  const memberIds = memberRecords?.map((m) => m.id) ?? [];
 
   if (memberIds.length === 0) {
     return [];
@@ -188,14 +167,10 @@ export async function getEmployeeTasks(
     return [];
   }
 
-  return normalizeTasks(
-    data as unknown as TaskSelectRow[]
-  );
+  return normalizeTasks(data as unknown as TaskSelectRow[]);
 }
 
-export async function getTaskById(
-  id: string
-): Promise<TaskWithProject | null> {
+export async function getTaskById(id: string): Promise<TaskWithProject | null> {
   const { data, error } = await supabase
     .from("tasks")
     .select(TASK_SELECT)
@@ -211,16 +186,24 @@ export async function getTaskById(
     return null;
   }
 
-  return normalizeTask(
-    data as unknown as TaskSelectRow
-  );
+  return normalizeTask(data as unknown as TaskSelectRow);
 }
 
-export async function createTask(
-  createdBy: string,
-  values: TaskInput
-) {
+export async function createTask(createdBy: string, values: TaskInput) {
   const taskCode = await generateTaskCode();
+
+    const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  console.log("========== TASK DEBUG ==========");
+  console.log("AUTH UID:", user?.id);
+  console.log("CREATED BY:", createdBy);
+  console.log("MATCH:", user?.id === createdBy);
+  console.log("PROJECT ID:", values.project_id);
+  console.log("PROJECT MEMBER ID:", values.project_member_id);
+  console.log("================================");
+
 
   const { data, error } = await supabase
     .from("tasks")
@@ -241,17 +224,19 @@ export async function createTask(
     .single();
 
   if (error) {
+    console.log("TASK ERROR:", JSON.stringify(error, null, 2));
+
     return {
       success: false,
       error: error.message,
     };
   }
-
   const { data: member } = await supabase
     .from("project_members")
     .select("profile_id")
     .eq("id", values.project_member_id)
     .maybeSingle();
+
 
   if (member) {
     await createNotification({
@@ -270,13 +255,11 @@ export async function createTask(
     message: "Task created successfully.",
     data: data as Task,
   };
-
 }
 
-export async function updateTask(
-  id: string,
-  values: UpdateTaskInput
-) {
+
+
+export async function updateTask(id: string, values: UpdateTaskInput) {
   const { data, error } = await supabase
     .from("tasks")
     .update({
@@ -301,15 +284,12 @@ export async function updateTask(
   };
 }
 
-export async function deleteTask(
-  id: string
-) {
-  const { data: task, error: checkError } =
-    await supabase
-      .from("tasks")
-      .select("id")
-      .eq("id", id)
-      .maybeSingle();
+export async function deleteTask(id: string) {
+  const { data: task, error: checkError } = await supabase
+    .from("tasks")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
 
   if (checkError) {
     return {
@@ -321,15 +301,11 @@ export async function deleteTask(
   if (!task) {
     return {
       success: false,
-      error:
-        "Task was not found or has already been deleted.",
+      error: "Task was not found or has already been deleted.",
     };
   }
 
-  const { error } = await supabase
-    .from("tasks")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("tasks").delete().eq("id", id);
 
   if (error) {
     return {
@@ -347,7 +323,7 @@ export async function deleteTask(
 export async function updateTaskStatus(
   id: string,
   status: string,
-  actualHours?: number
+  actualHours?: number,
 ) {
   const updateData: {
     status: string;

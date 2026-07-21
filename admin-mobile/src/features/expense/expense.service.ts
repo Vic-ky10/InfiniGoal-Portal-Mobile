@@ -79,29 +79,25 @@ export async function getAuthenticatedProfileId() {
 export async function generateExpenseCode(): Promise<string> {
   const { data, error } = await supabase
     .from("expenses")
-    .select("expense_code")
-    .like("expense_code", `${EXPENSE_CODE_PREFIX}%`)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .select("expense_code");
+
+    console.log("All expense codes visible to app:", data);
 
   if (error) {
     throw new Error("Unable to generate expense code.");
   }
 
-  if (!data?.expense_code) {
-    return formatExpenseCode(1);
+  if (!data || data.length === 0) {
+    return "EXP000001";
   }
 
-  const current = Number(
-    data.expense_code.replace(EXPENSE_CODE_PREFIX, "")
+  const maxNumber = Math.max(
+    ...data.map((item) =>
+      parseInt(item.expense_code.replace("EXP", ""), 10)
+    )
   );
 
-  if (Number.isNaN(current)) {
-    throw new Error("Latest expense code is invalid.");
-  }
-
-  return formatExpenseCode(current + 1);
+  return `EXP${String(maxNumber + 1).padStart(6, "0")}`;
 }
 
 export async function createExpense(
@@ -109,6 +105,7 @@ export async function createExpense(
   values: ExpenseInput
 ) {
   const expenseCode = await generateExpenseCode();
+  console.log("Generated Expense Code:", expenseCode);
 
   const { data, error } = await supabase
     .from("expenses")
