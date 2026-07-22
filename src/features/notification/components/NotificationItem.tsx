@@ -1,16 +1,50 @@
-import { View, TouchableOpacity } from "react-native";
+import { View, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
 import { Notification } from "../notification.types";
 
+
+
 interface Props {
   notification: Notification;
-  onPress: (id: string) => void;
+  onPress: (notification: Notification) => void;
+  colors: typeof adminColors;
 }
 
-export default function NotificationItem({ notification, onPress }: Props) {
+const getRelativeTime = (date: string) => {
+  const now = new Date();
+  const created = new Date(date);
+
+  const diff =
+    now.getTime() - created.getTime();
+
+  const minutes = Math.floor(
+    diff / (1000 * 60)
+  );
+
+  const hours = Math.floor(minutes / 60);
+
+  const days = Math.floor(hours / 24);
+
+  if (minutes < 1) return "Just now";
+
+  if (minutes < 60)
+    return `${minutes} min ago`;
+
+  if (hours < 24)
+    return `${hours} hr ago`;
+
+  if (days === 1) return "Yesterday";
+
+  if (days < 7)
+    return `${days} days ago`;
+
+  return created.toLocaleDateString();
+};
+
+export default function NotificationItem({ notification, onPress , colors }: Props) {
   const getIcon = (type: string) => {
     switch (type) {
       case "Task":
@@ -33,66 +67,164 @@ export default function NotificationItem({ notification, onPress }: Props) {
   const isUnread = !notification.is_read;
 
   return (
-    <TouchableOpacity onPress={() => onPress(notification.id)} activeOpacity={0.7}>
-      <Card style={{ backgroundColor: isUnread ? `${adminColors.primary}08` : adminColors.surface }}>
-        <View style={{ flexDirection: "row", alignItems: "flex-start" }}>
+  <Pressable
+  onPress={() => onPress(notification)}
+  android_ripple={{ color: "transparent" }}
+  style={({ pressed }) => [
+  {
+    opacity: 1,
+    transform: [{ scale: pressed ? 0.985 : 1 }],
+    backgroundColor: pressed
+      ? `${adminColors.primary}10`
+      : "transparent",
+  },
+]}
+>
+    <Card
+      style={{
+        padding: spacing.lg,
+        borderRadius: radius.lg,
+        backgroundColor: isUnread
+          ? `${colors.primary}08`
+          : colors.surface,
+        borderWidth: 1,
+        borderColor: isUnread
+          ? `${colors.primary}25`
+          : colors.border,
+      }}
+    >
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "flex-start",
+        }}
+      >
+        {/* Icon */}
+
+        <View
+          style={{
+            width: 54,
+            height: 54,
+            borderRadius: 27,
+            backgroundColor:
+              `${colors.primary}15`,
+            justifyContent: "center",
+            alignItems: "center",
+            marginRight: spacing.md,
+          }}
+        >
+          <Feather
+            name={getIcon(
+              notification.notification_type
+            )}
+            size={22}
+            color={colors.primary}
+          />
+        </View>
+
+        {/* Content */}
+
+        <View style={{ flex: 1 }}>
           <View
             style={{
-              padding: spacing.md,
-              borderRadius: radius.md,
-              backgroundColor: isUnread ? `${adminColors.primary}20` : adminColors.background,
-              marginRight: spacing.md,
+              flexDirection: "row",
+              alignItems: "center",
             }}
           >
-            <Feather
-              name={getIcon(notification.notification_type)}
-              size={18}
-              color={isUnread ? adminColors.primary : adminColors.textSecondary}
-            />
+            <AppText
+              weight={
+                isUnread ? "700" : "600"
+              }
+              variant="body"
+              style={{ flex: 1 }}
+            >
+              {notification.title}
+            </AppText>
+
+            {isUnread && (
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor:
+                    colors.primary,
+                }}
+              />
+            )}
           </View>
 
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-              <AppText weight={isUnread ? "700" : "600"} variant="body">
-                {notification.title}
+          <AppText
+            numberOfLines={2}
+            color={colors.textSecondary}
+            style={{
+              marginTop: spacing.xs,
+              lineHeight: 20,
+            }}
+          >
+            {notification.message}
+          </AppText>
+
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent:
+                "space-between",
+              marginTop: spacing.md,
+            }}
+          >
+            <Badge
+              label={
+                notification.notification_type
+              }
+              color={colors.primary}
+              variant="subtle"
+            />
+
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Feather
+                name="clock"
+                size={12}
+                color={
+                  colors.textSecondary
+                }
+              />
+
+              <AppText
+                variant="caption"
+                color={
+                  colors.textSecondary
+                }
+                style={{
+                  marginLeft: 4,
+                }}
+              >
+                {getRelativeTime(
+                  notification.created_at
+                )}
               </AppText>
 
-              {isUnread && (
-                <View
-                  style={{
-                    width: 8,
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: adminColors.primary,
-                  }}
-                />
-              )}
+              <Feather
+                name="chevron-right"
+                size={16}
+                color={
+                  colors.textSecondary
+                }
+                style={{
+                  marginLeft: spacing.sm,
+                }}
+              />
             </View>
-
-            <AppText
-              variant="caption"
-              color={adminColors.textSecondary}
-              style={{ marginTop: spacing.xs }}
-              numberOfLines={2}
-            >
-              {notification.message}
-            </AppText>
-
-            <AppText
-              variant="caption"
-              color={adminColors.textSecondary}
-              style={{ marginTop: spacing.xs, fontSize: 11 }}
-            >
-              {new Date(notification.created_at).toLocaleString([], {
-                month: "short",
-                day: "numeric",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </AppText>
           </View>
         </View>
-      </Card>
-    </TouchableOpacity>
-  );
+      </View>
+    </Card>
+  </Pressable>
+);
 }
