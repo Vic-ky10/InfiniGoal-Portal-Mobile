@@ -2,16 +2,26 @@ import { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
+import NotificationItem from "@/features/notification/components/NotificationItem";
+import NotificationDetailModal from "@/features/notification/components/NotificationDetailModal";
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
-
+import { employeeColors, spacing } from "@/theme";
 import { Notification } from "@/features/notification/notification.types";
-import { getNotifications, markNotificationRead } from "@/features/notification/notification.service";
+import {
+  getNotifications,
+  markNotificationRead,
+} from "@/features/notification/notification.service";
 
 export default function EmployeeNotificationsScreen() {
   const [loading, setLoading] = useState(true);
+
+  const [selectedNotification, setSelectedNotification] =
+    useState<Notification | null>(null);
+
+  const [modalVisible, setModalVisible] = useState(false);
+
   const [refreshing, setRefreshing] = useState(false);
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -20,7 +30,9 @@ export default function EmployeeNotificationsScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const data = await getNotifications(user.id);
@@ -41,62 +53,62 @@ export default function EmployeeNotificationsScreen() {
     const res = await markNotificationRead(id);
     if (res.success) {
       setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n))
+        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
       );
     }
   };
 
-  const renderNotificationItem = ({ item }: { item: Notification }) => (
-    <Card
-      style={{
-        marginBottom: spacing.md,
-        backgroundColor: item.is_read ? "#FFFFFF" : `${employeeColors.primary}08`,
-        borderColor: item.is_read ? employeeColors.border : employeeColors.primary,
-      }}
-    >
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <Badge label={item.notification_type} color={employeeColors.primary} variant="subtle" />
-            {!item.is_read && <Badge label="New" color={employeeColors.warning} />}
-          </View>
+  const handleOpenNotification = async (notification: Notification) => {
+    if (!notification.is_read) {
+      const res = await markNotificationRead(notification.id);
 
-          <AppText weight="700" variant="h3" style={{ marginTop: spacing.xs }}>
-            {item.title}
-          </AppText>
+      if (res.success) {
+        setNotifications((prev) =>
+          prev.map((n) =>
+            n.id === notification.id ? { ...n, is_read: true } : n,
+          ),
+        );
+      }
+    }
 
-          <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
-            {item.message}
-          </AppText>
+    setSelectedNotification(notification);
 
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.sm }}>
-            {new Date(item.created_at).toLocaleString()}
-          </AppText>
-        </View>
-
-        {!item.is_read && (
-          <TouchableOpacity onPress={() => handleMarkRead(item.id)} style={{ padding: spacing.xs }}>
-            <Feather name="check-circle" size={20} color={employeeColors.primary} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </Card>
-  );
+    setModalVisible(true);
+  };
 
   return (
     <Screen isLoading={loading} scroll={false}>
       <View style={{ flex: 1, gap: spacing.md }}>
-        <AppHeader title="Notifications" subtitle="Alerts and system notifications" />
+        <AppHeader
+          title="Notifications"
+          subtitle="Alerts and system notifications"
+        />
 
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}
-          renderItem={renderNotificationItem}
+          renderItem={({ item }) => (
+            <NotificationItem
+              notification={item}
+              onPress={(notification) => handleMarkRead(notification.id)}
+              colors={employeeColors}
+            />
+          )}
           refreshing={refreshing}
           onRefresh={() => loadData(true)}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<EmptyState title="No Notifications Found" />}
           contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+        />
+
+        <NotificationDetailModal
+          visible={modalVisible}
+          notification={selectedNotification}
+          onClose={() => {
+            setModalVisible(false);
+            setSelectedNotification(null);
+          }}
+          colors={employeeColors}
         />
       </View>
     </Screen>
