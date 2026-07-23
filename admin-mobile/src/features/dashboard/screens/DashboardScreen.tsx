@@ -2,7 +2,7 @@ import { View } from "react-native";
 import { useRouter } from "expo-router";
 
 import { AppText, Screen } from "@/components/ui";
-import { AppHeader } from "@/components/common";
+import { AppHeader, NotificationBell } from "@/components/common";
 
 import {
   NotificationCard,
@@ -32,32 +32,36 @@ export default function DashboardScreen() {
       <AppHeader
         title="Dashboard"
         subtitle="InfiniGoal Admin Portal"
+        rightComponent={
+          <NotificationBell count={data?.unreadNotifications ?? 0} />
+        }
       />
 
       <WelcomeCard name="Administrator" />
 
-     
-
-
-      <AppText variant="h3" weight="700" style={{ marginTop: spacing.xl, marginBottom: spacing.md }}>
+      <AppText
+        variant="h3"
+        weight="700"
+        style={{ marginTop: spacing.xl, marginBottom: spacing.md }}
+      >
         Overview
       </AppText>
 
       <View style={{ gap: spacing.md }}>
         <View style={{ flexDirection: "row", gap: spacing.md }}>
           <StatCard
-          
             title="Total Employees"
             value={data?.totalEmployees ?? 0}
             icon="users"
             color={adminColors.primary}
-            
+            onPress={() => router.push("/(admin)/employees")}
           />
           <StatCard
             title="Present Today"
             value={data?.presentToday ?? 0}
             icon="check-circle"
             color={adminColors.success}
+            onPress={() => router.push("/(admin)/attendance")}
           />
         </View>
 
@@ -67,12 +71,14 @@ export default function DashboardScreen() {
             value={data?.pendingLeaves ?? 0}
             icon="calendar"
             color={adminColors.warning}
+            onPress={() => router.push("/(admin)/leave")}
           />
           <StatCard
             title="Pending Expenses"
             value={data?.pendingExpenses ?? 0}
             icon="dollar-sign"
             color={adminColors.danger}
+            onPress={() => router.push("/(admin)/expenses")}
           />
         </View>
 
@@ -82,12 +88,14 @@ export default function DashboardScreen() {
             value={data?.activeProjects ?? 0}
             icon="briefcase"
             color={adminColors.info}
+            onPress={() => router.push("/(admin)/projects")}
           />
           <StatCard
             title="Total Tasks"
             value={data?.totalTasks ?? 0}
             icon="check-square"
             color={adminColors.primaryLight}
+            onPress={() => router.push("/(admin)/tasks")}
           />
         </View>
 
@@ -97,19 +105,25 @@ export default function DashboardScreen() {
             value={data?.totalAnnouncements ?? 0}
             icon="bell"
             color={adminColors.secondary}
+            onPress={() => router.push("/(admin)/announcements")}
           />
           <StatCard
             title="Unread Alerts"
             value={data?.unreadNotifications ?? 0}
             icon="message-square"
             color={adminColors.warning}
+            onPress={() => router.push("/(admin)/notifications")}
           />
         </View>
       </View>
 
-      {/* Quick Actions */} 
+      {/* Quick Actions */}
 
-      <AppText variant="h3" weight="700" style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
+      <AppText
+        variant="h3"
+        weight="700"
+        style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}
+      >
         Quick Management
       </AppText>
 
@@ -151,7 +165,12 @@ export default function DashboardScreen() {
       </View>
 
       {/* Notifications & Recent Activity */}
-      <AppText variant="h3" weight="700" style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}>
+
+      <AppText
+        variant="h3"
+        weight="700"
+        style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}
+      >
         Activity & Alerts
       </AppText>
 
@@ -161,15 +180,10 @@ export default function DashboardScreen() {
             title={`${data?.pendingLeaves} Leave request(s) waiting for approval`}
           />
         ) : (
-          <NotificationCard
-            title="All leave requests are up to date"
-          />
+          <NotificationCard title="All leave requests are up to date" />
         )}
 
-        <RecentActivity
-          title="System initialized"
-          time="Just now"
-        />
+        <RecentActivity title="System initialized" time="Just now" />
       </View>
     </Screen>
   );

@@ -104,29 +104,27 @@ export async function createExpense(
   profileId: string,
   values: ExpenseInput
 ) {
-  const expenseCode = await generateExpenseCode();
-  console.log("Generated Expense Code:", expenseCode);
-
-  const { data, error } = await supabase
-    .from("expenses")
-    .insert({
-      profile_id: profileId,
-      expense_code: expenseCode,
-      expense_type: values.expense_type,
-      amount: values.amount,
-      currency: "INR",
-      description: values.description,
-      receipt_url: values.receipt_url ?? null,
-      expense_date: values.expense_date,
-      status: EXPENSE_STATUS.PENDING,
-      payment_status: PAYMENT_STATUS.PENDING,
-      approved_amount: null,
-      reviewed_by: null,
-      reviewed_at: null,
-      review_comment: null,
-    })
-    .select(EXPENSE_SELECT)
-    .single();
+  // const expenseCode = await generateExpenseCode();
+  // console.log("Generated Expense Code:", expenseCode);
+const { data, error } = await supabase
+  .from("expenses")
+  .insert({
+    profile_id: profileId,
+    expense_type: values.expense_type,
+    amount: values.amount,
+    currency: "INR",
+    description: values.description,
+    receipt_url: values.receipt_url ?? null,
+    expense_date: values.expense_date,
+    status: EXPENSE_STATUS.PENDING,
+    payment_status: PAYMENT_STATUS.PENDING,
+    approved_amount: null,
+    reviewed_by: null,
+    reviewed_at: null,
+    review_comment: null,
+  })
+  .select(EXPENSE_SELECT)
+  .single();
 
   if (error) {
     return {

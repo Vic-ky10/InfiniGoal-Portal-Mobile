@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, FlatList, TouchableOpacity, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -29,10 +29,24 @@ export default function ProjectsScreen() {
   const [assignModalVisible, setAssignModalVisible] = useState(false);
   const [selectedProject, setSelectedProject] = useState<ProjectWithMembers | null>(null);
 
-  const { projects, stats, loading, refreshing, refresh } = useProjects({
-    search: searchQuery,
-    status: statusFilter,
+  const { projects, stats, loading, refreshing, refresh } = useProjects();
+
+  const filteredProjects = useMemo(() => {
+  const search = searchQuery.trim().toLowerCase();
+
+  return projects.filter((project) => {
+    const matchesSearch =
+      search === "" ||
+      project.project_name?.toLowerCase().includes(search) ||
+      project.project_code?.toLowerCase().includes(search) ||
+      project.description?.toLowerCase().includes(search);
+
+    const matchesStatus =
+      statusFilter === "" || project.status === statusFilter;
+
+    return matchesSearch && matchesStatus;
   });
+}, [projects, searchQuery, statusFilter]);
 
   const handleCreateNew = () => {
     setSelectedProject(null);
@@ -187,14 +201,14 @@ export default function ProjectsScreen() {
 
         {/* Projects List */}
         <FlatList
-          data={projects}
+          data={filteredProjects}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: projects.length === 0 ? 1 : undefined,
+            flexGrow: filteredProjects.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No projects found." />}
           renderItem={({ item }) => (

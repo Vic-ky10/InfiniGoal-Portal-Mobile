@@ -1,19 +1,12 @@
-import { useState, useEffect } from "react";
-import {
-  Modal,
-  View,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { useState, useEffect, useMemo } from "react";
+import { Modal, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Button, Card, Badge } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
-import { ProjectWithMembers, PROJECT_MEMBER_ROLE } from "../project.types";
+import { ProjectWithMembers } from "../project.types";
 import {
   assignProjectMembers,
-  removeProjectMember,
   getAuthenticatedProfileId,
 } from "../project.service";
 import { getEmployees } from "@/features/employee/employee.service";
@@ -34,7 +27,7 @@ export default function ProjectAssignModal({
 }: Props) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
-  const [memberRole, setMemberRole] = useState<string>(PROJECT_MEMBER_ROLE.DEVELOPER);
+
   const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -59,14 +52,17 @@ export default function ProjectAssignModal({
 
   const toggleSelectEmployee = (id: string) => {
     setSelectedProfileIds((prev) =>
-      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((pId) => pId !== id) : [...prev, id],
     );
   };
 
   const handleAssign = async () => {
     if (!project) return;
     if (selectedProfileIds.length === 0) {
-      Alert.alert("Select Employee", "Please select at least one employee to assign.");
+      Alert.alert(
+        "Select Employee",
+        "Please select at least one employee to assign.",
+      );
       return;
     }
 
@@ -81,7 +77,7 @@ export default function ProjectAssignModal({
       const res = await assignProjectMembers(profileId, {
         projectId: project.id,
         profileIds: selectedProfileIds,
-        member_role: memberRole as any,
+        // member_role: "Member",
       });
 
       if (res.success) {
@@ -98,32 +94,12 @@ export default function ProjectAssignModal({
     }
   };
 
-  const handleRemoveMember = async (memberId: string, name: string) => {
-    Alert.alert(
-      "Remove Member",
-      `Are you sure you want to remove ${name} from this project?`,
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: async () => {
-            const res = await removeProjectMember(memberId);
-            if (res.success) {
-              Alert.alert("Success", res.message);
-              onSuccess();
-            } else {
-              Alert.alert("Error", res.error || "Failed to remove member.");
-            }
-          },
-        },
-      ]
-    );
-  };
+  const activeMemberProfileIds = useMemo(
+    () => new Set(project?.members?.map((m) => m.profile_id) ?? []),
+    [project],
+  );
 
   if (!project) return null;
-
-  const activeMemberProfileIds = new Set(project.members?.map((m) => m.profile_id) ?? []);
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
@@ -143,6 +119,52 @@ export default function ProjectAssignModal({
             padding: spacing.lg,
           }}
         >
+          <Card
+            style={{
+              marginBottom: spacing.lg,
+              backgroundColor: adminColors.primary,
+              borderRadius: radius.lg,
+              padding: spacing.lg,
+            }}
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "flex-start",
+              }}
+            >
+              <View style={{ flex: 1 }}>
+                <AppText variant="h2" weight="700" color="#FFF">
+                  {project.project_name}
+                </AppText>
+
+                <AppText
+                  variant="caption"
+                  color="rgba(255,255,255,0.8)"
+                  style={{ marginTop: spacing.xs }}
+                >
+                  {project.project_code}
+                </AppText>
+              </View>
+
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={24} color="#FFF" />
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={{
+                flexDirection: "row",
+                marginTop: spacing.md,
+                gap: spacing.sm,
+              }}
+            >
+              <Badge label={project.status} variant="solid" />
+
+              <Badge label={project.priority} variant="subtle" />
+            </View>
+          </Card>
           <View
             style={{
               flexDirection: "row",
@@ -166,13 +188,74 @@ export default function ProjectAssignModal({
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                marginBottom: spacing.lg,
+              }}
+            >
+              <Card
+                style={{
+                  flex: 1,
+                  marginRight: spacing.xs,
+                  alignItems: "center",
+                  padding: spacing.md,
+                }}
+              >
+                <AppText variant="h2" weight="700">
+                  {project.members.length}
+                </AppText>
+
+                <AppText variant="caption">Members</AppText>
+              </Card>
+
+              <Card
+                style={{
+                  flex: 1,
+                  marginHorizontal: spacing.xs,
+                  alignItems: "center",
+                  padding: spacing.md,
+                }}
+              >
+                <AppText variant="h2" weight="700">
+                  {employees.length}
+                </AppText>
+
+                <AppText variant="caption">Employees</AppText>
+              </Card>
+
+              <Card
+                style={{
+                  flex: 1,
+                  marginLeft: spacing.xs,
+                  alignItems: "center",
+                  padding: spacing.md,
+                }}
+              >
+                <AppText variant="h2" weight="700">
+                  {selectedProfileIds.length}
+                </AppText>
+
+                <AppText variant="caption">Selected</AppText>
+              </Card>
+            </View>
             {/* Current Team Members */}
-            <AppText weight="700" variant="h3" style={{ marginBottom: spacing.sm }}>
+            {/* Current Team Members */}
+            <AppText
+              weight="700"
+              variant="h3"
+              style={{ marginBottom: spacing.sm }}
+            >
               Team Members ({project.members?.length ?? 0})
             </AppText>
 
-            {(!project.members || project.members.length === 0) ? (
-              <AppText variant="caption" color={adminColors.textSecondary} style={{ marginBottom: spacing.md }}>
+            {!project.members || project.members.length === 0 ? (
+              <AppText
+                variant="caption"
+                color={adminColors.textSecondary}
+                style={{ marginBottom: spacing.md }}
+              >
                 No employees currently assigned to this project.
               </AppText>
             ) : (
@@ -181,94 +264,62 @@ export default function ProjectAssignModal({
                   <Card
                     key={m.id}
                     style={{
-                      flexDirection: "row",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      padding: spacing.sm,
+                      padding: spacing.md,
+                      borderRadius: radius.lg,
+                      borderWidth: 1,
+                      borderColor: adminColors.border,
+                      marginBottom: spacing.sm,
                     }}
                   >
-                    <View>
-                      <AppText weight="600">
-                        {m.employee?.full_name || "Employee"}
-                      </AppText>
-                      <AppText variant="caption" color={adminColors.textSecondary}>
-                        Role: {m.member_role} | Joined: {m.joined_date || m.assigned_at?.slice(0, 10) || "--"}
-                      </AppText>
-                    </View>
-                    <TouchableOpacity
-                      onPress={() =>
-                        handleRemoveMember(m.id, m.employee?.full_name || "Employee")
-                      }
-                      style={{ padding: spacing.xs }}
+                    <AppText weight="600">
+                      {m.employee?.full_name || "Employee"}
+                    </AppText>
+
+                    <AppText
+                      variant="caption"
+                      color={adminColors.textSecondary}
                     >
-                      <Feather name="user-x" size={18} color={adminColors.danger} />
-                    </TouchableOpacity>
+                      Role: {m.member_role}
+                    </AppText>
+
+                    <AppText
+                      variant="caption"
+                      color={adminColors.textSecondary}
+                    >
+                      Joined:{" "}
+                      {m.joined_date || m.assigned_at?.slice(0, 10) || "--"}
+                    </AppText>
                   </Card>
                 ))}
               </View>
             )}
 
+            {!project.members || project.members.length === 0 ? (
+              <AppText
+                variant="caption"
+                color={adminColors.textSecondary}
+                style={{ marginBottom: spacing.md }}
+              >
+                No employees currently assigned to this project.
+              </AppText>
+            ) : (
+              <View
+                style={{ gap: spacing.xs, marginBottom: spacing.lg }}
+              ></View>
+            )}
+
             {/* Assign New Members */}
-            <AppText weight="700" variant="h3" style={{ marginBottom: spacing.sm }}>
-              Assign Employees
-            </AppText>
-
-            {/* Member Role Selector */}
-            <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-              Role on Project
-            </AppText>
-            <View
-              style={{
-                flexDirection: "row",
-                gap: spacing.xs,
-                marginBottom: spacing.md,
-                flexWrap: "wrap",
-              }}
+            <AppText
+              weight="700"
+              variant="h3"
+              style={{ marginBottom: spacing.sm }}
             >
-              {[
-                PROJECT_MEMBER_ROLE.PROJECT_MANAGER,
-                PROJECT_MEMBER_ROLE.DEVELOPER,
-                PROJECT_MEMBER_ROLE.SALES,
-                PROJECT_MEMBER_ROLE.MARKETING,
-                PROJECT_MEMBER_ROLE.ANALYTICS,
-                PROJECT_MEMBER_ROLE.OTHER,
-              ].map((r) => (
-                <TouchableOpacity
-                  key={r}
-                  onPress={() => setMemberRole(r)}
-                  style={{
-                    paddingHorizontal: spacing.md,
-                    paddingVertical: spacing.xs,
-                    borderRadius: radius.md,
-                    alignItems: "center",
-                    backgroundColor:
-                      memberRole === r ? adminColors.primary : adminColors.surface,
-                    borderWidth: 1,
-                    borderColor:
-                      memberRole === r ? adminColors.primary : adminColors.border,
-                  }}
-                >
-                  <AppText
-                    variant="caption"
-                    weight="600"
-                    color={memberRole === r ? "#FFFFFF" : adminColors.textSecondary}
-                  >
-                    {r}
-                  </AppText>
-                </TouchableOpacity>
-              ))}
-            </View>
-
-            <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Select Employees
             </AppText>
 
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {employees.map((emp) => {
-                const isAlreadyMember = activeMemberProfileIds.has(emp.id);
                 const isSelected = selectedProfileIds.includes(emp.id);
-
-                if (isAlreadyMember) return null;
 
                 return (
                   <TouchableOpacity
@@ -291,14 +342,21 @@ export default function ProjectAssignModal({
                   >
                     <View>
                       <AppText weight="600">{emp.full_name}</AppText>
-                      <AppText variant="caption" color={adminColors.textSecondary}>
+                      <AppText
+                        variant="caption"
+                        color={adminColors.textSecondary}
+                      >
                         {emp.employee_id} • {emp.designation || emp.role}
                       </AppText>
                     </View>
                     <Feather
                       name={isSelected ? "check-square" : "square"}
                       size={20}
-                      color={isSelected ? adminColors.primary : adminColors.textSecondary}
+                      color={
+                        isSelected
+                          ? adminColors.primary
+                          : adminColors.textSecondary
+                      }
                     />
                   </TouchableOpacity>
                 );

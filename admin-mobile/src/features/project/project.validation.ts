@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import {
-  PROJECT_MEMBER_ROLE,
+  // PROJECT_MEMBER_ROLE,
   PROJECT_PRIORITY,
   PROJECT_STATUS,
 } from "./project.types";
@@ -11,10 +11,10 @@ const priorityValues = Object.values(PROJECT_PRIORITY) as [
   ...string[],
 ];
 const statusValues = Object.values(PROJECT_STATUS) as [string, ...string[]];
-const memberRoleValues = Object.values(PROJECT_MEMBER_ROLE) as [
-  string,
-  ...string[],
-];
+// const memberRoleValues = Object.values(PROJECT_MEMBER_ROLE) as [
+//   string,
+//   ...string[],
+// ];
 
 export const projectSchema = z
   .object({
@@ -63,16 +63,21 @@ export const projectIdSchema = z.object({
   projectId: z.string().uuid("Invalid project."),
 });
 
+// export const assignProjectMembersSchema = z.object({
+//   projectId: z.string().uuid("Invalid project."),
+//   profileIds: z
+//     .array(z.string().uuid("Invalid employee."))
+//     .min(1, "Select at least one employee."),
+//   member_role: z.enum(memberRoleValues, {
+//     error: "Select a valid member role.",
+//   }),
+// });
 export const assignProjectMembersSchema = z.object({
   projectId: z.string().uuid("Invalid project."),
   profileIds: z
     .array(z.string().uuid("Invalid employee."))
     .min(1, "Select at least one employee."),
-  member_role: z.enum(memberRoleValues, {
-    error: "Select a valid member role.",
-  }),
 });
-
 export const removeProjectMemberSchema = z.object({
   projectMemberId: z.string().uuid("Invalid project member."),
 });

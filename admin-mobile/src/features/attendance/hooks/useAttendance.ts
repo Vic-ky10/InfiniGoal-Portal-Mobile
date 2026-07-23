@@ -20,28 +20,35 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<AttendanceFilters>(initialFilters);
+  // const [filters, setFilters] = useState<AttendanceFilters>(initialFilters);
 
-  const fetchAttendance = useCallback(async (showRefresh = false) => {
-    try {
-      if (showRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
+  // useEffect(() => {
+  //   setFilters(initialFilters);
+  // }, [initialFilters]);
+
+  const fetchAttendance = useCallback(
+    async (showRefresh = false) => {
+      try {
+        if (showRefresh) {
+          setRefreshing(true);
+        } else {
+          setLoading(true);
+        }
+
+        const [data, summaryData] = await Promise.all([
+          getAttendanceRecords(),
+          getAttendanceSummary(),
+        ]);
+
+        setRecords(data);
+        setSummary(summaryData);
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
       }
-
-      const [data, summaryData] = await Promise.all([
-        getAttendanceRecords(filters),
-        getAttendanceSummary(filters),
-      ]);
-
-      setRecords(data);
-      setSummary(summaryData);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, [filters]);
+    },
+    [],
+  );
 
   useEffect(() => {
     fetchAttendance();
@@ -52,8 +59,6 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
     summary,
     loading,
     refreshing,
-    filters,
-    setFilters,
     refresh: () => fetchAttendance(true),
   };
 }

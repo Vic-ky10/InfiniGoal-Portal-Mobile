@@ -19,7 +19,7 @@ export function useProjects(initialFilters: ProjectFilters = {}) {
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<ProjectFilters>(initialFilters);
+  
 
   const fetchProjects = useCallback(async (showRefresh = false) => {
     try {
@@ -30,7 +30,7 @@ export function useProjects(initialFilters: ProjectFilters = {}) {
       }
 
       const [data, statsData] = await Promise.all([
-        getProjects(filters),
+        getProjects(),
         getProjectDashboardStats(),
       ]);
 
@@ -40,7 +40,7 @@ export function useProjects(initialFilters: ProjectFilters = {}) {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, []);
 
   useEffect(() => {
     fetchProjects();
@@ -51,8 +51,7 @@ export function useProjects(initialFilters: ProjectFilters = {}) {
     stats,
     loading,
     refreshing,
-    filters,
-    setFilters,
+  
     refresh: () => fetchProjects(true),
   };
 }

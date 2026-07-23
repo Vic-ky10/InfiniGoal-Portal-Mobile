@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 
 import { AppText, Screen } from "@/components/ui";
@@ -18,9 +18,15 @@ const STATUS_FILTERS: { label: string; value: LeaveStatus | "" }[] = [
 
 export default function LeaveScreen() {
   const [statusFilter, setStatusFilter] = useState<LeaveStatus | "">("");
-  const { leaveRequests, loading, refreshing, refresh, handleReview } = useLeave({
-    status: statusFilter || undefined,
-  });
+
+  const { leaveRequests, loading, refreshing, refresh, handleReview } =
+    useLeave();
+
+  const filteredLeaveRequests = useMemo(() => {
+    return leaveRequests.filter((leave) => {
+      return statusFilter === "" || leave.status === statusFilter;
+    });
+  }, [leaveRequests, statusFilter]);
 
   return (
     <Screen
@@ -30,10 +36,19 @@ export default function LeaveScreen() {
       onRefresh={refresh}
     >
       <View style={{ flex: 1, gap: spacing.md }}>
-        <AppHeader title="Leave Requests" subtitle="Review employee leave applications" />
+        <AppHeader
+          title="Leave Requests"
+          subtitle="Review employee leave applications"
+        />
 
         {/* Filter Tabs */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.xs,
+            marginBottom: spacing.xs,
+          }}
+        >
           {STATUS_FILTERS.map((opt) => {
             const isSelected = statusFilter === opt.value;
             return (
@@ -44,9 +59,13 @@ export default function LeaveScreen() {
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.xs,
                   borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
+                  backgroundColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.surface,
                   borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
+                  borderColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.border,
                 }}
               >
                 <AppText
@@ -62,15 +81,16 @@ export default function LeaveScreen() {
         </View>
 
         {/* Leave Requests List */}
+
         <FlatList
-          data={leaveRequests}
+          data={filteredLeaveRequests}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: leaveRequests.length === 0 ? 1 : undefined,
+            flexGrow: filteredLeaveRequests.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No leave requests found." />}
           renderItem={({ item }) => (
