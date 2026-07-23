@@ -8,7 +8,10 @@ import { LeaveRequestWithEmployee, LeaveStatus } from "../leave.types";
 
 interface Props {
   leave: LeaveRequestWithEmployee;
-  onReview: (id: string, status: LeaveStatus) => Promise<{ success: boolean; error?: string }>;
+  onReview: (
+    id: string,
+    status: LeaveStatus,
+  ) => Promise<{ success: boolean; error?: string }>;
 }
 
 export default function LeaveCard({ leave, onReview }: Props) {
@@ -40,12 +43,19 @@ export default function LeaveCard({ leave, onReview }: Props) {
 
   return (
     <Card>
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.md }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          marginBottom: spacing.md,
+        }}
+      >
         <Avatar name={name} size={42} />
         <View style={{ flex: 1, marginLeft: spacing.md }}>
           <AppText weight="700">{name}</AppText>
           <AppText variant="caption" color={adminColors.textSecondary}>
-            {employee?.department ? `${employee.department} • ` : ""}{leave.leave_type} Leave
+            {employee?.department ? `${employee.department} • ` : ""}
+            {leave.leave_type} Leave
           </AppText>
         </View>
         <Badge label={leave.status} color={getStatusColor(leave.status)} />
@@ -60,24 +70,33 @@ export default function LeaveCard({ leave, onReview }: Props) {
           marginBottom: spacing.md,
         }}
       >
-        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Feather name="calendar" size={14} color={adminColors.primary} style={{ marginRight: 6 }} />
-            <AppText variant="caption" weight="600">
-              {leave.start_date} to {leave.end_date}
-            </AppText>
-          </View>
-          <Badge label={`${leave.total_days} Day(s)`} color={adminColors.primary} variant="subtle" />
+        <View style={{ flexDirection: "row", alignItems: "center" }}>
+          <Feather
+            name="calendar"
+            size={14}
+            color={adminColors.primary}
+            style={{ marginRight: 6 }}
+          />
+          <AppText variant="caption" weight="600">
+            {leave.start_date} to {leave.end_date}
+          </AppText>
         </View>
-
         {leave.reason ? (
-          <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: spacing.xs }}>
+          <AppText
+            variant="caption"
+            color={adminColors.textSecondary}
+            style={{ marginTop: spacing.xs }}
+          >
             "{leave.reason}"
           </AppText>
         ) : null}
 
         {leave.review_comment ? (
-          <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic", marginTop: spacing.xs }}>
+          <AppText
+            variant="caption"
+            color={adminColors.textSecondary}
+            style={{ fontStyle: "italic", marginTop: spacing.xs }}
+          >
             Review note: {leave.review_comment}
           </AppText>
         ) : null}

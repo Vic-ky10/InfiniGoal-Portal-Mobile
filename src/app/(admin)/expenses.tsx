@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 
 import { AppText, Screen } from "@/components/ui";
@@ -18,9 +18,22 @@ const STATUS_FILTERS: { label: string; value: ExpenseStatus | "" }[] = [
 
 export default function ExpensesScreen() {
   const [statusFilter, setStatusFilter] = useState<ExpenseStatus | "">("");
-  const { expenses, loading, refreshing, refresh, handleReview, handleMarkPaid } = useExpenses({
-    status: statusFilter || undefined,
-  });
+ const {
+  expenses,
+  loading,
+  refreshing,
+  refresh,
+  handleReview,
+  handleMarkPaid,
+} = useExpenses();
+
+const filteredExpenses = useMemo(() => {
+  return expenses.filter((expense) => {
+    return (
+      statusFilter === "" || expense.status === statusFilter
+    )
+  })
+}, [expenses, statusFilter])
 
   return (
     <Screen
@@ -32,7 +45,8 @@ export default function ExpensesScreen() {
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader title="Expense Claims" subtitle="Review & approve employee reimbursements" />
 
-        {/* Status Filters */}
+
+
         <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
           {STATUS_FILTERS.map((opt) => {
             const isSelected = statusFilter === opt.value;
@@ -61,16 +75,20 @@ export default function ExpensesScreen() {
           })}
         </View>
 
+
+
         {/* Expenses List */}
+
+        
         <FlatList
-          data={expenses}
+         data={filteredExpenses}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: expenses.length === 0 ? 1 : undefined,
+            flexGrow: filteredExpenses.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No expense claims found." />}
           renderItem={({ item }) => (

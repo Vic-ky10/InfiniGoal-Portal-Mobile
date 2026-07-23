@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  LeaveFilters,
   LeaveRequestWithEmployee,
   LeaveStatus,
 } from "../leave.types";
@@ -10,11 +9,10 @@ import {
   reviewLeaveRequest,
 } from "../leave.service";
 
-export function useLeave(initialFilters: LeaveFilters = {}) {
+export function useLeave() {
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequestWithEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<LeaveFilters>(initialFilters);
 
   const fetchLeaveRequests = useCallback(async (showRefresh = false) => {
     try {
@@ -24,13 +22,13 @@ export function useLeave(initialFilters: LeaveFilters = {}) {
         setLoading(true);
       }
 
-      const data = await getLeaveRequests(filters);
+      const data = await getLeaveRequests();
       setLeaveRequests(data);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, []);
 
   useEffect(() => {
     fetchLeaveRequests();
@@ -42,8 +40,12 @@ export function useLeave(initialFilters: LeaveFilters = {}) {
     comment?: string
   ) => {
     const profileId = await getAuthenticatedProfileId();
+
     if (!profileId) {
-      return { success: false, error: "Authenticated profile not found." };
+      return {
+        success: false,
+        error: "Authenticated profile not found.",
+      };
     }
 
     const result = await reviewLeaveRequest(profileId, {
@@ -63,8 +65,6 @@ export function useLeave(initialFilters: LeaveFilters = {}) {
     leaveRequests,
     loading,
     refreshing,
-    filters,
-    setFilters,
     refresh: () => fetchLeaveRequests(true),
     handleReview,
   };

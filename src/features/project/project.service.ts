@@ -13,10 +13,7 @@ import {
   ProjectWithMembers,
 } from "./project.types";
 
-import {
-  AssignProjectMembersInput,
-  ProjectInput,
-} from "./project.validation";
+import { AssignProjectMembersInput, ProjectInput } from "./project.validation";
 
 const PROJECT_SELECT =
   "id, project_name, project_code, description, priority, progress, start_date, end_date, status, created_by, created_at, updated_at";
@@ -46,12 +43,12 @@ type SupabaseEmployeeProjectRecord = Omit<
 };
 
 function normalizeProjectMembers(
-  records: SupabaseProjectMemberRecord[]
+  records: SupabaseProjectMemberRecord[],
 ): ProjectMemberWithEmployee[] {
   return records.map((record) => ({
     ...record,
     employee: Array.isArray(record.employee)
-      ? record.employee[0] ?? null
+      ? (record.employee[0] ?? null)
       : record.employee,
   }));
 }
@@ -65,7 +62,7 @@ export async function getAuthenticatedProfileId() {
 }
 
 export async function getProjects(
-  filters: ProjectFilters = {}
+  filters: ProjectFilters = {},
 ): Promise<ProjectWithMembers[]> {
   let query = supabase
     .from("projects")
@@ -98,7 +95,7 @@ export async function getProjects(
       (project) =>
         project.project_name.toLowerCase().includes(search) ||
         project.project_code.toLowerCase().includes(search) ||
-        project.description?.toLowerCase().includes(search)
+        project.description?.toLowerCase().includes(search),
     );
   }
 
@@ -107,19 +104,17 @@ export async function getProjects(
   }
 
   const members = await getProjectMembersByProjectIds(
-    projects.map((project) => project.id)
+    projects.map((project) => project.id),
   );
 
   return projects.map((project) => ({
     ...project,
-    members: members.filter(
-      (member) => member.project_id === project.id
-    ),
+    members: members.filter((member) => member.project_id === project.id),
   }));
 }
 
 export async function getProjectById(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectWithMembers | null> {
   const { data, error } = await supabase
     .from("projects")
@@ -144,10 +139,7 @@ export async function getProjectById(
   };
 }
 
-export async function createProject(
-  createdBy: string,
-  values: ProjectInput
-) {
+export async function createProject(createdBy: string, values: ProjectInput) {
   const { data, error } = await supabase
     .from("projects")
     .insert({
@@ -177,10 +169,7 @@ export async function createProject(
   };
 }
 
-export async function updateProject(
-  projectId: string,
-  values: ProjectInput
-) {
+export async function updateProject(projectId: string, values: ProjectInput) {
   const { data, error } = await supabase
     .from("projects")
     .update({
@@ -210,9 +199,7 @@ export async function updateProject(
   };
 }
 
-export async function archiveProject(
-  projectId: string
-) {
+export async function archiveProject(projectId: string) {
   const { data, error } = await supabase
     .from("projects")
     .update({
@@ -236,15 +223,12 @@ export async function archiveProject(
   };
 }
 
-export async function deleteProject(
-  id: string
-) {
-  const { data: project, error: checkError } =
-    await supabase
-      .from("projects")
-      .select("id")
-      .eq("id", id)
-      .maybeSingle();
+export async function deleteProject(id: string) {
+  const { data: project, error: checkError } = await supabase
+    .from("projects")
+    .select("id")
+    .eq("id", id)
+    .maybeSingle();
 
   if (checkError) {
     return {
@@ -256,15 +240,11 @@ export async function deleteProject(
   if (!project) {
     return {
       success: false,
-      error:
-        "Project was not found or has already been deleted.",
+      error: "Project was not found or has already been deleted.",
     };
   }
 
-  const { error } = await supabase
-    .from("projects")
-    .delete()
-    .eq("id", id);
+  const { error } = await supabase.from("projects").delete().eq("id", id);
 
   if (error) {
     return {
@@ -281,7 +261,7 @@ export async function deleteProject(
 
 export async function assignProjectMembers(
   assignedBy: string,
-  values: AssignProjectMembersInput
+  values: AssignProjectMembersInput,
 ) {
   const project = await getProjectById(values.projectId);
 
@@ -294,12 +274,30 @@ export async function assignProjectMembers(
 
   const uniqueProfileIds = [...new Set(values.profileIds)];
 
-  const { data: existingRows, error: existingError } =
-    await supabase
-      .from("project_members")
-      .select(PROJECT_MEMBER_SELECT)
-      .eq("project_id", values.projectId)
-      .in("profile_id", uniqueProfileIds);
+  const { data: profiles, error: profileError } = await supabase
+    .from("profiles")
+    .select("id, designation")
+    .in("id", uniqueProfileIds);
+
+  if (profileError) {
+    return {
+      success: false,
+      error: profileError.message,
+    };
+  }
+
+  const designationMap = new Map(
+    (profiles ?? []).map((profile) => [
+      profile.id,
+      profile.designation || "Other",
+    ]),
+  );
+
+  const { data: existingRows, error: existingError } = await supabase
+    .from("project_members")
+    .select(PROJECT_MEMBER_SELECT)
+    .eq("project_id", values.projectId)
+    .in("profile_id", uniqueProfileIds);
 
   if (existingError) {
     return {
@@ -312,16 +310,12 @@ export async function assignProjectMembers(
 
   const activeIds = new Set(
     existing
-      .filter(
-        (member) =>
-          member.status !== PROJECT_MEMBER_STATUS.REMOVED
-      )
-      .map((member) => member.profile_id)
+      .filter((member) => member.status !== PROJECT_MEMBER_STATUS.REMOVED)
+      .map((member) => member.profile_id),
   );
 
   const removedRows = existing.filter(
-    (member) =>
-      member.status === PROJECT_MEMBER_STATUS.REMOVED
+    (member) => member.status === PROJECT_MEMBER_STATUS.REMOVED,
   );
 
   const insertedRows: ProjectMember[] = [];
@@ -330,9 +324,16 @@ export async function assignProjectMembers(
   const newProfileIds = uniqueProfileIds.filter(
     (profileId) =>
       !activeIds.has(profileId) &&
-      !removedRows.some(
-        (member) => member.profile_id === profileId
-      )
+      !removedRows.some((member) => member.profile_id === profileId),
+  );
+
+  console.log("Profiles:", profiles);
+  console.log("Designation Map:", designationMap);
+  console.log(
+    newProfileIds.map((id) => ({
+      id,
+      role: designationMap.get(id),
+    })),
   );
 
   if (newProfileIds.length) {
@@ -343,9 +344,9 @@ export async function assignProjectMembers(
           project_id: values.projectId,
           profile_id: profileId,
           assigned_by: assignedBy,
-          member_role: values.member_role,
+          member_role: getProjectMemberRole(designationMap.get(profileId)),
           status: PROJECT_MEMBER_STATUS.ACTIVE,
-        }))
+        })),
       )
       .select(PROJECT_MEMBER_SELECT);
 
@@ -364,12 +365,12 @@ export async function assignProjectMembers(
       .from("project_members")
       .update({
         assigned_by: assignedBy,
-        member_role: values.member_role,
+        member_role: getProjectMemberRole(
+          designationMap.get(member.profile_id),
+        ),
         status: PROJECT_MEMBER_STATUS.ACTIVE,
         assigned_at: new Date().toISOString(),
-        joined_date: new Date()
-          .toISOString()
-          .slice(0, 10),
+        joined_date: new Date().toISOString().slice(0, 10),
       })
       .eq("id", member.id)
       .select(PROJECT_MEMBER_SELECT)
@@ -385,10 +386,7 @@ export async function assignProjectMembers(
     reactivatedRows.push(data as ProjectMember);
   }
 
-  const changedRows = [
-    ...insertedRows,
-    ...reactivatedRows,
-  ];
+  const changedRows = [...insertedRows, ...reactivatedRows];
 
   await Promise.all(
     changedRows.map((member) =>
@@ -400,12 +398,11 @@ export async function assignProjectMembers(
         referenceId: project.id,
         actionUrl: "/employee/projects",
         createdBy: assignedBy,
-      })
-    )
+      }),
+    ),
   );
 
-  const skippedCount =
-    uniqueProfileIds.length - changedRows.length;
+  const skippedCount = uniqueProfileIds.length - changedRows.length;
 
   return {
     success: true,
@@ -417,9 +414,37 @@ export async function assignProjectMembers(
   };
 }
 
-export async function removeProjectMember(
-  projectMemberId: string
-) {
+function getProjectMemberRole(
+  designation?: string | null,
+):
+  | "Project Manager"
+  | "Developer"
+  | "Sales"
+  | "Marketing"
+  | "Analytics"
+  | "Other" {
+  switch (designation?.trim()) {
+    case "Project Manager":
+      return "Project Manager";
+
+    case "Developer":
+      return "Developer";
+
+    case "Sales":
+      return "Sales";
+
+    case "Marketing":
+      return "Marketing";
+
+    case "Analytics":
+      return "Analytics";
+
+    default:
+      return "Other";
+  }
+}
+
+export async function removeProjectMember(projectMemberId: string) {
   const { data, error } = await supabase
     .from("project_members")
     .update({
@@ -444,16 +469,13 @@ export async function removeProjectMember(
 }
 
 export async function getProjectMembers(
-  projectId: string
+  projectId: string,
 ): Promise<ProjectMemberWithEmployee[]> {
   const { data, error } = await supabase
     .from("project_members")
     .select(PROJECT_MEMBER_WITH_EMPLOYEE_SELECT)
     .eq("project_id", projectId)
-    .neq(
-      "status",
-      PROJECT_MEMBER_STATUS.REMOVED
-    )
+    .neq("status", PROJECT_MEMBER_STATUS.REMOVED)
     .order("assigned_at", {
       ascending: false,
     });
@@ -463,22 +485,17 @@ export async function getProjectMembers(
     return [];
   }
 
-  return normalizeProjectMembers(
-    (data ?? []) as SupabaseProjectMemberRecord[]
-  );
+  return normalizeProjectMembers((data ?? []) as SupabaseProjectMemberRecord[]);
 }
 
 export async function getEmployeeProjects(
-  profileId: string
+  profileId: string,
 ): Promise<EmployeeProject[]> {
   const { data, error } = await supabase
     .from("project_members")
     .select(EMPLOYEE_PROJECT_SELECT)
     .eq("profile_id", profileId)
-    .neq(
-      "status",
-      PROJECT_MEMBER_STATUS.REMOVED
-    )
+    .neq("status", PROJECT_MEMBER_STATUS.REMOVED)
     .order("assigned_at", {
       ascending: false,
     });
@@ -488,70 +505,60 @@ export async function getEmployeeProjects(
     return [];
   }
 
-  const memberships = (
-    (data ?? []) as SupabaseEmployeeProjectRecord[]
-  ).map((record) => ({
-    ...record,
-    project: Array.isArray(record.project)
-      ? record.project[0] ?? null
-      : record.project ?? null,
-    team: [],
-  }));
+  const memberships = ((data ?? []) as SupabaseEmployeeProjectRecord[]).map(
+    (record) => ({
+      ...record,
+      project: Array.isArray(record.project)
+        ? (record.project[0] ?? null)
+        : (record.project ?? null),
+      team: [],
+    }),
+  );
 
   const projectIds = memberships
     .map((membership) => membership.project_id)
     .filter(Boolean);
 
-  const team =
-    await getProjectMembersByProjectIds(projectIds);
+  const team = await getProjectMembersByProjectIds(projectIds);
 
   return memberships.map((membership) => ({
     ...membership,
-    team: team.filter(
-      (member) =>
-        member.project_id === membership.project_id
-    ),
+    team: team.filter((member) => member.project_id === membership.project_id),
   }));
 }
 
 export async function getProjectDashboardStats(): Promise<ProjectDashboardStats> {
-  const [
-    totalProjects,
-    activeProjects,
-    completedProjects,
-    archivedProjects,
-  ] = await Promise.all([
-    supabase
-      .from("projects")
-      .select("id", {
+  const [totalProjects, activeProjects, completedProjects, archivedProjects] =
+    await Promise.all([
+      supabase.from("projects").select("id", {
         count: "exact",
         head: true,
       }),
 
-    supabase
-      .from("projects")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("status", PROJECT_STATUS.ACTIVE),
+      supabase
+        .from("projects")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("status", PROJECT_STATUS.ACTIVE),
 
-    supabase
-      .from("projects")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("status", PROJECT_STATUS.COMPLETED),
+      supabase
+        .from("projects")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("status", PROJECT_STATUS.COMPLETED),
 
-    supabase
-      .from("projects")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq("status", PROJECT_STATUS.ARCHIVED),
-  ]);
+      supabase
+        .from("projects")
+        .select("id", {
+          count: "exact",
+          head: true,
+        })
+        .eq("status", PROJECT_STATUS.ARCHIVED),
+    ]);
 
   for (const response of [
     totalProjects,
@@ -572,9 +579,7 @@ export async function getProjectDashboardStats(): Promise<ProjectDashboardStats>
   };
 }
 
-async function getProjectMembersByProjectIds(
-  projectIds: string[]
-) {
+async function getProjectMembersByProjectIds(projectIds: string[]) {
   if (projectIds.length === 0) {
     return [];
   }
@@ -583,10 +588,7 @@ async function getProjectMembersByProjectIds(
     .from("project_members")
     .select(PROJECT_MEMBER_WITH_EMPLOYEE_SELECT)
     .in("project_id", projectIds)
-    .neq(
-      "status",
-      PROJECT_MEMBER_STATUS.REMOVED
-    )
+    .neq("status", PROJECT_MEMBER_STATUS.REMOVED)
     .order("assigned_at", {
       ascending: false,
     });
@@ -596,7 +598,5 @@ async function getProjectMembersByProjectIds(
     return [];
   }
 
-  return normalizeProjectMembers(
-    (data ?? []) as SupabaseProjectMemberRecord[]
-  );
+  return normalizeProjectMembers((data ?? []) as SupabaseProjectMemberRecord[]);
 }

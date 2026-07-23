@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 
 import { AppText, Screen, Card } from "@/components/ui";
@@ -17,13 +17,30 @@ const STATUS_OPTIONS: { label: string; value: AttendanceStatus | "" }[] = [
 ];
 
 export default function AttendanceScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "">("");
+  const { records, summary, loading, refreshing, refresh } = useAttendance();
 
-  const { records, summary, loading, refreshing, refresh } = useAttendance({
-    search: searchQuery,
-    status: statusFilter,
-  });
+  const filteredRecords = useMemo(() => {
+    const search = searchText.trim().toLowerCase();
+
+    return records.filter((record) => {
+      const employee = record.employee;
+
+      const matchesSearch =
+        search === "" ||
+        employee?.full_name?.toLowerCase().includes(search) ||
+        employee?.employee_id?.toLowerCase().includes(search) ||
+        employee?.email?.toLowerCase().includes(search) ||
+        employee?.department?.toLowerCase().includes(search) ||
+        employee?.designation?.toLowerCase().includes(search);
+
+      const matchesStatus =
+        statusFilter === "" || record.status === statusFilter;
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [records, searchText, statusFilter]);
 
   return (
     <Screen
@@ -38,21 +55,27 @@ export default function AttendanceScreen() {
         {/* Summary Metrics */}
         <View style={{ flexDirection: "row", gap: spacing.xs }}>
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Present</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Present
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.success}>
               {summary.present}
             </AppText>
           </Card>
 
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Incomplete</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Incomplete
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.warning}>
               {summary.incomplete}
             </AppText>
           </Card>
 
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Absent</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Absent
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.danger}>
               {summary.absent}
             </AppText>
@@ -60,12 +83,19 @@ export default function AttendanceScreen() {
         </View>
 
         <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+          value={searchText}
+          onChangeText={setSearchText}
+          placeholder="Search employee..."
         />
 
         {/* Filter Tabs */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.xs,
+            marginBottom: spacing.xs,
+          }}
+        >
           {STATUS_OPTIONS.map((opt) => {
             const isSelected = statusFilter === opt.value;
             return (
@@ -76,9 +106,13 @@ export default function AttendanceScreen() {
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.xs,
                   borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
+                  backgroundColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.surface,
                   borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
+                  borderColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.border,
                 }}
               >
                 <AppText
@@ -95,14 +129,14 @@ export default function AttendanceScreen() {
 
         {/* List of Records */}
         <FlatList
-          data={records}
+          data={filteredRecords}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: records.length === 0 ? 1 : undefined,
+            flexGrow: filteredRecords.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No attendance logs found." />}
           renderItem={({ item }) => <AttendanceCard record={item} />}

@@ -139,19 +139,19 @@ export default function ProjectModal({
               label="Project Code"
               value={projectCode}
               onChangeText={setProjectCode}
-              placeholder="e.g. PRJ101"
+              placeholder="Enter Project Code"
             />
             <Input
               label="Project Name"
               value={projectName}
               onChangeText={setProjectName}
-              placeholder="e.g. Mobile App Redesign"
+              placeholder="Enter Project Name  "
             />
             <Input
               label="Description"
               value={description}
               onChangeText={setDescription}
-              placeholder="Project goals & scope"
+              placeholder="Description "
               multiline
               numberOfLines={3}
             />

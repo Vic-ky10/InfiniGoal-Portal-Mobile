@@ -164,7 +164,8 @@ export default function NotificationsScreen() {
           </View>
         </View>
 
-       {/* Notifiation */}
+       {/* notifiation */}
+
         {unreadCount > 0 && (
           <TouchableOpacity
             onPress={handleMarkAllRead}
@@ -182,7 +183,7 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         )}
 
-        {/* Filters */}
+        {/* filter */}
         <View
           style={{
             flexDirection: "row",

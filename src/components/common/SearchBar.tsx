@@ -1,19 +1,30 @@
 import { Input } from "../ui";
 
-interface Props {
+import { TextInputProps } from "react-native";
+
+interface Props extends Pick<
+  TextInputProps,
+  "onSubmitEditing" | "returnKeyType"
+> {
   value: string;
   onChangeText: (text: string) => void;
+  placeholder?: string;
 }
 
 export default function SearchBar({
   value,
   onChangeText,
+  placeholder = "Search...",
+  onSubmitEditing,
+  returnKeyType = "search",
 }: Props) {
   return (
     <Input
-      placeholder="Search..."
+      placeholder={placeholder}
       value={value}
       onChangeText={onChangeText}
+      onSubmitEditing={onSubmitEditing}
+      returnKeyType={returnKeyType}
     />
   );
 }

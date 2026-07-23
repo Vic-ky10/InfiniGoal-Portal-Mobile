@@ -15,7 +15,7 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
   const [expenses, setExpenses] = useState<ExpenseWithEmployee[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [filters, setFilters] = useState<ExpenseFilters>(initialFilters);
+
 
   const fetchExpenses = useCallback(async (showRefresh = false) => {
     try {
@@ -25,13 +25,13 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
         setLoading(true);
       }
 
-      const data = await getExpenses(filters);
+      const data = await getExpenses();
       setExpenses(data);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, [filters]);
+  }, []);
 
   useEffect(() => {
     fetchExpenses();
@@ -74,8 +74,8 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
     expenses,
     loading,
     refreshing,
-    filters,
-    setFilters,
+    
+    
     refresh: () => fetchExpenses(true),
     handleReview,
     handleMarkPaid,
