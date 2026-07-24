@@ -4,10 +4,10 @@ import {
   useColorScheme,
 } from "react-native";
 
-import { getAdminColors, spacing } from "@/theme";
+import { useThemeColors, spacing } from "@/theme";
 
 export default function Loader() {
-  const colors = getAdminColors(useColorScheme());
+  const colors = useThemeColors();
 
   return (
     <View

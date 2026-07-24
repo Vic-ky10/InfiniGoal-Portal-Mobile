@@ -87,10 +87,7 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
         backgroundColor: isUnread
           ? `${colors.primary}08`
           : colors.surface,
-        borderWidth: 1,
-        borderColor: isUnread
-          ? `${colors.primary}25`
-          : colors.border,
+        borderWidth: 0,
       }}
     >
       <View

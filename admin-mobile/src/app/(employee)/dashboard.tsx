@@ -4,8 +4,8 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
-import { AppHeader } from "@/components/common";
-import { employeeColors, radius, spacing } from "@/theme";
+import { AppHeader, NotificationBell } from "@/components/common";
+import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
 import { getTodayAttendance } from "@/features/attendance/attendance.service";
@@ -120,65 +120,93 @@ export default function EmployeeDashboard() {
         contentContainerStyle={{ paddingBottom: spacing.xxxl }}
       >
         <View style={{ gap: spacing.lg }}>
-          <AppHeader title="Dashboard" subtitle="Welcome to your Portal" />
+          <AppHeader
+            title="Dashboard"
+            subtitle="Welcome to your Portal"
+            rightComponent={
+              <NotificationBell
+                count={notificationCount}
+                route="/(employee)/notifications"
+                surfaceColor={employeeColors.surface}
+                iconColor={employeeColors.text}
+                badgeColor={employeeColors.danger}
+              />
+            }
+          />
 
           {/* Welcome Banner */}
           <Card
             style={{
-              backgroundColor: employeeColors.primary,
               padding: spacing.xl,
               borderRadius: radius.lg,
+              borderLeftWidth: 6,
+              borderLeftColor: employeeColors.primary,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              ...shadows.sm,
             }}
           >
-            <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-              <View style={{ flex: 1 }}>
-                <AppText variant="h2" weight="700" color="#FFFFFF">
-                  Hello, {employeeName}!
-                </AppText>
-                <AppText variant="body" color="#D1FAE5" style={{ marginTop: spacing.xs }}>
-                  {designation}
-                </AppText>
-              </View>
-              <View
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
-                  backgroundColor: "rgba(255, 255, 255, 0.2)",
-                  justifyContent: "center",
-                  alignItems: "center",
-                }}
-              >
-                <Feather name="user" size={26} color="#FFFFFF" />
-              </View>
+            <View style={{ flex: 1 }}>
+              <AppText variant="h2" weight="700" color={employeeColors.text}>
+                Hello, {employeeName}!
+              </AppText>
+              <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs }}>
+                {designation}
+              </AppText>
+            </View>
+            <View
+              style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                backgroundColor: `${employeeColors.primary}15`,
+                justifyContent: "center",
+                alignItems: "center",
+              }}
+            >
+              <Feather name="user" size={26} color={employeeColors.primary} />
             </View>
           </Card>
 
           {/* Quick Action Grid */}
-          <AppText variant="h3" weight="700" color={employeeColors.text}>
+          <AppText variant="h3" weight="700" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
             Overview & Quick Actions
           </AppText>
 
           {/* Attendance Card */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             onPress={() => router.push("/(employee)/attendance")}
           >
-            <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Card
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: spacing.lg,
+                borderWidth: 1,
+                borderColor: employeeColors.border,
+                ...shadows.sm,
+              }}
+            >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    padding: spacing.md,
+                    width: 44,
+                    height: 44,
                     backgroundColor: `${employeeColors.primary}15`,
                     borderRadius: radius.md,
+                    justifyContent: "center",
+                    alignItems: "center",
                     marginRight: spacing.md,
                   }}
                 >
                   <Feather name="clock" size={22} color={employeeColors.primary} />
                 </View>
                 <View>
-                  <AppText weight="700">Attendance</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary}>
+                  <AppText weight="700" variant="title">Attendance</AppText>
+                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                     Today: {todayStatus}
                   </AppText>
                 </View>
@@ -198,24 +226,37 @@ export default function EmployeeDashboard() {
 
           {/* Leave Summary */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             onPress={() => router.push("/(employee)/leave")}
           >
-            <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Card
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: spacing.lg,
+                borderWidth: 1,
+                borderColor: employeeColors.border,
+                ...shadows.sm,
+              }}
+            >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    padding: spacing.md,
+                    width: 44,
+                    height: 44,
                     backgroundColor: "#F59E0B15",
                     borderRadius: radius.md,
+                    justifyContent: "center",
+                    alignItems: "center",
                     marginRight: spacing.md,
                   }}
                 >
                   <Feather name="calendar" size={22} color="#F59E0B" />
                 </View>
                 <View>
-                  <AppText weight="700">Leave Requests</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary}>
+                  <AppText weight="700" variant="title">Leave Requests</AppText>
+                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                     {pendingLeaveCount} pending review
                   </AppText>
                 </View>
@@ -226,24 +267,37 @@ export default function EmployeeDashboard() {
 
           {/* Expenses */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             onPress={() => router.push("/(employee)/expenses")}
           >
-            <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Card
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: spacing.lg,
+                borderWidth: 1,
+                borderColor: employeeColors.border,
+                ...shadows.sm,
+              }}
+            >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    padding: spacing.md,
+                    width: 44,
+                    height: 44,
                     backgroundColor: "#3B82F615",
                     borderRadius: radius.md,
+                    justifyContent: "center",
+                    alignItems: "center",
                     marginRight: spacing.md,
                   }}
                 >
                   <Feather name="dollar-sign" size={22} color="#3B82F6" />
                 </View>
                 <View>
-                  <AppText weight="700">Expenses</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary}>
+                  <AppText weight="700" variant="title">Expenses</AppText>
+                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                     {pendingExpenseCount} pending claims
                   </AppText>
                 </View>
@@ -255,32 +309,72 @@ export default function EmployeeDashboard() {
           {/* Tasks & Projects Grid */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               onPress={() => router.push("/(employee)/tasks")}
               style={{ flex: 1 }}
             >
-              <Card style={{ alignItems: "center", paddingVertical: spacing.lg }}>
-                <Feather name="check-square" size={26} color={employeeColors.primary} style={{ marginBottom: spacing.xs }} />
+              <Card
+                style={{
+                  alignItems: "center",
+                  paddingVertical: spacing.xl,
+                  borderWidth: 1,
+                  borderColor: employeeColors.border,
+                  ...shadows.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: `${employeeColors.primary}10`,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <Feather name="check-square" size={22} color={employeeColors.primary} />
+                </View>
                 <AppText variant="h2" weight="700">
                   {activeTaskCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary}>
+                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                   Active Tasks
                 </AppText>
               </Card>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               onPress={() => router.push("/(employee)/projects")}
               style={{ flex: 1 }}
             >
-              <Card style={{ alignItems: "center", paddingVertical: spacing.lg }}>
-                <Feather name="folder" size={26} color="#8B5CF6" style={{ marginBottom: spacing.xs }} />
+              <Card
+                style={{
+                  alignItems: "center",
+                  paddingVertical: spacing.xl,
+                  borderWidth: 1,
+                  borderColor: employeeColors.border,
+                  ...shadows.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: "#8B5CF610",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <Feather name="folder" size={22} color="#8B5CF6" />
+                </View>
                 <AppText variant="h2" weight="700">
                   {projectCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary}>
+                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                   My Projects
                 </AppText>
               </Card>
@@ -289,25 +383,38 @@ export default function EmployeeDashboard() {
 
           {/* Incentives */}
           <TouchableOpacity
-            activeOpacity={0.8}
+            activeOpacity={0.9}
             onPress={() => router.push("/(employee)/incentives")}
           >
-            <Card style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <Card
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "space-between",
+                paddingVertical: spacing.lg,
+                borderWidth: 1,
+                borderColor: employeeColors.border,
+                ...shadows.sm,
+              }}
+            >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
                 <View
                   style={{
-                    padding: spacing.md,
+                    width: 44,
+                    height: 44,
                     backgroundColor: "#EC489915",
                     borderRadius: radius.md,
+                    justifyContent: "center",
+                    alignItems: "center",
                     marginRight: spacing.md,
                   }}
                 >
                   <Feather name="award" size={22} color="#EC4899" />
                 </View>
                 <View>
-                  <AppText weight="700">Incentives</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary}>
-                    {incentiveCount} recorded rewards
+                  <AppText weight="700" variant="title">Incentives</AppText>
+                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                    {incentiveCount} rewards
                   </AppText>
                 </View>
               </View>
@@ -318,29 +425,73 @@ export default function EmployeeDashboard() {
           {/* Announcements & Notifications Row */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               onPress={() => router.push("/(employee)/announcements")}
               style={{ flex: 1 }}
             >
-              <Card style={{ alignItems: "center", paddingVertical: spacing.lg }}>
-                <Feather name="bell" size={24} color="#06B6D4" style={{ marginBottom: spacing.xs }} />
-                <AppText weight="700">{announcementCount}</AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary}>
+              <Card
+                style={{
+                  alignItems: "center",
+                  paddingVertical: spacing.xl,
+                  borderWidth: 1,
+                  borderColor: employeeColors.border,
+                  ...shadows.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: "#06B6D410",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <Feather name="bell" size={22} color="#06B6D4" />
+                </View>
+                <AppText variant="h2" weight="700">
+                  {announcementCount}
+                </AppText>
+                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
                   Announcements
                 </AppText>
               </Card>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.8}
+              activeOpacity={0.9}
               onPress={() => router.push("/(employee)/notifications")}
               style={{ flex: 1 }}
             >
-              <Card style={{ alignItems: "center", paddingVertical: spacing.lg }}>
-                <Feather name="message-square" size={24} color="#F59E0B" style={{ marginBottom: spacing.xs }} />
-                <AppText weight="700">{notificationCount} Unread</AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary}>
-                  Notifications
+              <Card
+                style={{
+                  alignItems: "center",
+                  paddingVertical: spacing.xl,
+                  borderWidth: 1,
+                  borderColor: employeeColors.border,
+                  ...shadows.sm,
+                }}
+              >
+                <View
+                  style={{
+                    width: 44,
+                    height: 44,
+                    borderRadius: 22,
+                    backgroundColor: "#F59E0B10",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginBottom: spacing.sm,
+                  }}
+                >
+                  <Feather name="message-square" size={22} color="#F59E0B" />
+                </View>
+                <AppText variant="h2" weight="700">
+                  {notificationCount}
+                </AppText>
+                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                  Unread Alerts
                 </AppText>
               </Card>
             </TouchableOpacity>

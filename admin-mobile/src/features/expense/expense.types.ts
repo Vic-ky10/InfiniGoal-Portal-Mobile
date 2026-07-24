@@ -108,3 +108,59 @@ export const reviewExpenseSchema = z.object({
 
 export type ReviewExpenseInput =
   z.infer<typeof reviewExpenseSchema>;
+
+export interface TopEmployeeSummary {
+  profileId: string;
+  name: string;
+  email: string;
+  totalAmount: number;
+  count: number;
+}
+
+export interface DepartmentSummary {
+  department: string;
+  totalAmount: number;
+  count: number;
+}
+
+export interface MonthlySummary {
+  month: string;
+  amount: number;
+  count: number;
+}
+
+export interface AdminExpenseSummary {
+  totalCompanyExpense: number;
+  approvedAmount: number;
+  pendingAmount: number;
+  rejectedAmount: number;
+  totalExpenseCount: number;
+  employeeCount: number;
+  averageExpense: number;
+  topEmployees: TopEmployeeSummary[];
+  departmentSummary: DepartmentSummary[];
+  monthlySummary: MonthlySummary[];
+  recentExpenses: ExpenseWithEmployee[];
+}
+
+export interface CategorySummary {
+  category: string;
+  amount: number;
+  count: number;
+}
+
+export interface EmployeeExpenseSummary {
+  totalExpenses: number;
+  approvedAmount: number;
+  pendingAmount: number;
+  rejectedAmount: number;
+  totalExpenseCount: number;
+  approvedCount: number;
+  pendingCount: number;
+  rejectedCount: number;
+  monthlyTotal: number;
+  averageExpense: number;
+  categorySummary: CategorySummary[];
+  monthlySummary: MonthlySummary[];
+  recentExpenses: Expense[];
+}

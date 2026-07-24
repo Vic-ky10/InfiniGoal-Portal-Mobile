@@ -2,14 +2,13 @@ import { ReactNode } from "react";
 import {
   ScrollView,
   RefreshControl,
-  useColorScheme,
   ViewStyle,
   StyleProp,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import {
-  getAdminColors,
+  useThemeColors,
   spacing,
 } from "@/theme";
 import Loader from "./Loader";
@@ -40,11 +39,11 @@ export default function Screen({
   style,
   contentContainerStyle,
 }: ScreenProps) {
-  const colors = getAdminColors(useColorScheme());
+  const colors = useThemeColors();
 
   if (isLoading) {
     return (
-      <SafeAreaView style={[{ flex: 1, backgroundColor: colors.background }, style]}>
+      <SafeAreaView style={[{ flex: 1, backgroundColor: colors.surface }, style]}>
         <Loader />
       </SafeAreaView>
     );
@@ -52,7 +51,7 @@ export default function Screen({
 
   if (isError) {
     return (
-      <SafeAreaView style={[{ flex: 1, backgroundColor: colors.background }, style]}>
+      <SafeAreaView style={[{ flex: 1, backgroundColor: colors.surface }, style]}>
         <ErrorState message={errorMessage} onRetry={onRetry} />
       </SafeAreaView>
     );
@@ -64,7 +63,7 @@ export default function Screen({
         style={[
           {
             flex: 1,
-            backgroundColor: colors.background,
+            backgroundColor: colors.surface,
           },
           style,
         ]}
@@ -100,7 +99,7 @@ export default function Screen({
       style={[
         {
           flex: 1,
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           padding: spacing.xl,
         },
         style,

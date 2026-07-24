@@ -1,11 +1,10 @@
 import {
   Text,
   TextProps,
-  useColorScheme,
 } from "react-native";
 
 import {
-  getAdminColors,
+  useThemeColors,
   typography,
 } from "@/theme";
 
@@ -41,7 +40,7 @@ export default function AppText({
   style,
   ...props
 }: AppTextProps) {
-  const colors = getAdminColors(useColorScheme());
+  const colors = useThemeColors();
 
   return (
     <Text

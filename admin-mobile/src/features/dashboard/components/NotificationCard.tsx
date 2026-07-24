@@ -1,5 +1,5 @@
 import { Card, AppText } from "@/components/ui";
-import { adminColors } from "@/theme";
+import { adminColors, shadows } from "@/theme";
 
 interface Props {
   title: string;
@@ -9,10 +9,20 @@ export default function NotificationCard({
   title,
 }: Props) {
   return (
-    <Card>
+    <Card
+      style={{
+        borderLeftWidth: 6,
+        borderLeftColor: adminColors.primary,
+        borderWidth: 1,
+        borderColor: adminColors.border,
+        backgroundColor: `${adminColors.primary}05`,
+        ...shadows.sm,
+      }}
+    >
       <AppText
-        weight="600"
+        weight="700"
         color={adminColors.primary}
+        variant="body"
       >
         🔔 {title}
       </AppText>

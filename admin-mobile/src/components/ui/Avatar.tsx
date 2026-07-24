@@ -1,5 +1,5 @@
 import { View, Image } from "react-native";
-import { adminColors, radius, sizes } from "@/theme";
+import { useThemeColors, radius, sizes } from "@/theme";
 import AppText from "./AppText";
 
 interface AvatarProps {
@@ -13,8 +13,10 @@ export default function Avatar({
   name = "User",
   size = sizes.avatarMedium,
 }: AvatarProps) {
+  const colors = useThemeColors();
   const initials = name
     .split(" ")
+    .filter(Boolean)
     .map((n) => n[0])
     .join("")
     .toUpperCase()
@@ -28,6 +30,8 @@ export default function Avatar({
           width: size,
           height: size,
           borderRadius: size / 2,
+          borderWidth: 2,
+          borderColor: colors.border,
         }}
       />
     );
@@ -39,12 +43,14 @@ export default function Avatar({
         width: size,
         height: size,
         borderRadius: size / 2,
-        backgroundColor: adminColors.primaryLight,
+        backgroundColor: colors.primaryLight,
         alignItems: "center",
         justifyContent: "center",
+        borderWidth: 2,
+        borderColor: colors.background,
       }}
     >
-      <AppText color="#FFFFFF" weight="700" style={{ fontSize: size * 0.4 }}>
+      <AppText color="#FFFFFF" weight="700" style={{ fontSize: size * 0.38 }}>
         {initials}
       </AppText>
     </View>

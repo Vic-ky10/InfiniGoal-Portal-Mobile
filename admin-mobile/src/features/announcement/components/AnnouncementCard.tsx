@@ -174,11 +174,11 @@ export default function AnnouncementCard({
         }}
       >
         <View style={{ flex: 1 }}>
-          <Button title="Edit" onPress={() => onEdit(announcement)} />
+          <Button title="Edit" onPress={() => onEdit(announcement)} size="sm" />
         </View>
 
         <View style={{ flex: 1 }}>
-          <Button title="Delete" onPress={handleDelete} />
+          <Button title="Delete" onPress={handleDelete} size="sm" />
         </View>
       </View>
 
@@ -192,6 +192,7 @@ export default function AnnouncementCard({
             title="Publish Announcement"
             onPress={handlePublish}
             loading={actionLoading}
+            size="sm"
           />
         </View>
       )}

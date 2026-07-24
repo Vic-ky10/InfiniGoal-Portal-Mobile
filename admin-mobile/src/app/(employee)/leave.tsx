@@ -10,9 +10,9 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { AppText, Screen, Card, Badge, Input, Button } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, radius, spacing } from "@/theme";
+import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
 import { LeaveRequest, LEAVE_TYPE, LEAVE_DURATION } from "@/features/leave/leave.types";
@@ -61,14 +61,18 @@ export default function EmployeeLeaveScreen() {
   }, [loadData]);
 
   const handleApplyLeave = async () => {
-    if (!profileId) return;
+    if (!startDate.trim() || !endDate.trim()) {
+      Alert.alert("Validation Error", "Please select start and end dates.");
+      return;
+    }
     if (!reason.trim()) {
-      Alert.alert("Validation Error", "Please state the reason for leave.");
+      Alert.alert("Validation Error", "Please provide a reason for leave.");
       return;
     }
 
     setSubmitting(true);
     try {
+      if (!profileId) return;
       const res = await createLeaveRequest(profileId, {
         leave_type: leaveType as any,
         leave_duration: LEAVE_DURATION.FULL_DAY,
@@ -90,20 +94,22 @@ export default function EmployeeLeaveScreen() {
     }
   };
 
-  const handleCancelRequest = async (id: string) => {
-    if (!profileId) return;
-    Alert.alert("Cancel Request", "Are you sure you want to cancel this leave request?", [
+  const handleCancelRequest = (requestId: string) => {
+    Alert.alert("Cancel Leave", "Are you sure you want to cancel this pending leave request?", [
       { text: "No", style: "cancel" },
       {
-        text: "Yes, Cancel",
-        style: "destructive",
+        text: "Yes",
         onPress: async () => {
-          const res = await cancelPendingLeaveRequest(profileId, id);
-          if (res.success) {
-            Alert.alert("Cancelled", res.message);
-            loadData(true);
-          } else {
-            Alert.alert("Error", res.error);
+          try {
+            const res = await cancelPendingLeaveRequest(profileId || "", requestId);
+            if (res.success) {
+              Alert.alert("Success", res.message);
+              loadData(true);
+            } else {
+              Alert.alert("Error", res.error);
+            }
+          } catch (error) {
+            console.error(error);
           }
         },
       },
@@ -111,12 +117,12 @@ export default function EmployeeLeaveScreen() {
   };
 
   const renderLeaveItem = ({ item }: { item: LeaveRequest }) => (
-    <Card style={{ marginBottom: spacing.md }}>
+    <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <AppText weight="700" variant="h3">
-              {item.leave_type}
+            <AppText weight="700" variant="title" color={employeeColors.text}>
+              {item.leave_type} Leave
             </AppText>
             <Badge
               label={item.status}
@@ -145,8 +151,8 @@ export default function EmployeeLeaveScreen() {
         </View>
 
         {item.status === "Pending" && (
-          <TouchableOpacity onPress={() => handleCancelRequest(item.id)} style={{ padding: spacing.xs }}>
-            <Feather name="x-circle" size={20} color={employeeColors.danger} />
+          <TouchableOpacity onPress={() => handleCancelRequest(item.id)} style={{ padding: spacing.xs, backgroundColor: "#EF444410", borderRadius: radius.sm }}>
+            <Feather name="x-circle" size={16} color={employeeColors.danger} />
           </TouchableOpacity>
         )}
       </View>
@@ -170,7 +176,7 @@ export default function EmployeeLeaveScreen() {
               }}
             >
               <AppText weight="700" color="#FFFFFF">
-                + Apply Leave
+                + Apply
               </AppText>
             </TouchableOpacity>
           }
@@ -189,7 +195,7 @@ export default function EmployeeLeaveScreen() {
 
         {/* Apply Leave Modal */}
         <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
             <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
                 <AppText variant="h2" weight="700">
@@ -201,7 +207,7 @@ export default function EmployeeLeaveScreen() {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
+                <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
                   Leave Type
                 </AppText>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.lg }}>
@@ -213,9 +219,9 @@ export default function EmployeeLeaveScreen() {
                         paddingHorizontal: spacing.md,
                         paddingVertical: spacing.sm,
                         borderRadius: radius.md,
-                        borderWidth: 1,
+                        borderWidth: 1.5,
                         borderColor: leaveType === type ? employeeColors.primary : employeeColors.border,
-                        backgroundColor: leaveType === type ? `${employeeColors.primary}15` : "#FFFFFF",
+                        backgroundColor: leaveType === type ? `${employeeColors.primary}10` : "#FFFFFF",
                       }}
                     >
                       <AppText weight={leaveType === type ? "700" : "500"} color={leaveType === type ? employeeColors.primary : employeeColors.text}>
@@ -225,51 +231,33 @@ export default function EmployeeLeaveScreen() {
                   ))}
                 </View>
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  Start Date (YYYY-MM-DD)
-                </AppText>
-                <TextInput
+                <Input
+                  label="Start Date (YYYY-MM-DD)"
                   value={startDate}
                   onChangeText={setStartDate}
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg }}
                 />
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  End Date (YYYY-MM-DD)
-                </AppText>
-                <TextInput
+                <Input
+                  label="End Date (YYYY-MM-DD)"
                   value={endDate}
                   onChangeText={setEndDate}
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg }}
                 />
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  Reason
-                </AppText>
-                <TextInput
+                <Input
+                  label="Reason"
                   value={reason}
                   onChangeText={setReason}
                   placeholder="Enter reason for leave..."
                   multiline
                   numberOfLines={3}
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.xl, textAlignVertical: "top" }}
+                  style={{ height: 80, textAlignVertical: "top" }}
                 />
 
-                <TouchableOpacity
+                <Button
+                  title="Submit Leave Request"
+                  loading={submitting}
                   onPress={handleApplyLeave}
-                  disabled={submitting}
-                  style={{
-                    backgroundColor: employeeColors.primary,
-                    paddingVertical: spacing.md,
-                    borderRadius: radius.md,
-                    alignItems: "center",
-                    marginBottom: spacing.lg,
-                  }}
-                >
-                  <AppText weight="700" color="#FFFFFF">
-                    {submitting ? "Submitting..." : "Submit Leave Request"}
-                  </AppText>
-                </TouchableOpacity>
+                />
               </ScrollView>
             </View>
           </View>

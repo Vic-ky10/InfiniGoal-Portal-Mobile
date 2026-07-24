@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { TextInput, TextInputProps, View } from "react-native";
 
-import { adminColors, radius, spacing } from "@/theme";
+import { useThemeColors, radius, spacing } from "@/theme";
 import AppText from "./AppText";
 
 interface InputProps extends TextInputProps {
@@ -12,32 +13,49 @@ export default function Input({
   label,
   error,
   style,
+  onFocus,
+  onBlur,
   ...props
 }: InputProps) {
+  const colors = useThemeColors();
+  const [focused, setFocused] = useState(false);
+
   return (
     <View style={{ marginBottom: spacing.lg }}>
       {label && (
         <AppText
           weight="600"
-          style={{ marginBottom: spacing.sm }}
+          style={{ marginBottom: spacing.xs, fontSize: 13 }}
+          color={colors.textSecondary}
         >
           {label}
         </AppText>
       )}
 
       <TextInput
-        placeholderTextColor={adminColors.textSecondary}
+        placeholderTextColor={colors.textSecondary}
+        onFocus={(e) => {
+          setFocused(true);
+          onFocus?.(e);
+        }}
+        onBlur={(e) => {
+          setFocused(false);
+          onBlur?.(e);
+        }}
         style={[
           {
-            height: 50,
-            borderWidth: 1,
+            height: 52,
+            borderWidth: 1.5,
             borderColor: error
-              ? adminColors.danger
-              : adminColors.border,
+              ? colors.danger
+              : focused
+              ? colors.primary
+              : colors.border,
             borderRadius: radius.md,
             paddingHorizontal: spacing.lg,
-            backgroundColor: adminColors.surface,
-            color: adminColors.text,
+            backgroundColor: colors.background,
+            color: colors.text,
+            fontSize: 15,
           },
           style,
         ]}
@@ -47,7 +65,7 @@ export default function Input({
       {error && (
         <AppText
           variant="caption"
-          color={adminColors.danger}
+          color={colors.danger}
           style={{ marginTop: spacing.xs }}
         >
           {error}

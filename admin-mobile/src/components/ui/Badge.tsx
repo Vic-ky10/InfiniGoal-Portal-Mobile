@@ -1,6 +1,6 @@
 import { View } from "react-native";
 import AppText from "./AppText";
-import { adminColors, radius, spacing } from "@/theme";
+import { useThemeColors, radius, spacing } from "@/theme";
 
 interface BadgeProps {
   label: string;
@@ -11,13 +11,15 @@ interface BadgeProps {
 
 export default function Badge({
   label,
-  color = adminColors.primary,
+  color,
   textColor,
   variant = "subtle",
 }: BadgeProps) {
+  const colors = useThemeColors();
+  const activeColor = color ?? colors.primary;
   const isSubtle = variant === "subtle";
-  const bgColor = isSubtle ? `${color}1A` : color;
-  const finalTextColor = textColor ?? (isSubtle ? color : "#FFFFFF");
+  const bgColor = isSubtle ? `${activeColor}1A` : activeColor;
+  const finalTextColor = textColor ?? (isSubtle ? activeColor : "#FFFFFF");
 
   return (
     <View
@@ -27,6 +29,8 @@ export default function Badge({
         paddingHorizontal: spacing.md,
         paddingVertical: spacing.xs,
         borderRadius: radius.full,
+        borderWidth: isSubtle ? 1 : 0,
+        borderColor: `${activeColor}33`,
       }}
     >
       <AppText

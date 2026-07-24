@@ -3,26 +3,38 @@ import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText } from "@/components/ui";
-import { adminColors, radius, spacing } from "@/theme";
+import { adminColors, radius } from "@/theme";
 
 interface NotificationBellProps {
   count: number;
+  /** Route to navigate to when pressed. Defaults to admin notifications. */
+  route?: string;
+  /** Surface background color for the button. Defaults to adminColors.surface. */
+  surfaceColor?: string;
+  /** Icon color. Defaults to adminColors.text. */
+  iconColor?: string;
+  /** Badge background color. Defaults to adminColors.danger. */
+  badgeColor?: string;
 }
 
 export default function NotificationBell({
   count,
+  route = "/(admin)/notifications",
+  surfaceColor = adminColors.surface,
+  iconColor = adminColors.text,
+  badgeColor = adminColors.danger,
 }: NotificationBellProps) {
   const router = useRouter();
 
   return (
     <TouchableOpacity
       activeOpacity={0.8}
-      onPress={() => router.push("/(admin)/notifications")}
+      onPress={() => router.push(route as any)}
       style={{
         width: 46,
         height: 46,
         borderRadius: radius.full,
-        backgroundColor: adminColors.surface,
+        backgroundColor: surfaceColor,
         justifyContent: "center",
         alignItems: "center",
 
@@ -39,7 +51,7 @@ export default function NotificationBell({
       <Feather
         name="bell"
         size={22}
-        color={adminColors.text}
+        color={iconColor}
       />
 
       {count > 0 && (
@@ -56,7 +68,7 @@ export default function NotificationBell({
 
             borderRadius: radius.full,
 
-            backgroundColor: adminColors.danger,
+            backgroundColor: badgeColor,
 
             borderWidth: 2,
             borderColor: "#fff",

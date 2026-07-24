@@ -102,12 +102,15 @@ export default function AnnouncementsScreen() {
           }}
           style={{
             backgroundColor: adminColors.primary,
-            paddingVertical: spacing.md,
+            paddingVertical: spacing.sm,
             borderRadius: radius.md,
             alignItems: "center",
+            flexDirection: "row",
+            justifyContent: "center",
+            gap: 6,
           }}
         >
-          <AppText color="#FFFFFF" weight="700">
+          <AppText color="#FFFFFF" weight="700" variant="caption">
             + Create Announcement
           </AppText>
         </TouchableOpacity>

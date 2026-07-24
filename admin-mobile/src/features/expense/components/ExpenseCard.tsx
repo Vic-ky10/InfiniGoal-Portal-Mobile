@@ -107,12 +107,13 @@ export default function ExpenseCard({ expense, onReview, onMarkPaid }: Props) {
       </View>
 
       {expense.status === "Pending" && (
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={{ flexDirection: "row", gap: spacing.sm }}>
           <View style={{ flex: 1 }}>
             <Button
               title="Approve"
               onPress={handleApprove}
               loading={actionLoading}
+              size="sm"
             />
           </View>
           <TouchableOpacity
@@ -124,14 +125,15 @@ export default function ExpenseCard({ expense, onReview, onMarkPaid }: Props) {
               borderRadius: radius.md,
               alignItems: "center",
               justifyContent: "center",
-              paddingVertical: spacing.lg,
+              paddingVertical: spacing.xs,
+              minHeight: 34,
               opacity: actionLoading ? 0.6 : 1,
             }}
           >
             {actionLoading ? (
-              <ActivityIndicator color="#fff" />
+              <ActivityIndicator color="#fff" size="small" />
             ) : (
-              <AppText weight="700" color="#fff">
+              <AppText variant="caption" weight="700" color="#fff">
                 Reject
               </AppText>
             )}
@@ -144,6 +146,7 @@ export default function ExpenseCard({ expense, onReview, onMarkPaid }: Props) {
           title="Mark as Paid"
           onPress={handlePaid}
           loading={actionLoading}
+          size="sm"
         />
       )}
     </Card>

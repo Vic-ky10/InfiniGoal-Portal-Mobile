@@ -3,7 +3,7 @@ import { View, FlatList } from "react-native";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, spacing } from "@/theme";
+import { employeeColors, spacing, shadows } from "@/theme";
 
 import { AnnouncementWithCreator } from "@/features/announcement/announcement.types";
 import { getAnnouncements } from "@/features/announcement/announcement.service";
@@ -38,18 +38,18 @@ export default function EmployeeAnnouncementsScreen() {
       : (item.creator as any)?.full_name;
 
     return (
-      <Card style={{ marginBottom: spacing.md }}>
+      <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
         <View style={{ gap: spacing.xs }}>
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Badge label={item.announcement_type} color={employeeColors.primary} variant="subtle" />
             {item.is_pinned && <Badge label="Pinned" color={employeeColors.warning} />}
           </View>
 
-          <AppText weight="700" variant="h3" style={{ marginTop: spacing.xs }}>
+          <AppText weight="700" variant="h3" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
             {item.title}
           </AppText>
 
-          <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.xs, lineHeight: 22 }}>
+          <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs, lineHeight: 22 }}>
             {item.message}
           </AppText>
 
