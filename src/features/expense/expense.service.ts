@@ -1,12 +1,15 @@
 import { supabase } from "@/lib/supabase/client";
 import { createNotification, notifyAdmins } from "@/features/notification";
 
+import { API_BASE_URL } from "@/lib/api";
 import {
   EXPENSE_STATUS,
   PAYMENT_STATUS,
   Expense,
   ExpenseFilters,
   ExpenseWithEmployee,
+  AdminExpenseSummary,
+  EmployeeExpenseSummary,
 } from "./expense.types";
 
 import {
@@ -452,3 +455,71 @@ type SupabaseExpenseRecord = ExpenseWithEmployee & {
     | ExpenseWithEmployee["employee"]
     | NonNullable<ExpenseWithEmployee["employee"]>[];
 };
+
+export async function getAdminExpenseSummary(): Promise<AdminExpenseSummary> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const url = `${API_BASE_URL}/api/admin/expense-summary`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token ?? ""}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = "Failed to fetch admin expense summary.";
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorMessage;
+    } catch {
+      // use default
+    }
+    throw new Error(errorMessage);
+  }
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || "Failed to fetch admin expense summary");
+  }
+
+  return result.data as AdminExpenseSummary;
+}
+
+export async function getEmployeeExpenseSummary(): Promise<EmployeeExpenseSummary> {
+  const { data: { session } } = await supabase.auth.getSession();
+  const token = session?.access_token;
+
+  const url = `${API_BASE_URL}/api/employee/expense-summary`;
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Authorization": `Bearer ${token ?? ""}`,
+      "Content-Type": "application/json",
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    let errorMessage = "Failed to fetch employee expense summary.";
+    try {
+      const errorJson = JSON.parse(errorText);
+      errorMessage = errorJson.error || errorMessage;
+    } catch {
+      // use default
+    }
+    throw new Error(errorMessage);
+  }
+
+  const result = await response.json();
+  if (!result.success) {
+    throw new Error(result.error || "Failed to fetch employee expense summary");
+  }
+
+  return result.data as EmployeeExpenseSummary;
+}

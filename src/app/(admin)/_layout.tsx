@@ -1,135 +1,66 @@
+import { useEffect } from "react";
 import { Drawer } from "expo-router/drawer";
-import { Feather } from "@expo/vector-icons";
+import { useThemeStore } from "@/store";
+import { CustomDrawerContent, DrawerRoute } from "@/components/common";
+
+const ADMIN_ROUTES: DrawerRoute[] = [
+  { name: "dashboard",     title: "Dashboard",     icon: "grid",          path: "/(admin)/dashboard" },
+  { name: "employees",     title: "Employees",     icon: "users",         path: "/(admin)/employees" },
+  { name: "attendance",    title: "Attendance",    icon: "clock",         path: "/(admin)/attendance" },
+  { name: "leave",         title: "Leave",         icon: "calendar",      path: "/(admin)/leave" },
+  { name: "expenses",      title: "Expenses",      icon: "dollar-sign",   path: "/(admin)/expenses" },
+  { name: "expense-tracker", title: "Expense Tracker", icon: "trending-up", path: "/(admin)/expense-tracker" },
+  { name: "projects",      title: "Projects",      icon: "folder",        path: "/(admin)/projects" },
+  { name: "tasks",         title: "Tasks",         icon: "check-square",  path: "/(admin)/tasks" },
+  { name: "incentives",    title: "Incentives",    icon: "award",         path: "/(admin)/incentives" },
+  { name: "announcements", title: "Announcements", icon: "bell",          path: "/(admin)/announcements" },
+  { name: "notifications", title: "Notifications", icon: "message-square",path: "/(admin)/notifications" },
+  { name: "settings",      title: "Settings",      icon: "settings",      path: "/(admin)/settings" },
+];
 
 export default function AdminLayout() {
+  const setMode = useThemeStore((state) => state.setMode);
+
+  useEffect(() => {
+    setMode("admin");
+  }, []);
+
   return (
     <Drawer
       screenOptions={{
         headerShown: false,
         drawerType: "front",
+        drawerStyle: { width: 280 },
+        // suppress all default item styling — CustomDrawerContent owns it
         drawerActiveTintColor: "#2563EB",
-        drawerActiveBackgroundColor: "#2563EB15",
-        drawerInactiveTintColor: "#64748B",
-        drawerStyle: {
-          width: 280,
-          backgroundColor: "#FFFFFF",
-        },
-        drawerLabelStyle: {
-          fontSize: 15,
-          fontWeight: "600",
-          marginLeft: -10,
-        },
+        drawerInactiveTintColor: "transparent",
+        drawerActiveBackgroundColor: "transparent",
+        drawerInactiveBackgroundColor: "transparent",
+        overlayColor: "rgba(0,0,0,0.35)",
       }}
+      drawerContent={(props) => (
+        <CustomDrawerContent
+          drawerProps={props}
+          primaryColor="#2563EB"
+          appName="Admin Portal"
+          appSubtitle="InfiniGoal Management"
+          appIcon="shield"
+          routes={ADMIN_ROUTES}
+        />
+      )}
     >
-      <Drawer.Screen
-        name="dashboard"
-        options={{
-          title: "Dashboard",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="grid" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="employees"
-        options={{
-          title: "Employees",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="users" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="attendance"
-        options={{
-          title: "Attendance",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="clock" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="leave"
-        options={{
-          title: "Leave",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="calendar" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="expenses"
-        options={{
-          title: "Expenses",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="dollar-sign" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="projects"
-        options={{
-          title: "Projects",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="folder" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="tasks"
-        options={{
-          title: "Tasks",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="check-square" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="incentives"
-        options={{
-          title: "Incentives",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="award" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="announcements"
-        options={{
-          title: "Announcements",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="bell" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="notifications"
-        options={{
-          title: "Notifications",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="message-square" size={size} color={color as string} />
-          ),
-        }}
-      />
-
-      <Drawer.Screen
-        name="settings"
-        options={{
-          title: "Settings",
-          drawerIcon: ({ color, size }) => (
-            <Feather name="settings" size={size} color={color as string} />
-          ),
-        }}
-      />
+      <Drawer.Screen name="dashboard"     options={{ title: "Dashboard" }} />
+      <Drawer.Screen name="employees"     options={{ title: "Employees" }} />
+      <Drawer.Screen name="attendance"    options={{ title: "Attendance" }} />
+      <Drawer.Screen name="leave"         options={{ title: "Leave" }} />
+      <Drawer.Screen name="expenses"      options={{ title: "Expenses" }} />
+      <Drawer.Screen name="expense-tracker" options={{ title: "Expense Tracker" }} />
+      <Drawer.Screen name="projects"      options={{ title: "Projects" }} />
+      <Drawer.Screen name="tasks"         options={{ title: "Tasks" }} />
+      <Drawer.Screen name="incentives"    options={{ title: "Incentives" }} />
+      <Drawer.Screen name="announcements" options={{ title: "Announcements" }} />
+      <Drawer.Screen name="notifications" options={{ title: "Notifications" }} />
+      <Drawer.Screen name="settings"      options={{ title: "Settings" }} />
     </Drawer>
   );
 }

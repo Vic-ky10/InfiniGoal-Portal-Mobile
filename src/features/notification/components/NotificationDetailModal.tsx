@@ -79,6 +79,7 @@ export default function NotificationDetailModal({
             style={{
               borderRadius: radius.xl,
               padding: spacing.xl,
+              borderWidth: 0,
             }}
           >
             <View

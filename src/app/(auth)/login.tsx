@@ -54,6 +54,10 @@ export default function LoginScreen() {
     }
   }
 
+  const primaryColor = isEmployee ? "#22C55E" : "#2563EB";
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passFocused, setPassFocused] = useState(false);
+
   return (
     <View
       style={{
@@ -71,15 +75,26 @@ export default function LoginScreen() {
           left: 24,
           flexDirection: "row",
           alignItems: "center",
+          backgroundColor: "#FFFFFF",
+          paddingVertical: 8,
+          paddingHorizontal: 16,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "#E2E8F0",
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.03,
+          shadowRadius: 4,
+          elevation: 1,
         }}
       >
-        <Feather name="arrow-left" size={22} color="#1E293B" />
+        <Feather name="arrow-left" size={18} color="#0F172A" />
         <Text
           style={{
-            marginLeft: 8,
-            fontSize: 16,
+            marginLeft: 6,
+            fontSize: 14,
             fontWeight: "600",
-            color: "#1E293B",
+            color: "#0F172A",
           }}
         >
           Back
@@ -89,44 +104,63 @@ export default function LoginScreen() {
       <View
         style={{
           backgroundColor: "#FFFFFF",
-          padding: 24,
-          borderRadius: 16,
+          padding: 28,
+          borderRadius: 20,
+          borderWidth: 1,
+          borderColor: "#E2E8F0",
           elevation: 4,
-          shadowColor: "#000",
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
+          shadowColor: "#0F172A",
+          shadowOffset: { width: 0, height: 8 },
+          shadowOpacity: 0.05,
+          shadowRadius: 16,
         }}
       >
-        <Text
-          style={{
-            fontSize: 28,
-            fontWeight: "700",
-            textAlign: "center",
-            color: "#2563EB",
-          }}
-        >
-          InfiniGoal
-        </Text>
+        <View style={{ alignItems: "center", marginBottom: 28 }}>
+          <View
+            style={{
+              width: 54,
+              height: 54,
+              borderRadius: 16,
+              backgroundColor: isEmployee ? "#F0FDF4" : "#EFF6FF",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 16,
+              borderWidth: 1,
+              borderColor: isEmployee ? "#DCFCE7" : "#DBEAFE",
+            }}
+          >
+            <Feather name="layers" size={28} color={primaryColor} />
+          </View>
+
+          <Text
+            style={{
+              fontSize: 26,
+              fontWeight: "800",
+              color: "#0F172A",
+              letterSpacing: -0.5,
+            }}
+          >
+            InfiniGoal
+          </Text>
+
+          <Text
+            style={{
+              color: "#64748B",
+              marginTop: 6,
+              fontWeight: "600",
+              fontSize: 14,
+            }}
+          >
+            {portalTitle}
+          </Text>
+        </View>
 
         <Text
           style={{
-            textAlign: "center",
+            marginBottom: 6,
+            fontWeight: "600",
+            fontSize: 13,
             color: "#64748B",
-            marginTop: 6,
-            marginBottom: 28,
-            fontWeight: "600",
-            fontSize: 15,
-          }}
-        >
-          {portalTitle}
-        </Text>
-
-        <Text
-          style={{
-            marginBottom: 8,
-            fontWeight: "600",
-            color: "#334155",
           }}
         >
           Email
@@ -136,23 +170,29 @@ export default function LoginScreen() {
           value={email}
           onChangeText={setEmail}
           placeholder="Enter your email"
+          placeholderTextColor="#94A3B8"
           keyboardType="email-address"
           autoCapitalize="none"
+          onFocus={() => setEmailFocused(true)}
+          onBlur={() => setEmailFocused(false)}
           style={{
-            borderWidth: 1,
-            borderColor: "#CBD5E1",
-            borderRadius: 10,
+            borderWidth: 1.5,
+            borderColor: emailFocused ? primaryColor : "#E2E8F0",
+            borderRadius: 12,
             padding: 14,
             fontSize: 16,
+            backgroundColor: "#FFFFFF",
+            color: "#0F172A",
+            marginBottom: 20,
           }}
         />
 
         <Text
           style={{
-            marginTop: 20,
-            marginBottom: 8,
+            marginBottom: 6,
             fontWeight: "600",
-            color: "#334155",
+            fontSize: 13,
+            color: "#64748B",
           }}
         >
           Password
@@ -162,13 +202,18 @@ export default function LoginScreen() {
           value={password}
           onChangeText={setPassword}
           placeholder="Enter your password"
+          placeholderTextColor="#94A3B8"
           secureTextEntry
+          onFocus={() => setPassFocused(true)}
+          onBlur={() => setPassFocused(false)}
           style={{
-            borderWidth: 1,
-            borderColor: "#CBD5E1",
-            borderRadius: 10,
+            borderWidth: 1.5,
+            borderColor: passFocused ? primaryColor : "#E2E8F0",
+            borderRadius: 12,
             padding: 14,
             fontSize: 16,
+            backgroundColor: "#FFFFFF",
+            color: "#0F172A",
           }}
         />
 
@@ -178,10 +223,18 @@ export default function LoginScreen() {
           activeOpacity={0.85}
           style={{
             marginTop: 32,
-            backgroundColor: "#2563EB",
-            paddingVertical: 15,
-            borderRadius: 10,
+            backgroundColor: primaryColor,
+            paddingVertical: 16,
+            borderRadius: 12,
+            flexDirection: "row",
+            justifyContent: "center",
+            alignItems: "center",
             opacity: loading ? 0.6 : 1,
+            shadowColor: primaryColor,
+            shadowOffset: { width: 0, height: 4 },
+            shadowOpacity: 0.15,
+            shadowRadius: 8,
+            elevation: 2,
           }}
         >
           <Text
@@ -192,7 +245,7 @@ export default function LoginScreen() {
               fontSize: 16,
             }}
           >
-            {loading ? "Signing In..." : `Login to ${portalTitle}`}
+            {loading ? "Signing In..." : `Sign In`}
           </Text>
         </TouchableOpacity>
       </View>

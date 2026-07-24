@@ -2,7 +2,7 @@ import { View, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
-import { adminColors, spacing, radius } from "@/theme";
+import { adminColors, spacing, radius, shadows } from "@/theme";
 
 interface StatCardProps {
   title: string;
@@ -20,7 +20,7 @@ export default function StatCard({
   onPress,
 }: StatCardProps) {
   const Content = (
-    <Card style={{ flex: 1, minWidth: 140 }}>
+    <Card style={{ flex: 1, minWidth: 140, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
       <View
         style={{
           flexDirection: "row",
@@ -32,7 +32,7 @@ export default function StatCard({
           <AppText
             variant="caption"
             color={adminColors.textSecondary}
-            weight="500"
+            weight="600"
           >
             {title}
           </AppText>
@@ -40,8 +40,8 @@ export default function StatCard({
           <AppText
             variant="h1"
             weight="700"
-            color={color}
-            style={{ marginTop: spacing.sm }}
+            color={adminColors.text}
+            style={{ marginTop: spacing.xs }}
           >
             {value}
           </AppText>
@@ -51,17 +51,17 @@ export default function StatCard({
           {icon && (
             <View
               style={{
-                width: 42,
-                height: 42,
-                borderRadius: radius.lg,
-                backgroundColor: `${color}15`,
+                width: 38,
+                height: 38,
+                borderRadius: 10,
+                backgroundColor: `${color}10`,
                 justifyContent: "center",
                 alignItems: "center",
               }}
             >
               <Feather
                 name={icon}
-                size={20}
+                size={18}
                 color={color}
               />
             </View>
@@ -70,7 +70,7 @@ export default function StatCard({
           {onPress && (
             <Feather
               name="chevron-right"
-              size={16}
+              size={14}
               color={adminColors.textSecondary}
             />
           )}

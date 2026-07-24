@@ -2,11 +2,10 @@ import { ReactNode } from "react";
 import {
   View,
   ViewStyle,
-  useColorScheme,
 } from "react-native";
 
 import {
-  getAdminColors,
+  useThemeColors,
   radius,
   shadows,
   spacing,
@@ -21,13 +20,13 @@ export default function Card({
   children,
   style,
 }: CardProps) {
-  const colors = getAdminColors(useColorScheme());
+  const colors = useThemeColors();
 
   return (
     <View
       style={[
         {
-          backgroundColor: colors.surface,
+          backgroundColor: colors.background,
           borderWidth: 1,
           borderColor: colors.border,
           borderRadius: radius.xl,

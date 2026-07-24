@@ -1,7 +1,7 @@
 import { View } from "react-native";
 
 import { AppText, Card } from "@/components/ui";
-import { spacing } from "@/theme";
+import { adminColors, spacing, shadows } from "@/theme";
 
 interface Props {
   title: string;
@@ -13,19 +13,21 @@ export default function RecentActivity({
   time,
 }: Props) {
   return (
-    <Card>
+    <Card style={{ borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
+          alignItems: "center",
         }}
       >
-        <AppText weight="600">
+        <AppText weight="700" variant="body">
           {title}
         </AppText>
 
         <AppText
           variant="caption"
+          color={adminColors.textSecondary}
         >
           {time}
         </AppText>

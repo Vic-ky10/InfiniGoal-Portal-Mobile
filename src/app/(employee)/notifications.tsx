@@ -90,15 +90,18 @@ export default function EmployeeNotificationsScreen() {
           renderItem={({ item }) => (
             <NotificationItem
               notification={item}
-              onPress={(notification) => handleMarkRead(notification.id)}
+              onPress={(notification) => handleOpenNotification(notification)}
               colors={employeeColors}
             />
+          )}
+          ItemSeparatorComponent={() => (
+            <View style={{ height: spacing.sm }} />
           )}
           refreshing={refreshing}
           onRefresh={() => loadData(true)}
           showsVerticalScrollIndicator={false}
           ListEmptyComponent={<EmptyState title="No Notifications Found" />}
-          contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+          contentContainerStyle={{ paddingBottom: spacing.xxxl, paddingHorizontal: spacing.xs }}
         />
 
         <NotificationDetailModal

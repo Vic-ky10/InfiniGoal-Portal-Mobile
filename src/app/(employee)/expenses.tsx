@@ -10,9 +10,9 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { AppText, Screen, Card, Badge, Input, Button } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, radius, spacing } from "@/theme";
+import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
 import { Expense, EXPENSE_CATEGORY, EXPENSE_STATUS } from "@/features/expense/expense.types";
@@ -72,51 +72,55 @@ export default function EmployeeExpensesScreen() {
   };
 
   const openEditModal = (expense: Expense) => {
-    if (expense.status !== EXPENSE_STATUS.PENDING) {
-      Alert.alert("Notice", "Only pending expenses can be edited.");
-      return;
-    }
     setEditingExpense(expense);
     setExpenseType(expense.expense_type);
     setAmount(expense.amount.toString());
-    setDescription(expense.description ?? "");
+    setDescription(expense.description || "");
     setExpenseDate(expense.expense_date);
     setModalVisible(true);
   };
 
   const handleSaveExpense = async () => {
-    if (!profileId) return;
-    const numericAmount = parseFloat(amount);
-    if (isNaN(numericAmount) || numericAmount <= 0) {
-      Alert.alert("Validation Error", "Please enter a valid expense amount.");
+    if (!amount.trim() || isNaN(Number(amount))) {
+      Alert.alert("Validation", "Please enter a valid amount.");
+      return;
+    }
+    if (!expenseDate.trim()) {
+      Alert.alert("Validation", "Please enter an expense date.");
       return;
     }
 
     setSubmitting(true);
     try {
-      let res;
       if (editingExpense) {
-        res = await updateExpense(editingExpense.id, profileId, {
+        const res = await updateExpense(editingExpense.id, profileId || "", {
           expense_type: expenseType as any,
-          amount: numericAmount,
-          description: description.trim(),
+          amount: Number(amount),
           expense_date: expenseDate,
+          description: description.trim() || undefined,
         });
+        if (res.success) {
+          Alert.alert("Success", res.message);
+          setModalVisible(false);
+          loadData(true);
+        } else {
+          Alert.alert("Error", res.error);
+        }
       } else {
-        res = await createExpense(profileId, {
+        if (!profileId) return;
+        const res = await createExpense(profileId, {
           expense_type: expenseType as any,
-          amount: numericAmount,
-          description: description.trim(),
+          amount: Number(amount),
           expense_date: expenseDate,
+          description: description.trim(),
         });
-      }
-
-      if (res.success) {
-        Alert.alert("Success", res.message);
-        setModalVisible(false);
-        loadData(true);
-      } else {
-        Alert.alert("Error", res.error);
+        if (res.success) {
+          Alert.alert("Success", res.message);
+          setModalVisible(false);
+          loadData(true);
+        } else {
+          Alert.alert("Error", res.error);
+        }
       }
     } finally {
       setSubmitting(false);
@@ -129,11 +133,11 @@ export default function EmployeeExpensesScreen() {
   });
 
   const renderExpenseItem = ({ item }: { item: Expense }) => (
-    <Card style={{ marginBottom: spacing.md }}>
+    <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <AppText weight="700" variant="h3">
+            <AppText weight="700" variant="h3" color={employeeColors.text}>
               ₹{item.amount.toLocaleString()}
             </AppText>
             <Badge
@@ -163,8 +167,8 @@ export default function EmployeeExpensesScreen() {
         </View>
 
         {item.status === "Pending" && (
-          <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: spacing.xs }}>
-            <Feather name="edit-2" size={18} color={employeeColors.primary} />
+          <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: spacing.xs, backgroundColor: `${employeeColors.primary}10`, borderRadius: radius.sm }}>
+            <Feather name="edit-2" size={14} color={employeeColors.primary} />
           </TouchableOpacity>
         )}
       </View>
@@ -188,7 +192,7 @@ export default function EmployeeExpensesScreen() {
               }}
             >
               <AppText weight="700" color="#FFFFFF">
-                + Claim Expense
+                + Claim
               </AppText>
             </TouchableOpacity>
           }
@@ -203,7 +207,7 @@ export default function EmployeeExpensesScreen() {
               style={{
                 paddingHorizontal: spacing.md,
                 paddingVertical: spacing.xs,
-                borderRadius: radius.md,
+                borderRadius: radius.full,
                 backgroundColor: selectedStatus === status ? employeeColors.primary : `${employeeColors.primary}10`,
               }}
             >
@@ -227,7 +231,7 @@ export default function EmployeeExpensesScreen() {
 
         {/* Create / Edit Expense Modal */}
         <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={{ flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "flex-end" }}>
+          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
             <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
                 <AppText variant="h2" weight="700">
@@ -239,7 +243,7 @@ export default function EmployeeExpensesScreen() {
               </View>
 
               <ScrollView showsVerticalScrollIndicator={false}>
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
+                <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
                   Expense Category
                 </AppText>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.lg }}>
@@ -258,9 +262,9 @@ export default function EmployeeExpensesScreen() {
                         paddingHorizontal: spacing.md,
                         paddingVertical: spacing.sm,
                         borderRadius: radius.md,
-                        borderWidth: 1,
+                        borderWidth: 1.5,
                         borderColor: expenseType === cat ? employeeColors.primary : employeeColors.border,
-                        backgroundColor: expenseType === cat ? `${employeeColors.primary}15` : "#FFFFFF",
+                        backgroundColor: expenseType === cat ? `${employeeColors.primary}10` : "#FFFFFF",
                       }}
                     >
                       <AppText weight={expenseType === cat ? "700" : "500"} color={expenseType === cat ? employeeColors.primary : employeeColors.text}>
@@ -270,53 +274,35 @@ export default function EmployeeExpensesScreen() {
                   ))}
                 </View>
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  Amount (₹)
-                </AppText>
-                <TextInput
+                <Input
+                  label="Amount (₹)"
                   value={amount}
                   onChangeText={setAmount}
                   placeholder="0.00"
                   keyboardType="numeric"
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg }}
                 />
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  Expense Date (YYYY-MM-DD)
-                </AppText>
-                <TextInput
+                <Input
+                  label="Expense Date (YYYY-MM-DD)"
                   value={expenseDate}
                   onChangeText={setExpenseDate}
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.lg }}
                 />
 
-                <AppText weight="600" style={{ marginBottom: spacing.xs }}>
-                  Description
-                </AppText>
-                <TextInput
+                <Input
+                  label="Description"
                   value={description}
                   onChangeText={setDescription}
                   placeholder="Expense details..."
                   multiline
                   numberOfLines={3}
-                  style={{ borderWidth: 1, borderColor: employeeColors.border, borderRadius: radius.md, padding: spacing.md, marginBottom: spacing.xl, textAlignVertical: "top" }}
+                  style={{ height: 80, textAlignVertical: "top" }}
                 />
 
-                <TouchableOpacity
+                <Button
+                  title={editingExpense ? "Update Expense" : "Submit Claim"}
+                  loading={submitting}
                   onPress={handleSaveExpense}
-                  disabled={submitting}
-                  style={{
-                    backgroundColor: employeeColors.primary,
-                    paddingVertical: spacing.md,
-                    borderRadius: radius.md,
-                    alignItems: "center",
-                    marginBottom: spacing.lg,
-                  }}
-                >
-                  <AppText weight="700" color="#FFFFFF">
-                    {submitting ? "Saving..." : editingExpense ? "Update Expense" : "Submit Claim"}
-                  </AppText>
-                </TouchableOpacity>
+                />
               </ScrollView>
             </View>
           </View>

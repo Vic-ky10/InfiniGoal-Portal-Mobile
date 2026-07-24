@@ -1,3 +1,5 @@
+import { useThemeStore } from "@/store/theme.store";
+
 export const adminColors = {
   primary: "#2563EB",
   primaryLight: "#3B82F6",
@@ -24,8 +26,18 @@ export const adminColors = {
 
 export const adminDarkColors = adminColors;
 
+export function useThemeColors() {
+  const mode = useThemeStore((state) => state.mode);
+  return mode === "employee" ? employeeColors : adminColors;
+}
+
 export function getAdminColors(_colorScheme?: string | null) {
-  return adminColors;
+  try {
+    const mode = useThemeStore.getState().mode;
+    return mode === "employee" ? employeeColors : adminColors;
+  } catch (e) {
+    return adminColors;
+  }
 }
 
 export const employeeColors = {

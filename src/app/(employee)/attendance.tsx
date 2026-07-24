@@ -1,9 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, FlatList, TouchableOpacity, Alert } from "react-native";
 
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, radius, spacing } from "@/theme";
+import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
 import { Attendance } from "@/features/attendance/attendance.types";
@@ -113,50 +113,85 @@ export default function EmployeeAttendanceScreen() {
         <AppHeader title="Attendance" subtitle="Track your daily work hours" />
 
         {/* Today's Clock In / Clock Out Card */}
-        <Card style={{ backgroundColor: `${employeeColors.primary}10`, borderColor: employeeColors.border, padding: spacing.lg }}>
-          <AppText variant="h3" weight="700" color={employeeColors.text}>
-            Today's Attendance
-          </AppText>
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs, marginBottom: spacing.md }}>
-            {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
-          </AppText>
+        <Card
+          style={{
+            borderColor: employeeColors.border,
+            borderLeftWidth: 6,
+            borderLeftColor: todayRecord
+              ? todayRecord.logout_time
+                ? employeeColors.info
+                : employeeColors.primary
+              : employeeColors.warning,
+            padding: spacing.xl,
+            ...shadows.sm,
+          }}
+        >
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+            <View>
+              <AppText variant="h3" weight="700" color={employeeColors.text}>
+                Today's Attendance
+              </AppText>
+              <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              </AppText>
+            </View>
+            <Badge
+              label={
+                todayRecord
+                  ? todayRecord.logout_time
+                    ? "Completed"
+                    : "Logged In"
+                  : "Not Checked In"
+              }
+              color={
+                todayRecord
+                  ? todayRecord.logout_time
+                    ? employeeColors.info
+                    : employeeColors.primary
+                  : employeeColors.warning
+              }
+            />
+          </View>
 
-          <View style={{ flexDirection: "row", gap: spacing.md }}>
+          {/* Log times display */}
+          <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: spacing.lg, backgroundColor: `${employeeColors.border}30`, padding: spacing.md, borderRadius: radius.md }}>
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <AppText variant="caption" color={employeeColors.textSecondary}>Check In</AppText>
+              <AppText weight="700" variant="title" style={{ marginTop: 4 }}>
+                {todayRecord?.login_time
+                  ? new Date(todayRecord.login_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : "--:--"}
+              </AppText>
+            </View>
+            <View style={{ width: 1, height: "100%", backgroundColor: employeeColors.border }} />
+            <View style={{ alignItems: "center", flex: 1 }}>
+              <AppText variant="caption" color={employeeColors.textSecondary}>Check Out</AppText>
+              <AppText weight="700" variant="title" style={{ marginTop: 4 }}>
+                {todayRecord?.logout_time
+                  ? new Date(todayRecord.logout_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  : "--:--"}
+              </AppText>
+            </View>
+          </View>
+
+          <View style={{ width: "100%" }}>
             {!todayRecord ? (
-              <TouchableOpacity
+              <Button
+                title={actionLoading ? "Checking In..." : "Check In Now"}
+                loading={actionLoading}
                 onPress={handleClockIn}
-                disabled={actionLoading}
-                style={{
-                  flex: 1,
-                  backgroundColor: employeeColors.primary,
-                  paddingVertical: spacing.md,
-                  borderRadius: radius.md,
-                  alignItems: "center",
-                }}
-              >
-                <AppText weight="700" color="#FFFFFF">
-                  {actionLoading ? "Logging In..." : "Login"}
-                </AppText>
-              </TouchableOpacity>
+              />
             ) : !todayRecord.logout_time ? (
-              <TouchableOpacity
+              <Button
+                title={actionLoading ? "Checking Out..." : "Check Out Now"}
+                loading={actionLoading}
                 onPress={handleClockOut}
-                disabled={actionLoading}
-                style={{
-                  flex: 1,
-                  backgroundColor: employeeColors.danger,
-                  paddingVertical: spacing.md,
-                  borderRadius: radius.md,
-                  alignItems: "center",
-                }}
-              >
-                <AppText weight="700" color="#FFFFFF">
-                  {actionLoading ? "Logging Out..." : "Logout"}
-                </AppText>
-              </TouchableOpacity>
+              />
             ) : (
-              <View style={{ flex: 1, alignItems: "center", paddingVertical: spacing.sm }}>
-                <Badge label="Attendance Completed Today" color={employeeColors.primary} />
+              <View style={{ alignItems: "center", paddingVertical: spacing.xs }}>
+                <AppText weight="600" color={employeeColors.success}>
+                  Attendance complete for today!
+                </AppText>
               </View>
             )}
           </View>
