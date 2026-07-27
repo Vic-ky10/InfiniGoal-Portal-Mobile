@@ -28,7 +28,9 @@ export default function EmployeeAttendanceScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       setProfileId(user.id);
@@ -86,11 +88,34 @@ export default function EmployeeAttendanceScreen() {
 
   const renderHistoryItem = ({ item }: { item: Attendance }) => (
     <Card style={{ marginBottom: spacing.md }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          alignItems: "center",
+        }}
+      >
         <View>
           <AppText weight="700">{item.attendance_date}</AppText>
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
-            In: {item.login_time ? new Date(item.login_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--"} | Out: {item.logout_time ? new Date(item.logout_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "--"}
+          <AppText
+            variant="caption"
+            color={employeeColors.textSecondary}
+            style={{ marginTop: 2 }}
+          >
+            In:{" "}
+            {item.login_time
+              ? new Date(item.login_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--"}{" "}
+            | Out:{" "}
+            {item.logout_time
+              ? new Date(item.logout_time).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              : "--"}
           </AppText>
         </View>
         <Badge
@@ -99,8 +124,8 @@ export default function EmployeeAttendanceScreen() {
             item.status === "Present"
               ? employeeColors.primary
               : item.status === "Incomplete"
-              ? employeeColors.warning
-              : employeeColors.danger
+                ? employeeColors.warning
+                : employeeColors.danger
           }
         />
       </View>
@@ -126,13 +151,28 @@ export default function EmployeeAttendanceScreen() {
             ...shadows.sm,
           }}
         >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+            }}
+          >
             <View>
               <AppText variant="h3" weight="700" color={employeeColors.text}>
                 Today's Attendance
               </AppText>
-              <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
-                {new Date().toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              <AppText
+                variant="caption"
+                color={employeeColors.textSecondary}
+                style={{ marginTop: 2 }}
+              >
+                {new Date().toLocaleDateString(undefined, {
+                  weekday: "long",
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </AppText>
             </View>
             <Badge
@@ -153,22 +193,47 @@ export default function EmployeeAttendanceScreen() {
             />
           </View>
 
-          {/* Log times display */}
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginVertical: spacing.lg, backgroundColor: `${employeeColors.border}30`, padding: spacing.md, borderRadius: radius.md }}>
+          {/* log times display */}
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              marginVertical: spacing.lg,
+              backgroundColor: `${employeeColors.border}30`,
+              padding: spacing.md,
+              borderRadius: radius.md,
+            }}
+          >
             <View style={{ alignItems: "center", flex: 1 }}>
-              <AppText variant="caption" color={employeeColors.textSecondary}>Check In</AppText>
+              <AppText variant="caption" color={employeeColors.textSecondary}>
+                Log in 
+              </AppText>
               <AppText weight="700" variant="title" style={{ marginTop: 4 }}>
                 {todayRecord?.login_time
-                  ? new Date(todayRecord.login_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  ? new Date(todayRecord.login_time).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "--:--"}
               </AppText>
             </View>
-            <View style={{ width: 1, height: "100%", backgroundColor: employeeColors.border }} />
+            <View
+              style={{
+                width: 1,
+                height: "100%",
+                backgroundColor: employeeColors.border,
+              }}
+            />
             <View style={{ alignItems: "center", flex: 1 }}>
-              <AppText variant="caption" color={employeeColors.textSecondary}>Check Out</AppText>
+              <AppText variant="caption" color={employeeColors.textSecondary}>
+                Log out 
+              </AppText>
               <AppText weight="700" variant="title" style={{ marginTop: 4 }}>
                 {todayRecord?.logout_time
-                  ? new Date(todayRecord.logout_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                  ? new Date(todayRecord.logout_time).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })
                   : "--:--"}
               </AppText>
             </View>
@@ -177,20 +242,22 @@ export default function EmployeeAttendanceScreen() {
           <View style={{ width: "100%" }}>
             {!todayRecord ? (
               <Button
-                title={actionLoading ? "Checking In..." : "Check In Now"}
+                title={actionLoading ? "logging  In..." : "Log In Now"}
                 loading={actionLoading}
                 onPress={handleClockIn}
               />
             ) : !todayRecord.logout_time ? (
               <Button
-                title={actionLoading ? "Checking Out..." : "Check Out Now"}
+                title={actionLoading ? "Logging Out..." : "Log Out Now"}
                 loading={actionLoading}
                 onPress={handleClockOut}
               />
             ) : (
-              <View style={{ alignItems: "center", paddingVertical: spacing.xs }}>
+              <View
+                style={{ alignItems: "center", paddingVertical: spacing.xs }}
+              >
                 <AppText weight="600" color={employeeColors.success}>
-                  Attendance complete for today!
+                  Attendance completed  for today!
                 </AppText>
               </View>
             )}
@@ -208,7 +275,9 @@ export default function EmployeeAttendanceScreen() {
           refreshing={refreshing}
           onRefresh={() => loadData(true)}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<EmptyState title="No attendance history found" />}
+          ListEmptyComponent={
+            <EmptyState title="No attendance history found" />
+          }
           contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         />
       </View>

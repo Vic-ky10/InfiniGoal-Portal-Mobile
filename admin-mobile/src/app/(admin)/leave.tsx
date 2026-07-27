@@ -80,7 +80,7 @@ export default function LeaveScreen() {
           })}
         </View>
 
-        {/* Leave Requests List */}
+        {/* leave requests list data */}
 
         <FlatList
           data={filteredLeaveRequests}

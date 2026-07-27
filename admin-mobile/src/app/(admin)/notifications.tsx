@@ -127,7 +127,7 @@ export default function NotificationsScreen() {
           title="🔔 Notifications"
           subtitle={
             unreadCount > 0
-              ? `${unreadCount} unread notifications`
+              ? `${unreadCount} - unread notifications`
               : "You're all caught up!"
           }
         />
@@ -183,7 +183,7 @@ export default function NotificationsScreen() {
           </TouchableOpacity>
         )}
 
-        {/* filter */}
+
         <View
           style={{
             flexDirection: "row",

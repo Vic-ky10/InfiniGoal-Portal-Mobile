@@ -52,7 +52,7 @@ export default function AttendanceScreen() {
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader title="Attendance" subtitle="Daily employee check-in logs" />
 
-        {/* Summary Metrics */}
+        {/* summary  */}
         <View style={{ flexDirection: "row", gap: spacing.xs }}>
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
             <AppText variant="caption" color={adminColors.textSecondary}>

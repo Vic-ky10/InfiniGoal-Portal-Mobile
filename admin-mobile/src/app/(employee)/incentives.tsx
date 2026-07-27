@@ -58,13 +58,13 @@ export default function EmployeeIncentivesScreen() {
             {item.title}
           </AppText>
 
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }  }>
             Code: {item.incentive_code} | Type: {item.incentive_type} | Month: {item.month}/{item.year}
           </AppText>
 
           {item.description ? (
             <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
-              {item.description}
+              Comments:   {item.description}
             </AppText>
           ) : null}
         </View>

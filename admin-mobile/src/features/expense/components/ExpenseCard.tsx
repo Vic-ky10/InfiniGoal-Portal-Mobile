@@ -90,7 +90,7 @@ export default function ExpenseCard({ expense, onReview, onMarkPaid }: Props) {
 
         {expense.description ? (
           <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: spacing.xs }}>
-            "{expense.description}"
+          Reasons: "{expense.description}"
           </AppText>
         ) : null}
 

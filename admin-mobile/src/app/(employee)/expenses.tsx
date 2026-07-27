@@ -156,7 +156,7 @@ export default function EmployeeExpensesScreen() {
           </AppText>
           {item.description ? (
             <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.sm }}>
-              {item.description}
+             Reason:   {item.description}
             </AppText>
           ) : null}
           {item.review_comment && (

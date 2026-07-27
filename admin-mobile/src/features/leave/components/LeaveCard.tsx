@@ -78,7 +78,7 @@ export default function LeaveCard({ leave, onReview }: Props) {
             style={{ marginRight: 6 }}
           />
           <AppText variant="caption" weight="600">
-            {leave.start_date} to {leave.end_date}
+          Dates:  {leave.start_date}  to  {leave.end_date}
           </AppText>
         </View>
         {leave.reason ? (
@@ -87,7 +87,7 @@ export default function LeaveCard({ leave, onReview }: Props) {
             color={adminColors.textSecondary}
             style={{ marginTop: spacing.xs }}
           >
-            "{leave.reason}"
+           Reason : "{leave.reason}"
           </AppText>
         ) : null}
 

@@ -4,14 +4,22 @@ import {
   TouchableOpacity,
   Alert,
   Modal,
-  TextInput,
   ActivityIndicator,
 } from "react-native";
+
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 
-import { AppText, Screen, Card, Avatar, Badge, Button, Input } from "@/components/ui";
+import {
+  AppText,
+  Screen,
+  Card,
+  Avatar,
+  Badge,
+  Button,
+  Input,
+} from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
@@ -20,6 +28,7 @@ import { updateSelfProfile } from "@/features/employee/employee.service";
 import { getEmployeeLeaveRequests } from "@/features/leave/leave.service";
 import { getEmployeeProjects } from "@/features/project/project.service";
 import { getEmployeeTasks } from "@/features/task/task.service";
+import { uploadAvatar } from "@/lib/storage/uploadAvatar";
 
 interface ProfileData {
   id: string;
@@ -54,12 +63,16 @@ export default function EmployeeProfileScreen() {
   const loadProfile = async () => {
     try {
       setLoading(true);
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       const { data } = await supabase
         .from("profiles")
-        .select("id, employee_id, full_name, email, phone, department, designation, joined_date, avatar_url")
+        .select(
+          "id, employee_id, full_name, email, phone, department, designation, joined_date, avatar_url",
+        )
         .eq("id", user.id)
         .maybeSingle();
 
@@ -116,7 +129,7 @@ export default function EmployeeProfileScreen() {
         profile.id,
         editName.trim(),
         editPhone.trim() || null,
-        profile.avatar_url
+        profile.avatar_url,
       );
 
       if (!res.success) {
@@ -130,14 +143,14 @@ export default function EmployeeProfileScreen() {
               full_name: editName.trim(),
               phone: editPhone.trim() || null,
             }
-          : null
+          : null,
       );
       setIsEditModalOpen(false);
       Alert.alert("Success", "Profile updated successfully.");
     } catch (error) {
       Alert.alert(
         "Update Error",
-        error instanceof Error ? error.message : "Failed to update profile."
+        error instanceof Error ? error.message : "Failed to update profile.",
       );
     } finally {
       setSaving(false);
@@ -152,91 +165,88 @@ export default function EmployeeProfileScreen() {
     }
   };
 
-  const handleSelectAvatar = async () => {
-    if (!profile) return;
+const handleSelectAvatar = async () => {
+  if (!profile) return;
 
-    try {
-      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission Required",
-          "Permission to access camera roll is required to update photo."
-        );
-        return;
-      }
+  try {
+    const permissionResult =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [1, 1],
-        quality: 0.75,
-      });
-
-      if (result.canceled || !result.assets?.[0]?.uri) {
-        return;
-      }
-
-      setUploading(true);
-      const selectedUri = result.assets[0].uri;
-
-      // Extract details
-      const fileExt = selectedUri.split(".").pop()?.toLowerCase() || "png";
-      const filePath = `${profile.id}/avatar-${Date.now()}.${fileExt}`;
-
-      // Fetch file blob from URI
-      const response = await fetch(selectedUri);
-      const blob = await response.blob();
-
-      // Clean old avatars
-      await removeOldAvatars(profile.id);
-
-      // Upload to storage
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(filePath, blob, {
-          contentType: `image/${fileExt}`,
-          upsert: true,
-        });
-
-      if (uploadError) {
-        throw new Error(uploadError.message);
-      }
-
-      // Get public URL
-      const {
-        data: { publicUrl },
-      } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-      // Update database profile
-      const dbRes = await updateSelfProfile(
-        profile.id,
-        profile.full_name,
-        profile.phone,
-        publicUrl
-      );
-
-      if (!dbRes.success) {
-        throw new Error(dbRes.error || "Failed to update profile record.");
-      }
-
-      setProfile((prev) => (prev ? { ...prev, avatar_url: publicUrl } : null));
-      Alert.alert("Success", "Profile picture updated successfully.");
-    } catch (error) {
+    if (!permissionResult.granted) {
       Alert.alert(
-        "Upload Error",
-        error instanceof Error ? error.message : "Failed to upload image."
+        "Permission Required",
+        "Permission to access camera roll is required to update photo.",
       );
-    } finally {
-      setUploading(false);
+      return;
     }
-  };
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.75,
+    });
+
+    if (result.canceled || !result.assets?.[0]?.uri) {
+      return;
+    }
+
+    setUploading(true);
+
+    const selectedUri = result.assets[0].uri;
+
+    // Upload to Supabase Storage
+    const publicUrl = await uploadAvatar({
+      userId: profile.id,
+      imageUri: selectedUri,
+    });
+
+    // Update profile table
+    const dbRes = await updateSelfProfile(
+      profile.id,
+      profile.full_name,
+      profile.phone,
+      publicUrl,
+    );
+
+    if (!dbRes.success) {
+      throw new Error(dbRes.error ?? "Failed to update profile.");
+    }
+
+    // Refresh UI
+    setProfile((prev) =>
+      prev
+        ? {
+            ...prev,
+            avatar_url: publicUrl,
+          }
+        : null,
+    );
+
+    Alert.alert(
+      "Success",
+      "Profile picture updated successfully.",
+    );
+  } catch (error) {
+    console.error(error);
+
+    Alert.alert(
+      "Upload Error",
+      error instanceof Error ? error.message : "Failed to upload avatar.",
+    );
+  } finally {
+    setUploading(false);
+  }
+};
 
   return (
     <Screen isLoading={loading}>
       <View style={{ gap: spacing.lg }}>
-        <AppHeader title="My Profile" subtitle="Your account & employee details" />
+        <AppHeader
+          title="My Profile"
+          subtitle="Your account & employee details"
+        />
 
-        {/* Premium Profile Header Card */}
         <Card
           style={{
             alignItems: "center",
@@ -245,7 +255,6 @@ export default function EmployeeProfileScreen() {
             overflow: "hidden",
           }}
         >
-          {/* Subtle Accent Background Banner inside Card */}
           <View
             style={{
               position: "absolute",
@@ -258,7 +267,11 @@ export default function EmployeeProfileScreen() {
           />
 
           <View style={{ position: "relative", marginTop: 16 }}>
-            <Avatar name={profile?.full_name ?? "Employee"} size={96} uri={profile?.avatar_url} />
+            <Avatar
+              name={profile?.full_name ?? "Employee"}
+              size={96}
+              uri={profile?.avatar_url}
+            />
             <TouchableOpacity
               onPress={handleSelectAvatar}
               disabled={uploading}
@@ -285,23 +298,56 @@ export default function EmployeeProfileScreen() {
             </TouchableOpacity>
           </View>
 
-          <AppText weight="700" variant="h2" style={{ marginTop: spacing.md, textAlign: "center" }}>
+          <AppText
+            weight="700"
+            variant="h2"
+            style={{ marginTop: spacing.md, textAlign: "center" }}
+          >
             {profile?.full_name ?? "Employee User"}
           </AppText>
-          <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: 2, textAlign: "center" }}>
+          <AppText
+            variant="body"
+            color={employeeColors.textSecondary}
+            style={{ marginTop: 2, textAlign: "center" }}
+          >
             {profile?.designation ?? "Team Member"}
           </AppText>
 
-          <View style={{ marginTop: spacing.sm, flexDirection: "row", gap: spacing.xs, justifyContent: "center" }}>
-            <Badge label={profile?.employee_id ?? "EMP"} color={employeeColors.primary} />
-            <Badge label="Active" color={employeeColors.success} variant="subtle" />
+          <View
+            style={{
+              marginTop: spacing.sm,
+              flexDirection: "row",
+              gap: spacing.xs,
+              justifyContent: "center",
+            }}
+          >
+            <Badge
+              label={profile?.employee_id ?? "EMP"}
+              color={employeeColors.primary}
+            />
+            <Badge
+              label="Active"
+              color={employeeColors.success}
+              variant="subtle"
+            />
           </View>
         </Card>
 
         {/* Statistics Grid */}
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
-          <Card style={{ flex: 1, alignItems: "center", paddingVertical: spacing.md }}>
-            <Feather name="folder" size={20} color={employeeColors.primary} style={{ marginBottom: spacing.xs }} />
+        {/* <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <Card
+            style={{
+              flex: 1,
+              alignItems: "center",
+              paddingVertical: spacing.md,
+            }}
+          >
+            <Feather
+              name="folder"
+              size={20}
+              color={employeeColors.primary}
+              style={{ marginBottom: spacing.xs }}
+            />
             <AppText variant="h3" weight="700">
               {projectCount}
             </AppText>
@@ -310,8 +356,19 @@ export default function EmployeeProfileScreen() {
             </AppText>
           </Card>
 
-          <Card style={{ flex: 1, alignItems: "center", paddingVertical: spacing.md }}>
-            <Feather name="calendar" size={20} color="#F59E0B" style={{ marginBottom: spacing.xs }} />
+          <Card
+            style={{
+              flex: 1,
+              alignItems: "center",
+              paddingVertical: spacing.md,
+            }}
+          >
+            <Feather
+              name="calendar"
+              size={20}
+              color="#F59E0B"
+              style={{ marginBottom: spacing.xs }}
+            />
             <AppText variant="h3" weight="700">
               {pendingLeaves}
             </AppText>
@@ -320,8 +377,19 @@ export default function EmployeeProfileScreen() {
             </AppText>
           </Card>
 
-          <Card style={{ flex: 1, alignItems: "center", paddingVertical: spacing.md }}>
-            <Feather name="check-square" size={20} color="#3B82F6" style={{ marginBottom: spacing.xs }} />
+          <Card
+            style={{
+              flex: 1,
+              alignItems: "center",
+              paddingVertical: spacing.md,
+            }}
+          >
+            <Feather
+              name="check-square"
+              size={20}
+              color="#3B82F6"
+              style={{ marginBottom: spacing.xs }}
+            />
             <AppText variant="h3" weight="700">
               {activeTasks}
             </AppText>
@@ -329,11 +397,18 @@ export default function EmployeeProfileScreen() {
               Active Tasks
             </AppText>
           </Card>
-        </View>
+        </View> */}
 
         {/* Details Card */}
         <Card style={{ gap: spacing.md }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.xs }}>
+          <View
+            style={{
+              flexDirection: "row",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: spacing.xs,
+            }}
+          >
             <AppText variant="h3" weight="700">
               Personal Information
             </AppText>
@@ -348,77 +423,118 @@ export default function EmployeeProfileScreen() {
                 borderRadius: 14,
               }}
             >
-              <Feather name="edit-2" size={12} color={employeeColors.primary} style={{ marginRight: 4 }} />
-              <AppText variant="caption" color={employeeColors.primary} weight="600">
+              <Feather
+                name="edit-2"
+                size={12}
+                color={employeeColors.primary}
+                style={{ marginRight: 4 }}
+              />
+              <AppText
+                variant="caption"
+                color={employeeColors.primary}
+                weight="600"
+              >
                 Edit
               </AppText>
             </TouchableOpacity>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="mail" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600" color={employeeColors.textSecondary}>Email</AppText>
+              <Feather
+                name="mail"
+                size={16}
+                color={employeeColors.primary}
+                style={{ marginRight: spacing.md }}
+              />
+              <AppText weight="600" color={employeeColors.textSecondary}>
+                Email
+              </AppText>
             </View>
             <AppText variant="body" weight="500">
               {profile?.email ?? "--"}
             </AppText>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="phone" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600" color={employeeColors.textSecondary}>Phone</AppText>
+              <Feather
+                name="phone"
+                size={16}
+                color={employeeColors.primary}
+                style={{ marginRight: spacing.md }}
+              />
+              <AppText weight="600" color={employeeColors.textSecondary}>
+                Phone
+              </AppText>
             </View>
             <AppText variant="body" weight="500">
               {profile?.phone ?? "--"}
             </AppText>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="briefcase" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600" color={employeeColors.textSecondary}>Department</AppText>
+              <Feather
+                name="briefcase"
+                size={16}
+                color={employeeColors.primary}
+                style={{ marginRight: spacing.md }}
+              />
+              <AppText weight="600" color={employeeColors.textSecondary}>
+                Department
+              </AppText>
             </View>
             <AppText variant="body" weight="500">
               {profile?.department ?? "--"}
             </AppText>
           </View>
 
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+            }}
+          >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="calendar" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600" color={employeeColors.textSecondary}>Joined Date</AppText>
+              <Feather
+                name="calendar"
+                size={16}
+                color={employeeColors.primary}
+                style={{ marginRight: spacing.md }}
+              />
+              <AppText weight="600" color={employeeColors.textSecondary}>
+                Joined Date
+              </AppText>
             </View>
             <AppText variant="body" weight="500">
-              {profile?.joined_date ? new Date(profile.joined_date).toLocaleDateString() : "--"}
+              {profile?.joined_date
+                ? new Date(profile.joined_date).toLocaleDateString()
+                : "--"}
             </AppText>
           </View>
         </Card>
 
-        {/* Settings Card */}
-        <Card style={{ gap: spacing.md }}>
-          <AppText variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>
-            Account Settings
-          </AppText>
-
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="bell" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600">Notifications</AppText>
-            </View>
-            <Badge label="Enabled" color={employeeColors.success} variant="subtle" />
-          </View>
-
-          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
-            <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather name="shield" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
-              <AppText weight="600">Security & PIN</AppText>
-            </View>
-            <Feather name="chevron-right" size={16} color={employeeColors.textSecondary} />
-          </View>
-        </Card>
-
+     
         {/* Sign Out Button */}
         <TouchableOpacity
           disabled={loggingOut}
@@ -434,7 +550,12 @@ export default function EmployeeProfileScreen() {
           }}
         >
           <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Feather name="log-out" size={18} color="#EF4444" style={{ marginRight: spacing.sm }} />
+            <Feather
+              name="log-out"
+              size={18}
+              color="#EF4444"
+              style={{ marginRight: spacing.sm }}
+            />
             <AppText weight="700" color="#EF4444">
               {loggingOut ? "Signing Out..." : "Sign Out of Account"}
             </AppText>
@@ -461,12 +582,22 @@ export default function EmployeeProfileScreen() {
               gap: 20,
             }}
           >
-            <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
               <AppText variant="h2" weight="700">
                 Edit Profile Details
               </AppText>
               <TouchableOpacity onPress={() => setIsEditModalOpen(false)}>
-                <Feather name="x" size={24} color={employeeColors.textSecondary} />
+                <Feather
+                  name="x"
+                  size={24}
+                  color={employeeColors.textSecondary}
+                />
               </TouchableOpacity>
             </View>
 
@@ -485,7 +616,13 @@ export default function EmployeeProfileScreen() {
               keyboardType="phone-pad"
             />
 
-            <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.sm }}>
+            <View
+              style={{
+                flexDirection: "row",
+                gap: spacing.md,
+                marginTop: spacing.sm,
+              }}
+            >
               <View style={{ flex: 1 }}>
                 <Button
                   title="Cancel"
