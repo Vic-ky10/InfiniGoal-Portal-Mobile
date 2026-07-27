@@ -69,7 +69,7 @@ export default function EmployeeProjectsScreen() {
 
             {proj.description && (
               <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.sm }}>
-                {proj.description}
+               Task : {proj.description}
               </AppText>
             )}
 

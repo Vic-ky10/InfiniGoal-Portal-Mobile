@@ -96,7 +96,7 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
           alignItems: "flex-start",
         }}
       >
-        {/* Icon */}
+        {/* iccon */}
 
         <View
           style={{
@@ -119,7 +119,7 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
           />
         </View>
 
-        {/* Content */}
+        {/* content */}
 
         <View style={{ flex: 1 }}>
           <View

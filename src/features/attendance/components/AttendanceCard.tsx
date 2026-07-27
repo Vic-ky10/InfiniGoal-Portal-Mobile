@@ -61,7 +61,7 @@ export default function AttendanceCard({ record }: Props) {
       >
         <View style={{ alignItems: "center" }}>
           <AppText variant="caption" color={adminColors.textSecondary}>
-            In Time
+           Log  In Time
           </AppText>
           <AppText weight="600" style={{ marginTop: 2 }}>
             {formatTime(record.login_time)}
@@ -70,7 +70,7 @@ export default function AttendanceCard({ record }: Props) {
 
         <View style={{ alignItems: "center" }}>
           <AppText variant="caption" color={adminColors.textSecondary}>
-            Out Time
+            Log Out Time
           </AppText>
           <AppText weight="600" style={{ marginTop: 2 }}>
             {formatTime(record.logout_time)}
