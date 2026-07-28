@@ -1,4 +1,4 @@
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge, Avatar } from "@/components/ui";
@@ -40,12 +40,22 @@ export default function ProjectCard({ project, onPress }: Props) {
   };
 
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={onPress ? 0.7 : 1}>
+  <Pressable
+  onPress={onPress}
+  android_ripple={{ color: "transparent" }}
+  style={({ pressed }) => [
+    {
+      transform: [{ scale: pressed ? 0.985 : 1 }],
+      opacity: pressed ? 0.98 : 1,
+      borderRadius: 24,
+    },
+  ]}
+>
       <Card>
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: spacing.xs }}>
           <View style={{ flex: 1, marginRight: spacing.sm }}>
             <AppText weight="700" variant="h3">
-              {project.project_name}
+             Name : {project.project_name}
             </AppText>
             <AppText variant="caption" color={adminColors.textSecondary}>
               {project.project_code}
@@ -56,29 +66,11 @@ export default function ProjectCard({ project, onPress }: Props) {
 
         {project.description ? (
           <AppText variant="caption" color={adminColors.textSecondary} numberOfLines={2} style={{ marginBottom: spacing.md }}>
-            {project.description}
+         Description : {project.description}
           </AppText>
         ) : null}
 
-        {/* Progress Bar */}
-        <View style={{ marginBottom: spacing.md }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Progress</AppText>
-            <AppText variant="caption" weight="700" color={adminColors.primary}>
-              {project.progress ?? 0}%
-            </AppText>
-          </View>
-          <View style={{ height: 6, backgroundColor: adminColors.border, borderRadius: radius.full, overflow: "hidden" }}>
-            <View
-              style={{
-                height: "100%",
-                width: `${Math.min(100, Math.max(0, project.progress ?? 0))}%`,
-                backgroundColor: adminColors.primary,
-                borderRadius: radius.full,
-              }}
-            />
-          </View>
-        </View>
+      
 
         <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
           <Badge label={`${project.priority} Priority`} color={getPriorityColor(project.priority)} variant="subtle" />
@@ -86,11 +78,11 @@ export default function ProjectCard({ project, onPress }: Props) {
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Feather name="users" size={14} color={adminColors.textSecondary} style={{ marginRight: 4 }} />
             <AppText variant="caption" color={adminColors.textSecondary}>
-              {project.members?.length ?? 0} member(s)
+              {project.members?.length ?? 0} members
             </AppText>
           </View>
         </View>
       </Card>
-    </TouchableOpacity>
+    </Pressable>
   );
 }

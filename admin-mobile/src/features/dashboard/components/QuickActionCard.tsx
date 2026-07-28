@@ -1,4 +1,4 @@
-import { TouchableOpacity, View } from "react-native";
+import { TouchableOpacity, View, Platform, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
@@ -18,7 +18,18 @@ export default function QuickActionCard({
   onPress,
 }: Props) {
   return (
-    <TouchableOpacity onPress={onPress} activeOpacity={0.85}>
+  <Pressable
+  onPress={onPress}
+  android_ripple={{ color: "transparent" }}
+  style={({ pressed }) => [
+    {
+      transform: [{ scale: pressed ? 0.985 : 1 }],
+      opacity: pressed ? 0.98 : 1,
+      borderRadius: 24,
+    },
+  ]}
+>
+
       <Card style={{ borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
         <View style={{ flexDirection: "row", alignItems: "center" }}>
           {icon && (
@@ -51,6 +62,6 @@ export default function QuickActionCard({
           <Feather name="chevron-right" size={16} color={adminColors.textSecondary} />
         </View>
       </Card>
-    </TouchableOpacity>
+    </Pressable>
   );
 }

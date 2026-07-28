@@ -1,5 +1,11 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, TouchableOpacity, RefreshControl, ScrollView } from "react-native";
+import {
+  View,
+  Image,
+  TouchableOpacity,
+  RefreshControl,
+  ScrollView,
+} from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
@@ -24,6 +30,7 @@ export default function EmployeeDashboard() {
   const [refreshing, setRefreshing] = useState(false);
   const [employeeName, setEmployeeName] = useState("Employee");
   const [designation, setDesignation] = useState("Team Member");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // Dashboard Stats
   const [todayStatus, setTodayStatus] = useState<string>("Not Logged In");
@@ -40,19 +47,23 @@ export default function EmployeeDashboard() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       // Fetch Profile Details
       const { data: profile } = await supabase
         .from("profiles")
-        .select("full_name, designation")
+        .select("full_name, designation, avatar_url")
         .eq("id", user.id)
         .maybeSingle();
 
       if (profile) {
         if (profile.full_name) setEmployeeName(profile.full_name);
         if (profile.designation) setDesignation(profile.designation);
+
+        setAvatarUrl(profile.avatar_url ?? null);
       }
 
       // Parallel Data Fetching for Dashboard Summary
@@ -84,7 +95,9 @@ export default function EmployeeDashboard() {
       }
 
       setPendingLeaveCount(leaves.filter((l) => l.status === "Pending").length);
-      setPendingExpenseCount(expenses.filter((e) => e.status === "Pending").length);
+      setPendingExpenseCount(
+        expenses.filter((e) => e.status === "Pending").length,
+      );
       setActiveTaskCount(tasks.filter((t) => t.status !== "Completed").length);
       setProjectCount(projects.length);
       setIncentiveCount(incentives.length);
@@ -103,10 +116,7 @@ export default function EmployeeDashboard() {
   }, [loadData]);
 
   return (
-    <Screen
-      isLoading={loading}
-      scroll={false}
-    >
+    <Screen isLoading={loading} scroll={false}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -151,32 +161,56 @@ export default function EmployeeDashboard() {
               <AppText variant="h2" weight="700" color={employeeColors.text}>
                 Hello, {employeeName}!
               </AppText>
-              <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs }}>
+              <AppText
+                variant="body"
+                color={employeeColors.textSecondary}
+                style={{ marginTop: spacing.xs }}
+              >
                 {designation}
               </AppText>
             </View>
             <View
               style={{
-                width: 52,
-                height: 52,
-                borderRadius: 26,
+                width: 76,
+                height: 76,
+                borderRadius: 50,
+                overflow: "hidden",
                 backgroundColor: `${employeeColors.primary}15`,
                 justifyContent: "center",
                 alignItems: "center",
               }}
             >
-              <Feather name="user" size={26} color={employeeColors.primary} />
+              {avatarUrl ? (
+                <Image
+                  source={{ uri: avatarUrl }}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    borderRadius: 58,
+                    borderWidth: 2,
+                    borderColor: "#FFFFFF",
+                  }}
+                  resizeMode="cover"
+                />
+              ) : (
+                <Feather name="user" size={28} color={employeeColors.primary} />
+              )}
             </View>
           </Card>
 
           {/* Quick Action Grid */}
-          <AppText variant="h3" weight="700" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
+          <AppText
+            variant="h3"
+            weight="700"
+            color={employeeColors.text}
+            style={{ marginTop: spacing.xs }}
+          >
             Overview & Quick Actions
           </AppText>
 
           {/* Attendance Card */}
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={1} 
             onPress={() => router.push("/(employee)/attendance")}
           >
             <Card
@@ -202,11 +236,21 @@ export default function EmployeeDashboard() {
                     marginRight: spacing.md,
                   }}
                 >
-                  <Feather name="clock" size={22} color={employeeColors.primary} />
+                  <Feather
+                    name="clock"
+                    size={22}
+                    color={employeeColors.primary}
+                  />
                 </View>
                 <View>
-                  <AppText weight="700" variant="title">Attendance</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                  <AppText weight="700" variant="title">
+                    Attendance
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    color={employeeColors.textSecondary}
+                    style={{ marginTop: 2 }}
+                  >
                     Today: {todayStatus}
                   </AppText>
                 </View>
@@ -217,8 +261,8 @@ export default function EmployeeDashboard() {
                   todayStatus === "Logged In"
                     ? employeeColors.primary
                     : todayStatus === "Completed"
-                    ? employeeColors.info
-                    : employeeColors.warning
+                      ? employeeColors.info
+                      : employeeColors.warning
                 }
               />
             </Card>
@@ -226,7 +270,7 @@ export default function EmployeeDashboard() {
 
           {/* Leave Summary */}
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={1}
             onPress={() => router.push("/(employee)/leave")}
           >
             <Card
@@ -255,19 +299,29 @@ export default function EmployeeDashboard() {
                   <Feather name="calendar" size={22} color="#F59E0B" />
                 </View>
                 <View>
-                  <AppText weight="700" variant="title">Leave Requests</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                  <AppText weight="700" variant="title">
+                    Leave Requests
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    color={employeeColors.textSecondary}
+                    style={{ marginTop: 2 }}
+                  >
                     {pendingLeaveCount} pending review
                   </AppText>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color={employeeColors.textSecondary} />
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={employeeColors.textSecondary}
+              />
             </Card>
           </TouchableOpacity>
 
           {/* Expenses */}
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={1}
             onPress={() => router.push("/(employee)/expenses")}
           >
             <Card
@@ -296,20 +350,30 @@ export default function EmployeeDashboard() {
                   <Feather name="dollar-sign" size={22} color="#3B82F6" />
                 </View>
                 <View>
-                  <AppText weight="700" variant="title">Expenses</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                  <AppText weight="700" variant="title">
+                    Expenses
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    color={employeeColors.textSecondary}
+                    style={{ marginTop: 2 }}
+                  >
                     {pendingExpenseCount} pending claims
                   </AppText>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color={employeeColors.textSecondary} />
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={employeeColors.textSecondary}
+              />
             </Card>
           </TouchableOpacity>
 
           {/* Tasks & Projects Grid */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <TouchableOpacity
-              activeOpacity={0.9}
+              activeOpacity={1}
               onPress={() => router.push("/(employee)/tasks")}
               style={{ flex: 1 }}
             >
@@ -333,19 +397,27 @@ export default function EmployeeDashboard() {
                     marginBottom: spacing.sm,
                   }}
                 >
-                  <Feather name="check-square" size={22} color={employeeColors.primary} />
+                  <Feather
+                    name="check-square"
+                    size={22}
+                    color={employeeColors.primary}
+                  />
                 </View>
                 <AppText variant="h2" weight="700">
                   {activeTaskCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                <AppText
+                  variant="caption"
+                  color={employeeColors.textSecondary}
+                  style={{ marginTop: 2 }}
+                >
                   Active Tasks
                 </AppText>
               </Card>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.9}
+              activeOpacity={1}
               onPress={() => router.push("/(employee)/projects")}
               style={{ flex: 1 }}
             >
@@ -374,7 +446,11 @@ export default function EmployeeDashboard() {
                 <AppText variant="h2" weight="700">
                   {projectCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                <AppText
+                  variant="caption"
+                  color={employeeColors.textSecondary}
+                  style={{ marginTop: 2 }}
+                >
                   My Projects
                 </AppText>
               </Card>
@@ -383,7 +459,7 @@ export default function EmployeeDashboard() {
 
           {/* Incentives */}
           <TouchableOpacity
-            activeOpacity={0.9}
+            activeOpacity={1}
             onPress={() => router.push("/(employee)/incentives")}
           >
             <Card
@@ -412,20 +488,30 @@ export default function EmployeeDashboard() {
                   <Feather name="award" size={22} color="#EC4899" />
                 </View>
                 <View>
-                  <AppText weight="700" variant="title">Incentives</AppText>
-                  <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                  <AppText weight="700" variant="title">
+                    Incentives
+                  </AppText>
+                  <AppText
+                    variant="caption"
+                    color={employeeColors.textSecondary}
+                    style={{ marginTop: 2 }}
+                  >
                     {incentiveCount} rewards
                   </AppText>
                 </View>
               </View>
-              <Feather name="chevron-right" size={20} color={employeeColors.textSecondary} />
+              <Feather
+                name="chevron-right"
+                size={20}
+                color={employeeColors.textSecondary}
+              />
             </Card>
           </TouchableOpacity>
 
           {/* Announcements & Notifications Row */}
           <View style={{ flexDirection: "row", gap: spacing.md }}>
             <TouchableOpacity
-              activeOpacity={0.9}
+              activeOpacity={1}
               onPress={() => router.push("/(employee)/announcements")}
               style={{ flex: 1 }}
             >
@@ -454,14 +540,18 @@ export default function EmployeeDashboard() {
                 <AppText variant="h2" weight="700">
                   {announcementCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                <AppText
+                  variant="caption"
+                  color={employeeColors.textSecondary}
+                  style={{ marginTop: 2 }}
+                >
                   Announcements
                 </AppText>
               </Card>
             </TouchableOpacity>
 
             <TouchableOpacity
-              activeOpacity={0.9}
+              activeOpacity={1}
               onPress={() => router.push("/(employee)/notifications")}
               style={{ flex: 1 }}
             >
@@ -490,7 +580,11 @@ export default function EmployeeDashboard() {
                 <AppText variant="h2" weight="700">
                   {notificationCount}
                 </AppText>
-                <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
+                <AppText
+                  variant="caption"
+                  color={employeeColors.textSecondary}
+                  style={{ marginTop: 2 }}
+                >
                   Unread Alerts
                 </AppText>
               </Card>

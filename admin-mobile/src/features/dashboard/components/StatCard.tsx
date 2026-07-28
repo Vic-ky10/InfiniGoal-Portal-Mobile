@@ -1,4 +1,4 @@
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, Platform, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
@@ -20,7 +20,15 @@ export default function StatCard({
   onPress,
 }: StatCardProps) {
   const Content = (
-    <Card style={{ flex: 1, minWidth: 140, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+    <Card
+      style={{
+        flex: 1,
+        minWidth: 140,
+        borderWidth: 1,
+        borderColor: adminColors.border,
+        ...shadows.sm,
+      }}
+    >
       <View
         style={{
           flexDirection: "row",
@@ -59,11 +67,7 @@ export default function StatCard({
                 alignItems: "center",
               }}
             >
-              <Feather
-                name={icon}
-                size={18}
-                color={color}
-              />
+              <Feather name={icon} size={18} color={color} />
             </View>
           )}
 
@@ -82,12 +86,19 @@ export default function StatCard({
   if (!onPress) return Content;
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
+    <Pressable
       onPress={onPress}
-      style={{ flex: 1 }}
+      android_ripple={{ color: "transparent" }}
+      style={({ pressed }) => [
+        {
+          flex: 1,
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? 0.98 : 1,
+          borderRadius: 24,
+        },
+      ]}
     >
       {Content}
-    </TouchableOpacity>
+    </Pressable>
   );
 }

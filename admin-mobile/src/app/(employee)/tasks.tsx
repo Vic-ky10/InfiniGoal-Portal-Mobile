@@ -215,7 +215,7 @@ export default function EmployeeTasksScreen() {
     const isUpdating = updatingTaskId === item.id;
 
     return (
-      <TouchableOpacity onPress={() => openDetails(item)} activeOpacity={0.9}>
+      <TouchableOpacity onPress={() => openDetails(item)} activeOpacity={1}>
         <Card
           style={{
             marginBottom: spacing.md,
@@ -248,7 +248,7 @@ export default function EmployeeTasksScreen() {
           </View>
 
           <AppText weight="700" variant="h3" color={employeeColors.text}>
-            {item.title}
+            Task : {item.title}
           </AppText>
 
           {item.project && (
@@ -262,7 +262,7 @@ export default function EmployeeTasksScreen() {
 
           {item.description ? (
             <AppText variant="body" color={employeeColors.textSecondary} numberOfLines={2}>
-              {item.description}
+             Description :  {item.description}
             </AppText>
           ) : null}
 

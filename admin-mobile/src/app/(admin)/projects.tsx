@@ -220,7 +220,7 @@ export default function ProjectsScreen() {
         />
       </View>
 
-      {/* Modals */}
+    
       <ProjectModal
         visible={projectModalVisible}
         onClose={() => setProjectModalVisible(false)}

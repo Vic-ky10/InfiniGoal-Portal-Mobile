@@ -1,4 +1,4 @@
-import { Modal, Pressable, ScrollView, View } from "react-native";
+import { Modal, Pressable, ScrollView, View, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Button, Card, Badge } from "@/components/ui";
@@ -72,9 +72,23 @@ export default function NotificationDetailModal({
           backgroundColor: "rgba(0,0,0,0.45)",
           justifyContent: "center",
           padding: spacing.lg,
+          ...Platform.select({
+            web: {
+              outlineStyle: "none",
+            } as any,
+          }),
         }}
       >
-        <Pressable>
+        <Pressable
+          style={{
+            ...Platform.select({
+              web: {
+                outlineStyle: "none",
+              } as any,
+            }),
+          }}
+        >
+
           <Card
             style={{
               borderRadius: radius.xl,

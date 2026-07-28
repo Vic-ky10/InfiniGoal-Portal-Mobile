@@ -267,13 +267,13 @@ export default function TaskModal({
               label="Task Title"
               value={title}
               onChangeText={setTitle}
-              placeholder="e.g. Design Login Screen"
+              placeholder="Task Title "
             />
             <Input
               label="Description"
               value={description}
               onChangeText={setDescription}
-              placeholder="Detailed task requirements"
+              placeholder=" description ..."
               multiline
               numberOfLines={3}
             />

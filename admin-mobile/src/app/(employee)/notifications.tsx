@@ -84,6 +84,9 @@ export default function EmployeeNotificationsScreen() {
           subtitle="Alerts and system notifications"
         />
 
+
+        
+
         <FlatList
           data={notifications}
           keyExtractor={(item) => item.id}

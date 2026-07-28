@@ -1,4 +1,4 @@
-import { View, Pressable } from "react-native";
+import { View, Pressable, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge } from "@/components/ui";
@@ -77,6 +77,11 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
     backgroundColor: pressed
       ? `${adminColors.primary}10`
       : "transparent",
+    ...Platform.select({
+      web: {
+        outlineStyle: "none",
+      } as any,
+    }),
   },
 ]}
 >
@@ -84,9 +89,9 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
       style={{
         padding: spacing.lg,
         borderRadius: radius.lg,
-        backgroundColor: isUnread
-          ? `${colors.primary}08`
-          : colors.surface,
+        // backgroundColor: isUnread
+        //   ? `${colors.primary}08`
+        //   : colors.surface,
         borderWidth: 0,
       }}
     >
@@ -143,7 +148,7 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
                 style={{
                   width: 10,
                   height: 10,
-                  borderRadius: 5,
+                  borderRadius: 10,
                   backgroundColor:
                     colors.primary,
                 }}

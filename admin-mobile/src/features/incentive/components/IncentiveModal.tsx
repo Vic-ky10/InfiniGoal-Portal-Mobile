@@ -163,6 +163,7 @@ export default function IncentiveModal({
 
           <ScrollView showsVerticalScrollIndicator={false}>
             {/* Select Employee */}
+            
             <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Select Employee
             </AppText>
@@ -248,13 +249,13 @@ export default function IncentiveModal({
               label="Award Title"
               value={title}
               onChangeText={setTitle}
-              placeholder="e.g. Q3 Top Performer Bonus"
+              placeholder="e.g Performer Bonus"
             />
             <Input
               label="Description"
               value={description}
               onChangeText={setDescription}
-              placeholder="Reason / performance justification"
+              placeholder="Reason "
               multiline
               numberOfLines={3}
             />
@@ -262,7 +263,7 @@ export default function IncentiveModal({
               label="Amount (₹)"
               value={amount}
               onChangeText={setAmount}
-              placeholder="e.g. 5000"
+              placeholder="e.g.5000"
               keyboardType="numeric"
             />
 

@@ -93,7 +93,6 @@ export default function IncentivesScreen() {
           }
         />
 
-        {/* Status Filters */}
         <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
           {STATUS_FILTERS.map((opt) => {
             const isSelected = statusFilter === opt.value;

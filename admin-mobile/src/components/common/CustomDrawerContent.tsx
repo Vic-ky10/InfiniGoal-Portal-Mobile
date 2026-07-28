@@ -9,6 +9,9 @@ import {
 import { DrawerContentScrollView } from "expo-router/drawer";
 import { usePathname, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "react-native";
+
+import Logo from "@/assets/images/Logo.png";
 
 import { AppText } from "@/components/ui";
 import { spacing, radius } from "@/theme";
@@ -158,22 +161,49 @@ export default function CustomDrawerContent({
       scrollEnabled={false}
       contentContainerStyle={styles.container}
     >
-      {/* ── Header ── */}
+      {/* ─ Header ─ */}
       <View style={[styles.header, { borderBottomColor: `${primaryColor}20` }]}>
         <View style={[styles.logoCircle, { backgroundColor: primaryColor }]}>
-          <Feather name={appIcon} size={24} color="#fff" />
+                  <View
+                          style={{
+                            width: 66,
+                            height: 68,
+                            borderRadius: 18,
+                            backgroundColor: "#FFFFFF",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            marginBottom: 18,
+                            borderWidth: 1,
+                            borderColor: "#E2E8F0",
+                            shadowColor: "#000",
+                            shadowOffset: { width: 0, height: 4 },
+                            shadowOpacity: 0.05,
+                            shadowRadius: 10,
+                            elevation: 2,
+                            marginRight : 0
+                          }}
+                        >
+                          <Image
+                            source={Logo}
+                            style={{
+                              width: 52,
+                              height: 52,
+                              resizeMode: "contain",
+                            }}
+                          />
+                        </View>
         </View>
         <View style={{ flex: 1 }}>
-          <AppText weight="700" variant="h3" color="#0F172A">
+          <AppText weight="700" variant="h3" color="#0F172A" style={{ marginLeft : 10 }}>
             {appName}
           </AppText>
-          <AppText variant="caption" color="#94A3B8" style={{ marginTop: 1 }}>
+          <AppText variant="caption" color="#94A3B8" style={{ marginTop: 1  ,  marginLeft : 10 }}>
             {appSubtitle}
           </AppText>
         </View>
       </View>
 
-      {/* ── Nav Items ── */}
+      {/*  Nav Items  */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.navList}
@@ -198,7 +228,7 @@ export default function CustomDrawerContent({
         })}
       </ScrollView>
 
-      {/* ── Footer ── */}
+      {/* ─ Footer ─ */}
       <View style={[styles.footer, { borderTopColor: `${primaryColor}20` }]}>
         <AppText variant="caption" color="#CBD5E1" style={{ textAlign: "center" }}>
           InfiniGoal Portal
@@ -246,7 +276,7 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   itemActive: {
-    // extra specificity placeholder; actual bg from Animated
+ 
   },
   activeBar: {
     position: "absolute",

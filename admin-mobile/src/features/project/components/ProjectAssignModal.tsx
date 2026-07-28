@@ -136,16 +136,14 @@ export default function ProjectAssignModal({
             >
               <View style={{ flex: 1 }}>
                 <AppText variant="h2" weight="700" color="#FFF">
-                  {project.project_name}
+                  Project : {project.project_name}
                 </AppText>
 
                 <AppText
                   variant="caption"
                   color="rgba(255,255,255,0.8)"
                   style={{ marginTop: spacing.xs }}
-                >
-                  {project.project_code}
-                </AppText>
+                ></AppText>
               </View>
 
               <TouchableOpacity onPress={onClose}>
@@ -157,10 +155,11 @@ export default function ProjectAssignModal({
               style={{
                 flexDirection: "row",
                 marginTop: spacing.md,
-                gap: spacing.sm,
               }}
             >
-              <Badge label={project.status} variant="solid" />
+              <AppText variant="caption" weight="500" color="#FFF">
+                Status : {project.status}
+              </AppText>
 
               <Badge label={project.priority} variant="subtle" />
             </View>
@@ -173,18 +172,18 @@ export default function ProjectAssignModal({
               marginBottom: spacing.md,
             }}
           >
-            <View>
+            {/* <View>
               <AppText variant="h2" weight="700">
                 {project.project_name}
               </AppText>
               <AppText variant="caption" color={adminColors.textSecondary}>
                 Code: {project.project_code} • Status: {project.status}
               </AppText>
-            </View>
+            </View> */}
 
-            <TouchableOpacity onPress={onClose}>
+            {/* <TouchableOpacity onPress={onClose}>
               <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
           </View>
 
           <ScrollView showsVerticalScrollIndicator={false}>
@@ -364,7 +363,7 @@ export default function ProjectAssignModal({
             </View>
 
             <Button
-              title={`Assign ${selectedProfileIds.length} Selected Employee(s)`}
+              title={`Assign ${selectedProfileIds.length} Selected Employees`}
               onPress={handleAssign}
               loading={submitting}
               disabled={selectedProfileIds.length === 0}

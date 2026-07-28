@@ -8,6 +8,9 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
+import { Image } from "react-native";
+
+import Logo from "@/assets/images/Logo.png";
 
 import { loginAdmin, loginEmployee } from "@/features/auth/auth.service";
 
@@ -117,20 +120,32 @@ export default function LoginScreen() {
       >
         <View style={{ alignItems: "center", marginBottom: 28 }}>
           <View
-            style={{
-              width: 54,
-              height: 54,
-              borderRadius: 16,
-              backgroundColor: isEmployee ? "#F0FDF4" : "#EFF6FF",
-              justifyContent: "center",
-              alignItems: "center",
-              marginBottom: 16,
-              borderWidth: 1,
-              borderColor: isEmployee ? "#DCFCE7" : "#DBEAFE",
-            }}
-          >
-            <Feather name="layers" size={28} color={primaryColor} />
-          </View>
+                 style={{
+                   width: 96,
+                   height: 96,
+                   borderRadius: 28,
+                   backgroundColor: "#FFFFFF",
+                   justifyContent: "center",
+                   alignItems: "center",
+                   marginBottom: 28,
+                   borderWidth: 1,
+                   borderColor: "#E2E8F0",
+                   shadowColor: "#000",
+                   shadowOffset: { width: 0, height: 4 },
+                   shadowOpacity: 0.05,
+                   shadowRadius: 10,
+                   elevation: 2,
+                 }}
+               >
+                 <Image
+                   source={Logo}
+                   style={{
+                     width: 72,
+                     height: 72,
+                     resizeMode: "contain",
+                   }}
+                 />
+               </View>
 
           <Text
             style={{

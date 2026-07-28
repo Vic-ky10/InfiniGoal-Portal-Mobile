@@ -104,7 +104,7 @@ export default function IncentiveCard({ incentive, onReview, onMarkPaid, onEdit,
 
         {incentive.description ? (
           <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: spacing.xs }}>
-            "{incentive.description}"
+         Description :"{incentive.description}"
           </AppText>
         ) : null}
 

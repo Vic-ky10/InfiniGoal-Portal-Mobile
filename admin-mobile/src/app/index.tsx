@@ -3,6 +3,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import { useThemeStore } from "@/store";
+import { Image } from "react-native";
+
+import Logo from "@/assets/images/Logo.png";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -37,7 +40,14 @@ export default function HomeScreen() {
             elevation: 2,
           }}
         >
-          <Feather name="layers" size={48} color="#2563EB" />
+          <Image
+            source={Logo}
+            style={{
+              width: 72,
+              height: 72,
+              resizeMode: "contain",
+            }}
+          />
         </View>
 
         {/* Header Title & Subtitle */}
@@ -64,7 +74,7 @@ export default function HomeScreen() {
             lineHeight: 22,
           }}
         >
-          Premium Employee Hub & Management
+         Employee Hub & Management
         </Text>
 
         {/* Portal Action Cards */}

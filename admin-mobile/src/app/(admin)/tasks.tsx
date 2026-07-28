@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, FlatList, TouchableOpacity, Alert } from "react-native";
+import { View, FlatList, TouchableOpacity, Alert, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
@@ -60,10 +60,10 @@ export default function TasksScreen() {
           onPress: async () => {
             const res = await deleteTask(task.id);
             if (res.success) {
-              Alert.alert("Success", res.message);
-              refresh();
+               Alert.alert("Success", res.message);
+               refresh();
             } else {
-              Alert.alert("Error", res.error || "Failed to delete task.");
+               Alert.alert("Error", res.error || "Failed to delete task.");
             }
           },
         },
@@ -112,6 +112,11 @@ export default function TasksScreen() {
                 paddingVertical: spacing.xs,
                 borderRadius: radius.md,
                 gap: 4,
+                ...Platform.select({
+                  web: {
+                    outlineStyle: "none",
+                  } as any,
+                }),
               }}
             >
               <Feather name="plus" size={16} color="#FFFFFF" />
@@ -142,6 +147,11 @@ export default function TasksScreen() {
                   backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
                   borderWidth: 1,
                   borderColor: isSelected ? adminColors.primary : adminColors.border,
+                  ...Platform.select({
+                    web: {
+                      outlineStyle: "none",
+                    } as any,
+                  }),
                 }}
               >
                 <AppText

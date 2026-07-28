@@ -13,8 +13,7 @@ export default function NotificationCard({
       style={{
         borderLeftWidth: 6,
         borderLeftColor: adminColors.primary,
-        borderWidth: 1,
-        borderColor: adminColors.border,
+        borderWidth: 0,
         backgroundColor: `${adminColors.primary}05`,
         ...shadows.sm,
       }}

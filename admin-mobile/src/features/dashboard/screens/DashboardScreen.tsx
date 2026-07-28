@@ -3,7 +3,7 @@ import { useRouter } from "expo-router";
 
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, NotificationBell } from "@/components/common";
-
+import { Image } from "react-native";
 import {
   NotificationCard,
   QuickActionCard,
@@ -15,10 +15,39 @@ import {
 import { useDashboard } from "../hooks/useDashboard";
 
 import { adminColors, spacing } from "@/theme";
+import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 
 export default function DashboardScreen() {
   const router = useRouter();
   const { data, isLoading, isError, refetch, isRefetching } = useDashboard();
+  const [adminName, setAdminName] = useState("Administrator");
+  const [designation, setDesignation] = useState("System Administrator");
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    loadProfile();
+  }, []);
+
+  const loadProfile = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (!user) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("full_name, designation, avatar_url")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile) {
+      setAdminName(profile.full_name ?? "Administrator");
+      setDesignation(profile.designation ?? "System Administrator");
+      setAvatarUrl(profile.avatar_url ?? null);
+    }
+  };
 
   return (
     <Screen
@@ -37,8 +66,11 @@ export default function DashboardScreen() {
         }
       />
 
-      <WelcomeCard name="Administrator" />
-
+      <WelcomeCard
+        name={adminName}
+        designation={designation}
+        avatarUrl={avatarUrl}
+      />
       <AppText
         variant="h3"
         weight="700"
@@ -162,28 +194,6 @@ export default function DashboardScreen() {
           icon="folder"
           onPress={() => router.push("/(admin)/projects")}
         />
-      </View>
-
-      {/* Notifications & Recent Activity */}
-
-      <AppText
-        variant="h3"
-        weight="700"
-        style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}
-      >
-        Activity & Alerts
-      </AppText>
-
-      <View style={{ gap: spacing.sm }}>
-        {(data?.pendingLeaves ?? 0) > 0 ? (
-          <NotificationCard
-            title={`${data?.pendingLeaves} Leave request(s) waiting for approval`}
-          />
-        ) : (
-          <NotificationCard title="All leave requests are up to date" />
-        )}
-
-        <RecentActivity title="System initialized" time="Just now" />
       </View>
     </Screen>
   );
