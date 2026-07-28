@@ -1,30 +1,58 @@
-import { View } from "react-native";
+import { Image, Pressable, View } from "react-native";
+import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+
 
 import { AppText, Card } from "@/components/ui";
-import { adminColors, spacing, shadows } from "@/theme";
+import { adminColors, radius, spacing, shadows } from "@/theme";
 
 interface Props {
   name: string;
+  designation?: string;
+  avatarUrl?: string | null;
 }
 
 export default function WelcomeCard({
   name,
+  designation = "Administrator",
+  avatarUrl,
 }: Props) {
+  const router = useRouter();
+  
+
+  const hour = new Date().getHours();
+
+  const greeting =
+    hour < 12
+      ? "Good Morning"
+      : hour < 17
+      ? "Good Afternoon"
+      : "Good Evening";
+
   return (
-    <Card
-      style={{
-        borderLeftWidth: 6,
-        borderLeftColor: adminColors.primary,
-        padding: spacing.xl,
-        borderWidth: 1,
-        borderColor: adminColors.border,
-        ...shadows.sm,
-      }}
-    >
+<Card
+  style={{
+    borderLeftWidth: 5,
+    borderLeftColor: adminColors.primary,
+    padding: spacing.xl,
+    borderWidth: 1,
+    borderColor: adminColors.border,
+    ...shadows.sm,
+  }}
+>
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+    }}
+  >
+    {/* Left */}
+    <View style={{ flex: 1 }}>
       <AppText
         variant="caption"
-        color={adminColors.textSecondary}
         weight="600"
+        color={adminColors.textSecondary}
       >
         Welcome Back 👋
       </AppText>
@@ -37,13 +65,73 @@ export default function WelcomeCard({
         {name}
       </AppText>
 
+      {designation && (
+        <AppText
+          variant="body"
+          color={adminColors.textSecondary}
+          style={{ marginTop: 2 }}
+        >
+          {designation}
+        </AppText>
+      )}
+
       <AppText
+        variant="caption"
         color={adminColors.textSecondary}
-        style={{ marginTop: spacing.xs }}
-        variant="body"
+        style={{ marginTop: spacing.sm }}
       >
         Have a productive day monitoring system stats.
       </AppText>
-    </Card>
+    </View>
+
+    {/* Profile Image */}
+    <View
+      style={{
+        width: 100,
+        height: 100,
+        borderRadius: 50,
+        overflow: "hidden",
+        backgroundColor: `${adminColors.primary}15`,
+        borderWidth: 2,
+        borderColor: adminColors.primary,
+        justifyContent: "center",
+        alignItems: "center",
+        marginLeft: spacing.lg,
+      }}
+    >
+      {avatarUrl ? (
+        <Image
+          source={{ uri: avatarUrl }}
+          style={{
+            width: "100%",
+            height: "100%",
+          }}
+          resizeMode="cover"
+        />
+      ) : (
+        <Feather
+          name="user"
+          size={28}
+          color={adminColors.primary}
+        />
+      )}
+
+      {/* Online Indicator */}
+      <View
+        style={{
+          position: "absolute",
+          bottom: 2,
+          right: 2,
+          width: 12,
+          height: 12,
+          borderRadius: 6,
+          backgroundColor: adminColors.success,
+          borderWidth: 2,
+          borderColor: "#fff",
+        }}
+      />
+    </View>
+  </View>
+</Card>
   );
 }

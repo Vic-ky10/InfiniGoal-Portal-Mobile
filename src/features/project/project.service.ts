@@ -170,20 +170,27 @@ export async function createProject(createdBy: string, values: ProjectInput) {
 }
 
 export async function updateProject(projectId: string, values: ProjectInput) {
-  const { data, error } = await supabase
-    .from("projects")
-    .update({
-      project_code: values.project_code,
-      project_name: values.project_name,
-      description: values.description || null,
-      priority: values.priority,
-      status: values.status,
-      start_date: values.start_date,
-      end_date: values.end_date || null,
-    })
-    .eq("id", projectId)
-    .select(PROJECT_SELECT)
-    .single();
+ const { data, error, count } = await supabase
+  .from("projects")
+  .update({
+    project_name: values.project_name,
+    project_code: values.project_code,
+    description: values.description || null,
+    priority: values.priority,
+    status: values.status,
+    start_date: values.start_date,
+    end_date: values.end_date || null,
+  })
+  .eq("id", projectId)
+      .select(PROJECT_SELECT)
+   .single();
+
+
+console.log("Updated rows:", count);
+console.log("Data:", data);
+console.log("Error:", error);
+    
+
 
   if (error) {
     return {

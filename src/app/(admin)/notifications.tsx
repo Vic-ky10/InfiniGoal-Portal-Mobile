@@ -57,14 +57,21 @@
 import NotificationDetailModal from "@/features/notification/components/NotificationDetailModal";
 import { Notification } from "@/features/notification/notification.types";
 import { useMemo, useState } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  Platform,
+  Pressable,
+} from "react-native";
 
-import { AppText, Screen } from "@/components/ui";
+import { AppText, Card, Screen } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 
 import { useNotifications } from "@/features/notification/hooks/useNotifications";
 import NotificationItem from "@/features/notification/components/NotificationItem";
+import { Feather } from "@expo/vector-icons";
 
 const FILTERS = ["All", "Unread", "Read"] as const;
 
@@ -122,7 +129,6 @@ export default function NotificationsScreen() {
       onRefresh={refresh}
     >
       <View style={{ flex: 1, gap: spacing.md }}>
-       
         <AppHeader
           title="🔔 Notifications"
           subtitle={
@@ -131,58 +137,150 @@ export default function NotificationsScreen() {
               : "You're all caught up!"
           }
         />
+     
+     <Card
+  style={{
+    paddingVertical: spacing.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+  }}
+>
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: spacing.lg,
+    }}
+  >
+    <AppText variant="body" weight="700">
+      Notification Overview
+    </AppText>
 
-       
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderRadius: radius.lg,
-            padding: spacing.lg,
-            flexDirection: "row",
-            justifyContent: "space-around",
-          }}
-        >
-          <View style={{ alignItems: "center" }}>
-            <AppText variant="h2" weight="700">
-              {unreadCount}
-            </AppText>
-            <AppText variant="caption">Unread</AppText>
-          </View>
+    <Feather
+      name="bell"
+      size={18}
+      color={colors.primary}
+    />
+  </View>
 
-          <View style={{ alignItems: "center" }}>
-            <AppText variant="h2" weight="700">
-              {todayCount}
-            </AppText>
-            <AppText variant="caption">Today</AppText>
-          </View>
+  <View
+    style={{
+      flexDirection: "row",
+      justifyContent: "space-between",
+    }}
+  >
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+      }}
+    >
+      <AppText
+        variant="h1"
+        weight="700"
+        color={colors.text}
+      >
+        {unreadCount}
+      </AppText>
 
-          <View style={{ alignItems: "center" }}>
-            <AppText variant="h2" weight="700">
-              {notifications.length}
-            </AppText>
-            <AppText variant="caption">Total</AppText>
-          </View>
-        </View>
+      <AppText
+        variant="caption"
+        color={colors.textSecondary}
+      >
+        Unread
+      </AppText>
+    </View>
 
-       {/* notifiation */}
+    <View
+      style={{
+        width: 1,
+        backgroundColor: colors.border,
+        marginVertical: 6,
+      }}
+    />
+
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+      }}
+    >
+      <AppText
+        variant="h1"
+        weight="700"
+        color={colors.text}
+      >
+        {todayCount}
+      </AppText>
+
+      <AppText
+        variant="caption"
+        color={colors.textSecondary}
+      >
+        Today
+      </AppText>
+    </View>
+
+    <View
+      style={{
+        width: 1,
+        backgroundColor: colors.border,
+        marginVertical: 6,
+      }}
+    />
+
+    <View
+      style={{
+        flex: 1,
+        alignItems: "center",
+      }}
+    >
+      <AppText
+        variant="h1"
+        weight="700"
+        color={colors.text}
+      >
+        {notifications.length}
+      </AppText>
+
+      <AppText
+        variant="caption"
+        color={colors.textSecondary}
+      >
+        Total
+      </AppText>
+    </View>
+  </View>
+</Card>
+        
+
+        {/* notifiation */}
 
         {unreadCount > 0 && (
-          <TouchableOpacity
+          <Pressable
             onPress={handleMarkAllRead}
-            style={{
+            android_ripple={{ color: "transparent" }}
+            style={({ pressed }) => ({
               alignSelf: "flex-end",
               backgroundColor: colors.primary,
               paddingHorizontal: spacing.lg,
               paddingVertical: spacing.sm,
               borderRadius: radius.full,
-            }}
+              opacity: pressed ? 0.9 : 1,
+              ...Platform.select({
+                web: {
+                  cursor: "pointer",
+                  outlineStyle: "none",
+                } as any,
+              }),
+            })}
           >
             <AppText color="#fff" weight="700" variant="caption">
               Mark all as read
             </AppText>
-          </TouchableOpacity>
+          </Pressable>
         )}
-
 
         <View
           style={{
@@ -194,17 +292,25 @@ export default function NotificationsScreen() {
             const active = selectedFilter === filter;
 
             return (
-              <TouchableOpacity
+              <Pressable
                 key={filter}
                 onPress={() => setSelectedFilter(filter)}
-                style={{
+                android_ripple={{ color: "transparent" }}
+                style={({ pressed }) => ({
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.sm,
                   borderRadius: radius.full,
                   backgroundColor: active ? colors.primary : colors.surface,
                   borderWidth: 1,
                   borderColor: active ? colors.primary : colors.border,
-                }}
+                  opacity: pressed ? 0.9 : 1,
+                  ...Platform.select({
+                    web: {
+                      cursor: "pointer",
+                      outlineStyle: "none",
+                    } as any,
+                  }),
+                })}
               >
                 <AppText
                   weight="700"
@@ -213,7 +319,7 @@ export default function NotificationsScreen() {
                 >
                   {filter}
                 </AppText>
-              </TouchableOpacity>
+              </Pressable>
             );
           })}
         </View>

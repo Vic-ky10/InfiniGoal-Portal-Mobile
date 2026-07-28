@@ -7,3 +7,13 @@
   --font-rounded: 'SF Pro Rounded', 'Hiragino Maru Gothic ProN', Meiryo, 'MS PGothic', sans-serif;
   --font-serif: Georgia, 'Times New Roman', serif;
 }
+
+/* Remove the default focus/active outline border on web browser */
+/* *:focus,
+*:active,
+*:hover {
+  outline: none !important;
+  outline-style: none !important;
+  box-shadow: none !important;
+} */
+

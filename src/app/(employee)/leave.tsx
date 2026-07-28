@@ -31,7 +31,7 @@ export default function EmployeeLeaveScreen() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
 
-  // Form State
+
   const [leaveType, setLeaveType] = useState<string>(LEAVE_TYPE.CASUAL);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
   const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
@@ -122,7 +122,7 @@ export default function EmployeeLeaveScreen() {
         <View style={{ flex: 1 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
             <AppText weight="700" variant="title" color={employeeColors.text}>
-              {item.leave_type} Leave
+              {item.leave_type} 
             </AppText>
             <Badge
               label={item.status}
@@ -140,7 +140,7 @@ export default function EmployeeLeaveScreen() {
           </AppText>
           {item.reason && (
             <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.sm }}>
-              "{item.reason}"
+             Reasons:  "{item.reason}"
             </AppText>
           )}
           {item.review_comment && (
@@ -193,7 +193,7 @@ export default function EmployeeLeaveScreen() {
           contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         />
 
-        {/* Apply Leave Modal */}
+        {/* apply Leave Modal */}
         <Modal visible={modalVisible} animationType="slide" transparent>
           <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
             <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
