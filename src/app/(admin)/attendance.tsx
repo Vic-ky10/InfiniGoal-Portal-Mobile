@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { View, FlatList, TouchableOpacity, Pressable } from "react-native";
 
 import { AppText, Screen, Card } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
@@ -19,28 +19,59 @@ const STATUS_OPTIONS: { label: string; value: AttendanceStatus | "" }[] = [
 export default function AttendanceScreen() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "">("");
-  const { records, summary, loading, refreshing, refresh } = useAttendance();
+  const [selectedSummary, setSelectedSummary] = useState<
+    "present" | "incomplete" | "absent"
+  >("present");
+  const {
+    records,
+    setRecords,
+    presentRecords,
+    incompleteRecords,
+    absentRecords,
+    summary,
+    loading,
+    refreshing,
+    refresh,
+  } = useAttendance();
 
   const filteredRecords = useMemo(() => {
-    const search = searchText.trim().toLowerCase();
+  const search = searchText.trim().toLowerCase();
 
-    return records.filter((record) => {
-      const employee = record.employee;
+  return records.filter((record) => {
+    const employee = record.employee;
 
-      const matchesSearch =
-        search === "" ||
-        employee?.full_name?.toLowerCase().includes(search) ||
-        employee?.employee_id?.toLowerCase().includes(search) ||
-        employee?.email?.toLowerCase().includes(search) ||
-        employee?.department?.toLowerCase().includes(search) ||
-        employee?.designation?.toLowerCase().includes(search);
+    return (
+      search === "" ||
+      employee?.full_name?.toLowerCase().includes(search) ||
+      employee?.employee_id?.toLowerCase().includes(search) ||
+      employee?.email?.toLowerCase().includes(search) ||
+      employee?.department?.toLowerCase().includes(search) ||
+      employee?.designation?.toLowerCase().includes(search)
+    );
+  });
+}, [records, searchText]);
 
-      const matchesStatus =
-        statusFilter === "" || record.status === statusFilter;
+  useEffect(() => {
+    switch (selectedSummary) {
+      case "present":
+        setRecords(presentRecords);
+        break;
 
-      return matchesSearch && matchesStatus;
-    });
-  }, [records, searchText, statusFilter]);
+      case "incomplete":
+        setRecords(incompleteRecords);
+        break;
+
+      case "absent":
+        setRecords(absentRecords);
+        break;
+    }
+  }, [
+    selectedSummary,
+    presentRecords,
+    incompleteRecords,
+    absentRecords,
+    setRecords,
+  ]);
 
   return (
     <Screen
@@ -54,16 +85,45 @@ export default function AttendanceScreen() {
 
         {/* summary  */}
         <View style={{ flexDirection: "row", gap: spacing.xs }}>
-          <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>
-              Present
-            </AppText>
-            <AppText weight="700" variant="h3" color={adminColors.success}>
-              {summary.present}
-            </AppText>
-          </Card>
+          <Pressable
+            onPress={() => setSelectedSummary("present")}
+            style={{ flex: 1 }}
+          >
+            <Card
+              style={{
+                padding: spacing.sm,
+                alignItems: "center",
+                borderWidth: selectedSummary === "present" ? 2 : 1,
+                borderColor:
+                  selectedSummary === "present"
+                    ? adminColors.primary
+                    : adminColors.border,
+              }}
+            >
+              <AppText variant="caption" color={adminColors.textSecondary}>
+                Present
+              </AppText>
+              <AppText weight="700" variant="h3" color={adminColors.success}>
+                {summary.present}
+              </AppText>
+            </Card>
+          </Pressable>
 
-          <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
+          <Pressable
+            onPress={() => setSelectedSummary("incomplete")}
+            style={{ flex: 1 }}
+          >
+            <Card
+              style={{
+                padding: spacing.sm,
+                alignItems: "center",
+                borderWidth: selectedSummary === "incomplete" ? 2 : 1,
+                borderColor:
+                  selectedSummary === "incomplete"
+                    ? adminColors.primary
+                    : adminColors.border,
+              }}
+            >
             <AppText variant="caption" color={adminColors.textSecondary}>
               Incomplete
             </AppText>
@@ -71,8 +131,23 @@ export default function AttendanceScreen() {
               {summary.incomplete}
             </AppText>
           </Card>
+          </Pressable>
 
-          <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
+            <Pressable
+       onPress={() => setSelectedSummary("absent")}
+            style={{ flex: 1 }}
+          >
+            <Card
+              style={{
+                padding: spacing.sm,
+                alignItems: "center",
+                borderWidth: selectedSummary === "absent" ? 2 : 1,
+                borderColor:
+                  selectedSummary === "absent"
+                    ? adminColors.primary
+                    : adminColors.border,
+              }}
+            >
             <AppText variant="caption" color={adminColors.textSecondary}>
               Absent
             </AppText>
@@ -80,6 +155,8 @@ export default function AttendanceScreen() {
               {summary.absent}
             </AppText>
           </Card>
+
+          </Pressable>
         </View>
 
         <SearchBar
@@ -88,44 +165,7 @@ export default function AttendanceScreen() {
           placeholder="Search employee..."
         />
 
-        {/* Filter Tabs */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: spacing.xs,
-            marginBottom: spacing.xs,
-          }}
-        >
-          {STATUS_OPTIONS.map((opt) => {
-            const isSelected = statusFilter === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setStatusFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+      
 
         {/* List of Records */}
         <FlatList

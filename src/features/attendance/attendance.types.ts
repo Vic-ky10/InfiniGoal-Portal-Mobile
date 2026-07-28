@@ -43,3 +43,10 @@ export interface AttendanceSummary {
   absent: number;
   totalWorkingHours: number;
 }
+
+export interface AttendanceDashboard {
+  summary: AttendanceSummary;
+  present: AttendanceWithEmployee[];
+  incomplete: AttendanceWithEmployee[];
+  absent: AttendanceWithEmployee[];
+}

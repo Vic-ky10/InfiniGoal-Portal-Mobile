@@ -3,6 +3,7 @@ import { supabase } from "@/lib/supabase/client";
 import {
   ATTENDANCE_STATUS,
   Attendance,
+  AttendanceDashboard,
   AttendanceFilters,
   AttendanceSummary,
   AttendanceWithEmployee,
@@ -14,6 +15,8 @@ import {
   isAlreadyLoggedIn,
   isAlreadyLoggedOut,
 } from "./attendance.utils";
+import { Employee } from "../employee/employee.types";
+
 
 const ATTENDANCE_SELECT =
   "id, profile_id, attendance_date, login_time, logout_time, working_hours, status, notes, created_at, updated_at";
@@ -223,29 +226,162 @@ type SupabaseAttendanceRecord = AttendanceWithEmployee & {
 export async function getAttendanceSummary(
   filters: AttendanceFilters = {}
 ): Promise<AttendanceSummary> {
-  const records = await getAttendanceRecords(filters);
+  // Get all employees
+  const { data: employees, error: employeeError } = await supabase
+    .from("profiles")
+    .select("id")
+   
 
-  return records.reduce<AttendanceSummary>(
-    (summary, record) => {
-      summary.total++;
-      summary.totalWorkingHours += record.working_hours ?? 0;
+  if (employeeError) {
+    console.error(employeeError);
 
-      if (record.status === ATTENDANCE_STATUS.PRESENT) {
-        summary.present++;
-      } else if (record.status === ATTENDANCE_STATUS.INCOMPLETE) {
-        summary.incomplete++;
-      } else if (record.status === ATTENDANCE_STATUS.ABSENT) {
-        summary.absent++;
-      }
-
-      return summary;
-    },
-    {
+    return {
       total: 0,
       present: 0,
       incomplete: 0,
       absent: 0,
       totalWorkingHours: 0,
-    }
+    };
+  }
+
+  // Get today's attendance
+  const records = await getAttendanceRecords({
+    ...filters,
+    date: filters.date ?? getTodayDate(),
+  });
+
+  const attendanceMap = new Map(
+    records.map((record) => [record.profile_id, record])
   );
+
+  const summary: AttendanceSummary = {
+    total: employees.length,
+    present: 0,
+    incomplete: 0,
+    absent: 0,
+    totalWorkingHours: 0,
+  };
+
+  for (const employee of employees) {
+    const attendance = attendanceMap.get(employee.id);
+
+    // No attendance record
+    if (!attendance) {
+      summary.absent++;
+      continue;
+    }
+
+    // Logged in but not logged out
+    if (attendance.login_time && !attendance.logout_time) {
+      summary.incomplete++;
+      continue;
+    }
+
+    // Logged in and logged out
+    if (attendance.login_time && attendance.logout_time) {
+      summary.present++;
+      summary.totalWorkingHours += attendance.working_hours ?? 0;
+      continue;
+    }
+
+    summary.absent++;
+  }
+
+  return summary;
+}
+
+export async function getTodayAttendanceDashboard(): Promise<AttendanceDashboard> {
+  // Get all employees
+  const { data: employees, error: employeeError } = await supabase
+    .from("profiles")
+    .select("*");
+
+  if (employeeError) {
+    console.error(employeeError);
+
+    return {
+      summary: {
+        total: 0,
+        present: 0,
+        incomplete: 0,
+        absent: 0,
+        totalWorkingHours: 0,
+      },
+      present: [],
+      incomplete: [],
+      absent: [],
+    };
+  }
+
+  // Get today's attendance
+  const attendanceRecords = await getAttendanceRecords({
+    date: getTodayDate(),
+  });
+
+  const attendanceMap = new Map(
+    attendanceRecords.map((record) => [record.profile_id, record])
+  );
+
+  const present: AttendanceWithEmployee[] = [];
+  const incomplete: AttendanceWithEmployee[] = [];
+const absent: AttendanceWithEmployee[] = [];
+
+  let totalWorkingHours = 0;
+
+  for (const employee of employees as Employee[]) {
+    const attendance = attendanceMap.get(employee.id);
+
+    // No attendance => Absent
+if (!attendance) {
+  const absentRecord: AttendanceWithEmployee = {
+    id: `absent-${employee.id}`,
+    profile_id: employee.id,
+    attendance_date: getTodayDate(),
+    login_time: null,
+    logout_time: null,
+    working_hours: 0,
+    status: ATTENDANCE_STATUS.ABSENT,
+    notes: null,
+    created_at: "",
+    updated_at: "",
+    employee: {
+      employee_id: employee.employee_id,
+      full_name: employee.full_name,
+      email: employee.email,
+      department: employee.department,
+      designation: employee.designation,
+    },
+  };
+
+  // console.log("Employee:", employee);
+  // console.log("Absent Record:", absentRecord);
+
+  absent.push(absentRecord);
+
+  continue;
+}
+
+    // Logged in only
+    if (attendance.login_time && !attendance.logout_time) {
+      incomplete.push(attendance);
+      continue;
+    }
+
+    // Logged in + Logged out
+    present.push(attendance);
+    totalWorkingHours += attendance.working_hours ?? 0;
+  }
+
+  return {
+    summary: {
+      total: employees.length,
+      present: present.length,
+      incomplete: incomplete.length,
+      absent: absent.length,
+      totalWorkingHours,
+    },
+    present,
+    incomplete,
+    absent,
+  };
 }
