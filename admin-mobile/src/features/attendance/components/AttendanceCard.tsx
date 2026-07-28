@@ -12,6 +12,7 @@ interface Props {
 export default function AttendanceCard({ record }: Props) {
   const employee = record.employee;
   const name = employee?.full_name ?? "Unknown Employee";
+  const isAbsent = record.status === "Absent";
 
   const getStatusColor = (status: string) => {
     switch (status) {

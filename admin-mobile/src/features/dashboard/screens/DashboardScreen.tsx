@@ -89,9 +89,9 @@ export default function DashboardScreen() {
             onPress={() => router.push("/(admin)/employees")}
           />
           <StatCard
-            title="Present Today"
-            value={data?.presentToday ?? 0}
-            icon="check-circle"
+            title="Present Today "
+            value={data?.attendanceToday ?? "0 / 0"}
+            icon= "check-circle"
             color={adminColors.success}
             onPress={() => router.push("/(admin)/attendance")}
           />
