@@ -228,7 +228,7 @@ export default function CustomDrawerContent({
         })}
       </ScrollView>
 
-      {/* ─ Footer ─ */}
+
       <View style={[styles.footer, { borderTopColor: `${primaryColor}20` }]}>
         <AppText variant="caption" color="#CBD5E1" style={{ textAlign: "center" }}>
           InfiniGoal Portal

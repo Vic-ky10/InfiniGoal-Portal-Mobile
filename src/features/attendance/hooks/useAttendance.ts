@@ -4,25 +4,32 @@ import {
   AttendanceSummary,
   AttendanceWithEmployee,
 } from "../attendance.types";
-import {
-
-  getTodayAttendanceDashboard,
-} from "../attendance.service";
+import { getTodayAttendanceDashboard } from "../attendance.service";
 
 export function useAttendance(initialFilters: AttendanceFilters = {}) {
   const [records, setRecords] = useState<AttendanceWithEmployee[]>([]);
   const [presentRecords, setPresentRecords] = useState<
     AttendanceWithEmployee[]
   >([]);
+  const [shortHoursRecords, setShortHoursRecords] = useState<
+    AttendanceWithEmployee[]
+  >([]);
+
+  const [halfDayRecords, setHalfDayRecords] = useState<
+    AttendanceWithEmployee[]
+  >([]);
   const [incompleteRecords, setIncompleteRecords] = useState<
     AttendanceWithEmployee[]
   >([]);
-const [absentRecords, setAbsentRecords] =
-  useState<AttendanceWithEmployee[]>([]);
+  const [absentRecords, setAbsentRecords] = useState<AttendanceWithEmployee[]>(
+    [],
+  );
 
   const [summary, setSummary] = useState<AttendanceSummary>({
     total: 0,
     present: 0,
+    shortHours: 0,
+    halfDay: 0,
     incomplete: 0,
     absent: 0,
     totalWorkingHours: 0,
@@ -45,8 +52,9 @@ const [absentRecords, setAbsentRecords] =
       const dashboard = await getTodayAttendanceDashboard();
 
       setSummary(dashboard.summary);
-
       setPresentRecords(dashboard.present);
+      setShortHoursRecords(dashboard.shortHours);
+      setHalfDayRecords(dashboard.halfDay);
       setIncompleteRecords(dashboard.incomplete);
       setAbsentRecords(dashboard.absent);
 
@@ -64,16 +72,18 @@ const [absentRecords, setAbsentRecords] =
   }, [fetchAttendance]);
 
   return {
-  records,
-  setRecords,
+    records,
+    setRecords,
 
-  presentRecords,
-  incompleteRecords,
-  absentRecords,
+    presentRecords,
+    shortHoursRecords,
+    halfDayRecords,
+    incompleteRecords,
+    absentRecords,
 
-  summary,
-  loading,
-  refreshing,
-  refresh: () => fetchAttendance(true),
-};
+    summary,
+    loading,
+    refreshing,
+    refresh: () => fetchAttendance(true),
+  };
 }

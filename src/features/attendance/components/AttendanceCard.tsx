@@ -14,18 +14,27 @@ export default function AttendanceCard({ record }: Props) {
   const name = employee?.full_name ?? "Unknown Employee";
   const isAbsent = record.status === "Absent";
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Present":
-        return adminColors.success;
-      case "Incomplete":
-        return adminColors.warning;
-      case "Absent":
-        return adminColors.danger;
-      default:
-        return adminColors.textSecondary;
-    }
-  };
+ const getStatusColor = (status: string) => {
+  switch (status) {
+    case "Present":
+      return adminColors.success;
+
+    case "Short Hours":
+      return adminColors.warning;
+
+    case "Half Day":
+      return adminColors.primary;
+
+    case "Incomplete":
+      return adminColors.warning;
+
+    case "Absent":
+      return adminColors.danger;
+
+    default:
+      return adminColors.textSecondary;
+  }
+};
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return "--:--";
@@ -83,7 +92,9 @@ export default function AttendanceCard({ record }: Props) {
             Working Hours
           </AppText>
           <AppText weight="600" color={adminColors.primary} style={{ marginTop: 2 }}>
-            {record.working_hours ? `${record.working_hours.toFixed(1)} hrs` : "--"}
+           {record.working_hours !== null
+  ? `${record.working_hours.toFixed(1)} hrs`
+  : "--"}
           </AppText>
         </View>
       </View>

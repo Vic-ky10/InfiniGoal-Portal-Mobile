@@ -12,20 +12,23 @@ import { AttendanceStatus } from "@/features/attendance/attendance.types";
 const STATUS_OPTIONS: { label: string; value: AttendanceStatus | "" }[] = [
   { label: "All", value: "" },
   { label: "Present", value: "Present" },
+  { label: "Short Hours", value: "Short Hours" },
+  { label: "Half Day", value: "Half Day" },
   { label: "Incomplete", value: "Incomplete" },
   { label: "Absent", value: "Absent" },
 ];
-
 export default function AttendanceScreen() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "">("");
   const [selectedSummary, setSelectedSummary] = useState<
-    "present" | "incomplete" | "absent"
+    "present" | "shortHours" | "halfDay" | "incomplete" | "absent"
   >("present");
   const {
     records,
     setRecords,
     presentRecords,
+    shortHoursRecords,
+    halfDayRecords,
     incompleteRecords,
     absentRecords,
     summary,
@@ -35,26 +38,34 @@ export default function AttendanceScreen() {
   } = useAttendance();
 
   const filteredRecords = useMemo(() => {
-  const search = searchText.trim().toLowerCase();
+    const search = searchText.trim().toLowerCase();
 
-  return records.filter((record) => {
-    const employee = record.employee;
+    return records.filter((record) => {
+      const employee = record.employee;
 
-    return (
-      search === "" ||
-      employee?.full_name?.toLowerCase().includes(search) ||
-      employee?.employee_id?.toLowerCase().includes(search) ||
-      employee?.email?.toLowerCase().includes(search) ||
-      employee?.department?.toLowerCase().includes(search) ||
-      employee?.designation?.toLowerCase().includes(search)
-    );
-  });
-}, [records, searchText]);
+      return (
+        search === "" ||
+        employee?.full_name?.toLowerCase().includes(search) ||
+        employee?.employee_id?.toLowerCase().includes(search) ||
+        employee?.email?.toLowerCase().includes(search) ||
+        employee?.department?.toLowerCase().includes(search) ||
+        employee?.designation?.toLowerCase().includes(search)
+      );
+    });
+  }, [records, searchText]);
 
   useEffect(() => {
     switch (selectedSummary) {
       case "present":
         setRecords(presentRecords);
+        break;
+
+      case "shortHours":
+        setRecords(shortHoursRecords);
+        break;
+
+      case "halfDay":
+        setRecords(halfDayRecords);
         break;
 
       case "incomplete":
@@ -68,6 +79,8 @@ export default function AttendanceScreen() {
   }, [
     selectedSummary,
     presentRecords,
+    shortHoursRecords,
+    halfDayRecords,
     incompleteRecords,
     absentRecords,
     setRecords,
@@ -84,7 +97,13 @@ export default function AttendanceScreen() {
         <AppHeader title="Attendance" subtitle="Daily employee check-in logs" />
 
         {/* summary  */}
-        <View style={{ flexDirection: "row", gap: spacing.xs }}>
+        <View
+          style={{
+            flexDirection: "row",
+            flexWrap: "wrap",
+            gap: spacing.xs,
+          }}
+        >
           <Pressable
             onPress={() => setSelectedSummary("present")}
             style={{ flex: 1 }}
@@ -124,17 +143,17 @@ export default function AttendanceScreen() {
                     : adminColors.border,
               }}
             >
-            <AppText variant="caption" color={adminColors.textSecondary}>
-              Incomplete
-            </AppText>
-            <AppText weight="700" variant="h3" color={adminColors.warning}>
-              {summary.incomplete}
-            </AppText>
-          </Card>
+              <AppText variant="caption" color={adminColors.textSecondary}>
+                Incomplete
+              </AppText>
+              <AppText weight="700" variant="h3" color={adminColors.warning}>
+                {summary.incomplete}
+              </AppText>
+            </Card>
           </Pressable>
 
-            <Pressable
-       onPress={() => setSelectedSummary("absent")}
+          <Pressable
+            onPress={() => setSelectedSummary("absent")}
             style={{ flex: 1 }}
           >
             <Card
@@ -148,14 +167,13 @@ export default function AttendanceScreen() {
                     : adminColors.border,
               }}
             >
-            <AppText variant="caption" color={adminColors.textSecondary}>
-              Absent
-            </AppText>
-            <AppText weight="700" variant="h3" color={adminColors.danger}>
-              {summary.absent}
-            </AppText>
-          </Card>
-
+              <AppText variant="caption" color={adminColors.textSecondary}>
+                Absent
+              </AppText>
+              <AppText weight="700" variant="h3" color={adminColors.danger}>
+                {summary.absent}
+              </AppText>
+            </Card>
           </Pressable>
         </View>
 
@@ -164,8 +182,6 @@ export default function AttendanceScreen() {
           onChangeText={setSearchText}
           placeholder="Search employee..."
         />
-
-      
 
         {/* List of Records */}
         <FlatList
