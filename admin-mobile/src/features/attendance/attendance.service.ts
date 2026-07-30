@@ -5,6 +5,7 @@ import {
   Attendance,
   AttendanceDashboard,
   AttendanceFilters,
+  AttendanceStatus,
   AttendanceSummary,
   AttendanceWithEmployee,
 } from "./attendance.types";
@@ -16,7 +17,6 @@ import {
   isAlreadyLoggedOut,
 } from "./attendance.utils";
 import { Employee } from "../employee/employee.types";
-
 
 const ATTENDANCE_SELECT =
   "id, profile_id, attendance_date, login_time, logout_time, working_hours, status, notes, created_at, updated_at";
@@ -32,10 +32,7 @@ export async function getCurrentProfileId() {
   return user?.id ?? null;
 }
 
-export async function loginAttendance(
-  profileId: string,
-  notes?: string
-) {
+export async function loginAttendance(profileId: string, notes?: string) {
   const todayAttendance = await getTodayAttendance(profileId);
 
   if (isAlreadyLoggedIn(todayAttendance)) {
@@ -92,15 +89,25 @@ export async function logoutAttendance(profileId: string) {
 
   const workingHours = calculateWorkingHours(
     todayAttendance!.login_time!,
-    logoutTime
+    logoutTime,
   );
+
+  let status: AttendanceStatus;
+
+  if (workingHours >= 9) {
+    status = ATTENDANCE_STATUS.PRESENT;
+  } else if (workingHours >= 6) {
+    status = ATTENDANCE_STATUS.SHORT_HOURS;
+  } else {
+    status = ATTENDANCE_STATUS.HALF_DAY;
+  }
 
   const { data, error } = await supabase
     .from("attendance")
     .update({
       logout_time: logoutTime,
       working_hours: workingHours,
-      status: ATTENDANCE_STATUS.PRESENT,
+      status,
     })
     .eq("id", todayAttendance!.id)
     .select(ATTENDANCE_SELECT)
@@ -120,9 +127,8 @@ export async function logoutAttendance(profileId: string) {
   };
 }
 
-
 export async function getTodayAttendance(
-  profileId: string
+  profileId: string,
 ): Promise<Attendance | null> {
   const { data, error } = await supabase
     .from("attendance")
@@ -141,7 +147,7 @@ export async function getTodayAttendance(
 
 export async function getAttendanceHistory(
   profileId: string,
-  limit = 30
+  limit = 30,
 ): Promise<Attendance[]> {
   const { data, error } = await supabase
     .from("attendance")
@@ -159,13 +165,13 @@ export async function getAttendanceHistory(
 }
 
 export async function getAttendanceByEmployee(
-  profileId: string
+  profileId: string,
 ): Promise<Attendance[]> {
   return getAttendanceHistory(profileId, 100);
 }
 
 export async function getAttendanceRecords(
-  filters: AttendanceFilters = {}
+  filters: AttendanceFilters = {},
 ): Promise<AttendanceWithEmployee[]> {
   let query = supabase
     .from("attendance")
@@ -195,7 +201,7 @@ export async function getAttendanceRecords(
   const records = (data as SupabaseAttendanceRecord[]).map((record) => ({
     ...record,
     employee: Array.isArray(record.employee)
-      ? record.employee[0] ?? null
+      ? (record.employee[0] ?? null)
       : record.employee,
   }));
 
@@ -224,24 +230,25 @@ type SupabaseAttendanceRecord = AttendanceWithEmployee & {
 };
 
 export async function getAttendanceSummary(
-  filters: AttendanceFilters = {}
+  filters: AttendanceFilters = {},
 ): Promise<AttendanceSummary> {
   // Get all employees
   const { data: employees, error: employeeError } = await supabase
     .from("profiles")
-    .select("id")
-   
+    .select("id");
 
   if (employeeError) {
     console.error(employeeError);
 
-    return {
-      total: 0,
-      present: 0,
-      incomplete: 0,
-      absent: 0,
-      totalWorkingHours: 0,
-    };
+  return {
+  total: 0,
+  present: 0,
+  shortHours: 0,
+  halfDay: 0,
+  incomplete: 0,
+  absent: 0,
+  totalWorkingHours: 0,
+};
   }
 
   // Get today's attendance
@@ -251,16 +258,18 @@ export async function getAttendanceSummary(
   });
 
   const attendanceMap = new Map(
-    records.map((record) => [record.profile_id, record])
+    records.map((record) => [record.profile_id, record]),
   );
 
-  const summary: AttendanceSummary = {
-    total: employees.length,
-    present: 0,
-    incomplete: 0,
-    absent: 0,
-    totalWorkingHours: 0,
-  };
+ const summary: AttendanceSummary = {
+  total: employees.length,
+  present: 0,
+  shortHours: 0,
+  halfDay: 0,
+  incomplete: 0,
+  absent: 0,
+  totalWorkingHours: 0,
+};
 
   for (const employee of employees) {
     const attendance = attendanceMap.get(employee.id);
@@ -278,11 +287,25 @@ export async function getAttendanceSummary(
     }
 
     // Logged in and logged out
-    if (attendance.login_time && attendance.logout_time) {
+   
+if (attendance.login_time && attendance.logout_time) {
+  switch (attendance.status) {
+    case ATTENDANCE_STATUS.PRESENT:
       summary.present++;
-      summary.totalWorkingHours += attendance.working_hours ?? 0;
-      continue;
-    }
+      break;
+
+    case ATTENDANCE_STATUS.SHORT_HOURS:
+      summary.shortHours++;
+      break;
+
+    case ATTENDANCE_STATUS.HALF_DAY:
+      summary.halfDay++;
+      break;
+  }
+
+  summary.totalWorkingHours += attendance.working_hours ?? 0;
+  continue;
+}
 
     summary.absent++;
   }
@@ -299,18 +322,22 @@ export async function getTodayAttendanceDashboard(): Promise<AttendanceDashboard
   if (employeeError) {
     console.error(employeeError);
 
-    return {
-      summary: {
-        total: 0,
-        present: 0,
-        incomplete: 0,
-        absent: 0,
-        totalWorkingHours: 0,
-      },
-      present: [],
-      incomplete: [],
-      absent: [],
-    };
+   return {
+  summary: {
+    total: 0,
+    present: 0,
+    shortHours: 0,
+    halfDay: 0,
+    incomplete: 0,
+    absent: 0,
+    totalWorkingHours: 0,
+  },
+  present: [],
+  shortHours: [],
+  halfDay: [],
+  incomplete: [],
+  absent: [],
+};
   }
 
   // Get today's attendance
@@ -319,11 +346,13 @@ export async function getTodayAttendanceDashboard(): Promise<AttendanceDashboard
   });
 
   const attendanceMap = new Map(
-    attendanceRecords.map((record) => [record.profile_id, record])
+    attendanceRecords.map((record) => [record.profile_id, record]),
   );
 
-  const present: AttendanceWithEmployee[] = [];
-  const incomplete: AttendanceWithEmployee[] = [];
+const present: AttendanceWithEmployee[] = [];
+const shortHours: AttendanceWithEmployee[] = [];
+const halfDay: AttendanceWithEmployee[] = [];
+const incomplete: AttendanceWithEmployee[] = [];
 const absent: AttendanceWithEmployee[] = [];
 
   let totalWorkingHours = 0;
@@ -332,34 +361,34 @@ const absent: AttendanceWithEmployee[] = [];
     const attendance = attendanceMap.get(employee.id);
 
     // No attendance => Absent
-if (!attendance) {
-  const absentRecord: AttendanceWithEmployee = {
-    id: `absent-${employee.id}`,
-    profile_id: employee.id,
-    attendance_date: getTodayDate(),
-    login_time: null,
-    logout_time: null,
-    working_hours: 0,
-    status: ATTENDANCE_STATUS.ABSENT,
-    notes: null,
-    created_at: "",
-    updated_at: "",
-    employee: {
-      employee_id: employee.employee_id,
-      full_name: employee.full_name,
-      email: employee.email,
-      department: employee.department,
-      designation: employee.designation,
-    },
-  };
+    if (!attendance) {
+      const absentRecord: AttendanceWithEmployee = {
+        id: `absent-${employee.id}`,
+        profile_id: employee.id,
+        attendance_date: getTodayDate(),
+        login_time: null,
+        logout_time: null,
+        working_hours: 0,
+        status: ATTENDANCE_STATUS.ABSENT,
+        notes: null,
+        created_at: "",
+        updated_at: "",
+        employee: {
+          employee_id: employee.employee_id,
+          full_name: employee.full_name,
+          email: employee.email,
+          department: employee.department,
+          designation: employee.designation,
+        },
+      };
 
-  // console.log("Employee:", employee);
-  // console.log("Absent Record:", absentRecord);
+      // console.log("Employee:", employee);
+      // console.log("Absent Record:", absentRecord);
 
-  absent.push(absentRecord);
+      absent.push(absentRecord);
 
-  continue;
-}
+      continue;
+    }
 
     // Logged in only
     if (attendance.login_time && !attendance.logout_time) {
@@ -373,15 +402,19 @@ if (!attendance) {
   }
 
   return {
-    summary: {
-      total: employees.length,
-      present: present.length,
-      incomplete: incomplete.length,
-      absent: absent.length,
-      totalWorkingHours,
-    },
-    present,
-    incomplete,
-    absent,
+ summary: {
+  total: employees.length,
+  present: present.length,
+  shortHours: shortHours.length,
+  halfDay: halfDay.length,
+  incomplete: incomplete.length,
+  absent: absent.length,
+  totalWorkingHours,
+},
+present,
+shortHours,
+halfDay,
+incomplete,
+absent,
   };
 }

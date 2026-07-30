@@ -21,7 +21,7 @@ export default function EmployeeTasksScreen() {
   const [selectedTask, setSelectedTask] = useState<TaskWithProject | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
 
-  // Pulse animation for loading skeletons
+  
   const pulseAnim = useMemo(() => new Animated.Value(0.4), []);
 
   useEffect(() => {
@@ -93,17 +93,17 @@ export default function EmployeeTasksScreen() {
           {
             text: "Yes",
             onPress: async () => {
-              // Optimistic update first — UI transitions instantly
+             
               applyOptimisticUpdate(taskId, newStatus);
               setUpdatingTaskId(taskId);
               try {
                 const res = await updateTaskStatus(taskId, newStatus);
                 if (!res.success) {
-                  // Rollback: fetch real state from DB only on failure
+                  
                   Alert.alert("Error", res.error);
                   await loadData(true);
                 }
-                // On success: do nothing — local state is already correct
+              
               } finally {
                 setUpdatingTaskId(null);
               }
@@ -112,17 +112,17 @@ export default function EmployeeTasksScreen() {
         ]
       );
     } else {
-      // Optimistic update first — UI transitions instantly
+     
       applyOptimisticUpdate(taskId, newStatus);
       setUpdatingTaskId(taskId);
       try {
         const res = await updateTaskStatus(taskId, newStatus);
         if (!res.success) {
-          // Rollback: fetch real state from DB only on failure
+     
           Alert.alert("Error", res.error);
           await loadData(true);
         }
-        // On success: do nothing — local state is already correct
+     
       } finally {
         setUpdatingTaskId(null);
       }
@@ -148,7 +148,7 @@ export default function EmployeeTasksScreen() {
     const today = new Date(todayStr);
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // Dynamic Filter Pills
+    // Dynamic Filter 
     switch (statusFilter) {
       case "PENDING":
         return result.filter((t) => t.status === "Todo");
@@ -388,8 +388,7 @@ export default function EmployeeTasksScreen() {
               { id: "COMPLETED", label: "Completed" },
               { id: "OVERDUE", label: "Overdue" },
               { id: "HIGH_PRIORITY", label: "High Priority" },
-              { id: "TODAY", label: "Today" },
-              { id: "THIS_WEEK", label: "This Week" },
+                                 
             ].map((filter) => {
               const isSelected = statusFilter === filter.id;
               return (
@@ -500,7 +499,7 @@ export default function EmployeeTasksScreen() {
                         </View>
                       )}
 
-                      {/* Created By / Assigned By (conditional) */}
+                      {/* Created By / Assigned by */}
                       {selectedTask.created_by && (
                         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
                           <AppText variant="body" color={employeeColors.textSecondary}>Assigned By</AppText>
@@ -512,7 +511,7 @@ export default function EmployeeTasksScreen() {
                     </View>
                   </Card>
 
-                  {/* Description / Notes (conditional) */}
+                  {/* Description */}
                   {selectedTask.description ? (
                     <View style={{ gap: spacing.xs }}>
                       <AppText variant="caption" weight="600" color={employeeColors.textSecondary}>NOTES & DESCRIPTION</AppText>

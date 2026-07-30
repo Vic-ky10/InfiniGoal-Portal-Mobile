@@ -2,6 +2,8 @@ import { Employee } from "@/features/employee/employee.types";
 
 export const ATTENDANCE_STATUS = {
   PRESENT: "Present",
+  SHORT_HOURS: "Short Hours",
+  HALF_DAY: "Half Day",
   INCOMPLETE: "Incomplete",
   ABSENT: "Absent",
 } as const;
@@ -35,10 +37,11 @@ export interface AttendanceFilters {
   status?: AttendanceStatus | "";
   search?: string;
 }
-
 export interface AttendanceSummary {
   total: number;
   present: number;
+  shortHours: number;
+  halfDay: number;
   incomplete: number;
   absent: number;
   totalWorkingHours: number;
@@ -47,6 +50,8 @@ export interface AttendanceSummary {
 export interface AttendanceDashboard {
   summary: AttendanceSummary;
   present: AttendanceWithEmployee[];
+  shortHours: AttendanceWithEmployee[];
+  halfDay: AttendanceWithEmployee[];
   incomplete: AttendanceWithEmployee[];
   absent: AttendanceWithEmployee[];
 }
