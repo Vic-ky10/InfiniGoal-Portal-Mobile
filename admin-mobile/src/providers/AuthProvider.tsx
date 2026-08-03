@@ -96,7 +96,7 @@ export default function AuthProvider({ children }: Props) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [setIsInitializing, setRole, setUser]);
 
   useEffect(() => {
     if (isInitializing) return;
@@ -123,7 +123,7 @@ export default function AuthProvider({ children }: Props) {
         router.replace("/(employee)/dashboard");
       }
     }
-  }, [user, role, isInitializing, segments]);
+  }, [user, role, isInitializing, segments, router]);
 
   if (isInitializing) {
     return (

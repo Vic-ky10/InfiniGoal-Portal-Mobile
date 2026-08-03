@@ -24,7 +24,7 @@ export default function AdminLayout() {
 
   useEffect(() => {
     setMode("admin");
-  }, []);
+  }, [setMode]);
 
   return (
     <Drawer

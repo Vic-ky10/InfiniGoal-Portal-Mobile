@@ -3,14 +3,23 @@ import { View, FlatList, TouchableOpacity, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen, Card } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState } from "@/components/common";
+import {
+  AppHeader,
+  SearchBar,
+  EmptyState,
+  ActionSheet,
+  ActionSheetOption,
+} from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 
 import { useProjects } from "@/features/project/hooks/useProjects";
 import ProjectCard from "@/features/project/components/ProjectCard";
 import ProjectModal from "@/features/project/components/ProjectModal";
 import ProjectAssignModal from "@/features/project/components/ProjectAssignModal";
-import { ProjectStatus, ProjectWithMembers } from "@/features/project/project.types";
+import {
+  ProjectStatus,
+  ProjectWithMembers,
+} from "@/features/project/project.types";
 import { deleteProject } from "@/features/project/project.service";
 
 const STATUS_FILTERS: { label: string; value: ProjectStatus | "" }[] = [
@@ -27,26 +36,36 @@ export default function ProjectsScreen() {
   // Modals
   const [projectModalVisible, setProjectModalVisible] = useState(false);
   const [assignModalVisible, setAssignModalVisible] = useState(false);
-  const [selectedProject, setSelectedProject] = useState<ProjectWithMembers | null>(null);
+  const [selectedProject, setSelectedProject] =
+    useState<ProjectWithMembers | null>(null);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
 
   const { projects, stats, loading, refreshing, refresh } = useProjects();
 
   const filteredProjects = useMemo(() => {
-  const search = searchQuery.trim().toLowerCase();
+    const search = searchQuery.trim().toLowerCase();
 
-  return projects.filter((project) => {
-    const matchesSearch =
-      search === "" ||
-      project.project_name?.toLowerCase().includes(search) ||
-      project.project_code?.toLowerCase().includes(search) ||
-      project.description?.toLowerCase().includes(search);
+    return projects.filter((project) => {
+      const matchesSearch =
+        search === "" ||
+        project.project_name?.toLowerCase().includes(search) ||
+        project.project_code?.toLowerCase().includes(search) ||
+        project.description?.toLowerCase().includes(search);
 
-    const matchesStatus =
-      statusFilter === "" || project.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "" || project.status === statusFilter;
 
-    return matchesSearch && matchesStatus;
-  });
-}, [projects, searchQuery, statusFilter]);
+      return matchesSearch && matchesStatus;
+    });
+  }, [projects, searchQuery, statusFilter]);
 
   const handleCreateNew = () => {
     setSelectedProject(null);
@@ -64,14 +83,15 @@ export default function ProjectsScreen() {
   };
 
   const handleDelete = (project: ProjectWithMembers) => {
-    Alert.alert(
-      "Delete Project",
-      `Are you sure you want to delete ${project.project_name}?`,
-      [
-        { text: "Cancel", style: "cancel" },
+    setActionSheetConfig({
+      visible: true,
+      title: "Delete Project",
+      subtitle: `Are you sure you want to delete ${project.project_name}?`,
+      options: [
         {
-          text: "Delete",
-          style: "destructive",
+          label: "Delete",
+          isDestructive: true,
+          icon: "🗑",
           onPress: async () => {
             const res = await deleteProject(project.id);
             if (res.success) {
@@ -82,31 +102,40 @@ export default function ProjectsScreen() {
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleProjectCardPress = (project: ProjectWithMembers) => {
-    Alert.alert(
-      project.project_name,
-      `Code: ${project.project_code}\nPriority: ${project.priority}\nStatus: ${project.status}`,
-      [
-        { text: "Cancel", style: "cancel" },
+    setActionSheetConfig({
+      visible: true,
+      title: project.project_name,
+      subtitle:
+        `🏷 Project Code ` +
+        `- ${project.project_code}` +
+        `  🔥Priority ` +
+        `- ${project.priority}` +
+        `  🟢Status ` +
+        `- ${project.status}`,
+      options: [
         {
-          text: "View Team / Assign",
+          label: "View Team / Assign",
+          icon: "👥",
           onPress: () => handleAssign(project),
         },
         {
-          text: "Edit Project",
+          label: "Edit Project",
+          icon: "✏️",
           onPress: () => handleEdit(project),
         },
         {
-          text: "Delete Project",
-          style: "destructive",
+          label: "Delete Project",
+          isDestructive: true,
+          icon: "🗑",
           onPress: () => handleDelete(project),
         },
-      ]
-    );
+      ],
+    });
   };
 
   return (
@@ -144,34 +173,43 @@ export default function ProjectsScreen() {
         {/* Dashboard Stats */}
         <View style={{ flexDirection: "row", gap: spacing.xs }}>
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Total</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Total
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.primary}>
               {stats.totalProjects}
             </AppText>
           </Card>
 
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Active</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Active
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.info}>
               {stats.activeProjects}
             </AppText>
           </Card>
 
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
-            <AppText variant="caption" color={adminColors.textSecondary}>Done</AppText>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Done
+            </AppText>
             <AppText weight="700" variant="h3" color={adminColors.success}>
               {stats.completedProjects}
             </AppText>
           </Card>
         </View>
 
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-        />
+        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
         {/* Status Filters */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: spacing.xs,
+            marginBottom: spacing.xs,
+          }}
+        >
           {STATUS_FILTERS.map((opt) => {
             const isSelected = statusFilter === opt.value;
             return (
@@ -182,9 +220,13 @@ export default function ProjectsScreen() {
                   paddingHorizontal: spacing.lg,
                   paddingVertical: spacing.xs,
                   borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
+                  backgroundColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.surface,
                   borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
+                  borderColor: isSelected
+                    ? adminColors.primary
+                    : adminColors.border,
                 }}
               >
                 <AppText
@@ -220,7 +262,6 @@ export default function ProjectsScreen() {
         />
       </View>
 
-    
       <ProjectModal
         visible={projectModalVisible}
         onClose={() => setProjectModalVisible(false)}
@@ -233,6 +274,16 @@ export default function ProjectsScreen() {
         onClose={() => setAssignModalVisible(false)}
         onSuccess={refresh}
         project={selectedProject}
+      />
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() =>
+          setActionSheetConfig((prev) => ({ ...prev, visible: false }))
+        }
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
       />
     </Screen>
   );

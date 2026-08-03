@@ -3,7 +3,7 @@ import { View, FlatList, TouchableOpacity, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
-import { AppHeader, EmptyState } from "@/components/common";
+import { AppHeader, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 
 import { useIncentives } from "@/features/incentive/hooks/useIncentives";
@@ -23,6 +23,15 @@ export default function IncentivesScreen() {
   const [statusFilter, setStatusFilter] = useState<IncentiveStatus | "">("");
   const [incentiveModalVisible, setIncentiveModalVisible] = useState(false);
   const [selectedIncentive, setSelectedIncentive] = useState<IncentiveWithEmployee | null>(null);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
 
   const { incentives, loading, refreshing, refresh, handleReview, handleMarkPaid } = useIncentives({
     status: statusFilter || undefined,
@@ -39,14 +48,15 @@ export default function IncentivesScreen() {
   };
 
   const handleDelete = (incentive: IncentiveWithEmployee) => {
-    Alert.alert(
-      "Delete Incentive",
-      `Are you sure you want to delete incentive ${incentive.incentive_code} (${incentive.title})?`,
-      [
-        { text: "Cancel", style: "cancel" },
+    setActionSheetConfig({
+      visible: true,
+      title: "Delete Incentive",
+      subtitle: `Are you sure you want to delete incentive ${incentive.incentive_code} (${incentive.title})?`,
+      options: [
         {
-          text: "Delete",
-          style: "destructive",
+          label: "Delete",
+          isDestructive: true,
+          icon: "🗑",
           onPress: async () => {
             const res = await deleteIncentive(incentive.id);
             if (res.success) {
@@ -57,8 +67,8 @@ export default function IncentivesScreen() {
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   return (
@@ -150,6 +160,14 @@ export default function IncentivesScreen() {
         onClose={() => setIncentiveModalVisible(false)}
         onSuccess={refresh}
         incentiveToEdit={selectedIncentive}
+      />
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
       />
     </Screen>
   );

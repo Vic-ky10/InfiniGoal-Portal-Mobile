@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
@@ -48,38 +48,8 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
     },
   });
 
-  useEffect(() => {
-    if (visible) {
-      loadEmployees();
-      if (customerToEdit) {
-        reset({
-          full_name: customerToEdit.full_name,
-          phone: customerToEdit.phone,
-          alternate_phone: customerToEdit.alternate_phone || "",
-          email: customerToEdit.email || "",
-          address: customerToEdit.address || "",
-          sales_area_id: customerToEdit.sales_area_id,
-          assigned_employee_id: customerToEdit.assigned_employee_id,
-          status: customerToEdit.status,
-          notes: customerToEdit.notes || "",
-        });
-      } else {
-        reset({
-          full_name: "",
-          phone: "",
-          alternate_phone: "",
-          email: "",
-          address: "",
-          sales_area_id: "",
-          assigned_employee_id: "",
-          status: "Active",
-          notes: "",
-        });
-      }
-    }
-  }, [visible, customerToEdit]);
-
-  const loadEmployees = async () => {
+  const loadEmployees = useCallback(async () => {
+    await Promise.resolve();
     setLoadingEmployees(true);
     try {
       const data = await getEmployees();
@@ -89,14 +59,42 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
     } finally {
       setLoadingEmployees(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      Promise.resolve().then(() => {
+        loadEmployees();
+        if (customerToEdit) {
+          reset({
+            full_name: customerToEdit.full_name,
+            phone: customerToEdit.phone,
+            alternate_phone: customerToEdit.alternate_phone || "",
+            email: customerToEdit.email || "",
+            address: customerToEdit.address || "",
+            sales_area_id: customerToEdit.sales_area_id,
+            assigned_employee_id: customerToEdit.assigned_employee_id,
+            status: customerToEdit.status,
+            notes: customerToEdit.notes || "",
+          });
+        } else {
+          reset({
+            full_name: "",
+            phone: "",
+            alternate_phone: "",
+            email: "",
+            address: "",
+            sales_area_id: "",
+            assigned_employee_id: "",
+            status: "Active",
+            notes: "",
+          });
+        }
+      });
+    }
+  }, [visible, customerToEdit, reset, loadEmployees]);
 
   const onSubmit = async (data: CustomerForm) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser(); // wait, we need supabase to fetch logged in user
-      // Let's resolve supabase profile below
-    } catch(e) {}
-    
     // Instead of raw supabase, let's use the mutation
     // We can fetch the authenticated user id inside the mutation or pass it.
     // Let's see: createCustomer service takes (customer, createdBy).
@@ -424,6 +422,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.sm,
   },
+
   fieldLabel: {
     fontSize: 13,
     color: adminColors.textSecondary,

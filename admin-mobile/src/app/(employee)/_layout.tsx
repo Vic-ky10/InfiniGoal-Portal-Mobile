@@ -23,7 +23,7 @@ export default function EmployeeLayout() {
 
   useEffect(() => {
     setMode("employee");
-  }, []);
+  }, [setMode]);
 
   return (
     <Drawer

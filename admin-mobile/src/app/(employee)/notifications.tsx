@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import { View, FlatList } from "react-native";
 
 import NotificationItem from "@/features/notification/components/NotificationItem";
 import NotificationDetailModal from "@/features/notification/components/NotificationDetailModal";
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
 import { supabase } from "@/lib/supabase/client";
 import { employeeColors, spacing } from "@/theme";
@@ -26,6 +25,7 @@ export default function EmployeeNotificationsScreen() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -46,17 +46,10 @@ export default function EmployeeNotificationsScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
-
-  const handleMarkRead = async (id: string) => {
-    const res = await markNotificationRead(id);
-    if (res.success) {
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, is_read: true } : n)),
-      );
-    }
-  };
 
   const handleOpenNotification = async (notification: Notification) => {
     if (!notification.is_read) {

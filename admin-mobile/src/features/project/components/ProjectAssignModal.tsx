@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Modal, View, ScrollView, TouchableOpacity, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -28,27 +28,26 @@ export default function ProjectAssignModal({
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [selectedProfileIds, setSelectedProfileIds] = useState<string[]>([]);
 
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      loadEmployees();
-      setSelectedProfileIds([]);
-    }
-  }, [visible]);
-
-  const loadEmployees = async () => {
-    setLoadingEmployees(true);
+  const loadEmployees = useCallback(async () => {
+    await Promise.resolve();
     try {
       const data = await getEmployees();
       setEmployees(data);
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoadingEmployees(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    if (visible) {
+      Promise.resolve().then(() => {
+        loadEmployees();
+        setSelectedProfileIds([]);
+      });
+    }
+  }, [visible, loadEmployees]);
 
   const toggleSelectEmployee = (id: string) => {
     setSelectedProfileIds((prev) =>

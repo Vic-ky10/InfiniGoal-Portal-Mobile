@@ -63,7 +63,9 @@ export function useEmployee(id?: string) {
   }, [id]);
 
   useEffect(() => {
-    fetchEmployee();
+    Promise.resolve().then(() => {
+      fetchEmployee();
+    });
   }, [fetchEmployee]);
 
   return {

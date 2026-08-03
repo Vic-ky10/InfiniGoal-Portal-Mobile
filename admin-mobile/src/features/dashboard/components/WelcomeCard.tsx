@@ -1,10 +1,8 @@
-import { Image, Pressable, View } from "react-native";
+import { Image, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
-
 
 import { AppText, Card } from "@/components/ui";
-import { adminColors, radius, spacing, shadows } from "@/theme";
+import { adminColors, spacing, shadows } from "@/theme";
 
 interface Props {
   name: string;
@@ -17,18 +15,6 @@ export default function WelcomeCard({
   designation = "Administrator",
   avatarUrl,
 }: Props) {
-  const router = useRouter();
-  
-
-  const hour = new Date().getHours();
-
-  const greeting =
-    hour < 12
-      ? "Good Morning"
-      : hour < 17
-      ? "Good Afternoon"
-      : "Good Evening";
-
   return (
 <Card
   style={{

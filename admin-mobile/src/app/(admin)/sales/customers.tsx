@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
@@ -139,7 +139,7 @@ export default function CustomersScreen() {
           {!!item.notes && (
             <View style={styles.notesRow}>
               <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic" }}>
-                Notes: "{item.notes}"
+                Notes: &quot;{item.notes}&quot;
               </AppText>
             </View>
           )}

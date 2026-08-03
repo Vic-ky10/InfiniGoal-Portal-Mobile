@@ -8,10 +8,18 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, DatePickerField } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
-import { ProjectWithMembers, PROJECT_PRIORITY, PROJECT_STATUS } from "../project.types";
-import { createProject, updateProject, getAuthenticatedProfileId } from "../project.service";
+import {
+  ProjectWithMembers,
+  PROJECT_PRIORITY,
+  PROJECT_STATUS,
+} from "../project.types";
+import {
+  createProject,
+  updateProject,
+  getAuthenticatedProfileId,
+} from "../project.service";
 
 interface Props {
   visible: boolean;
@@ -31,33 +39,51 @@ export default function ProjectModal({
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>(PROJECT_PRIORITY.MEDIUM);
   const [status, setStatus] = useState<string>(PROJECT_STATUS.ACTIVE);
-  const [startDate, setStartDate] = useState(new Date().toISOString().slice(0, 10));
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().slice(0, 10),
+  );
   const [endDate, setEndDate] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (projectToEdit) {
-      setProjectCode(projectToEdit.project_code || "");
-      setProjectName(projectToEdit.project_name || "");
-      setDescription(projectToEdit.description || "");
-      setPriority(projectToEdit.priority || PROJECT_PRIORITY.MEDIUM);
-      setStatus(projectToEdit.status || PROJECT_STATUS.ACTIVE);
-      setStartDate(projectToEdit.start_date ? projectToEdit.start_date.slice(0, 10) : new Date().toISOString().slice(0, 10));
-      setEndDate(projectToEdit.end_date ? projectToEdit.end_date.slice(0, 10) : "");
-    } else {
-      setProjectCode(`PRJ${Math.floor(100 + Math.random() * 900)}`);
-      setProjectName("");
-      setDescription("");
-      setPriority(PROJECT_PRIORITY.MEDIUM);
-      setStatus(PROJECT_STATUS.ACTIVE);
-      setStartDate(new Date().toISOString().slice(0, 10));
-      setEndDate("");
-    }
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      if (projectToEdit) {
+        setProjectCode(projectToEdit.project_code || "");
+        setProjectName(projectToEdit.project_name || "");
+        setDescription(projectToEdit.description || "");
+        setPriority(projectToEdit.priority || PROJECT_PRIORITY.MEDIUM);
+        setStatus(projectToEdit.status || PROJECT_STATUS.ACTIVE);
+        setStartDate(
+          projectToEdit.start_date
+            ? projectToEdit.start_date.slice(0, 10)
+            : new Date().toISOString().slice(0, 10),
+        );
+        setEndDate(
+          projectToEdit.end_date ? projectToEdit.end_date.slice(0, 10) : "",
+        );
+      } else {
+        setProjectCode(`PRJ${Math.floor(100 + Math.random() * 900)}`);
+        setProjectName("");
+        setDescription("");
+        setPriority(PROJECT_PRIORITY.MEDIUM);
+        setStatus(PROJECT_STATUS.ACTIVE);
+        setStartDate(new Date().toISOString().slice(0, 10));
+        setEndDate("");
+      }
+    });
+    return () => {
+      active = false;
+    };
   }, [projectToEdit, visible]);
 
   const handleSubmit = async () => {
     if (!projectCode.trim() || !projectName.trim()) {
-      Alert.alert("Validation Error", "Please fill in Project Code and Project Name.");
+      Alert.alert(
+        "Validation Error",
+        "Please fill in Project Code and Project Name.",
+      );
       return;
     }
 
@@ -167,33 +193,39 @@ export default function ProjectModal({
                 marginBottom: spacing.lg,
               }}
             >
-              {[PROJECT_PRIORITY.LOW, PROJECT_PRIORITY.MEDIUM, PROJECT_PRIORITY.HIGH].map(
-                (p) => (
-                  <TouchableOpacity
-                    key={p}
-                    onPress={() => setPriority(p)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: spacing.sm,
-                      borderRadius: radius.md,
-                      alignItems: "center",
-                      backgroundColor:
-                        priority === p ? adminColors.primary : adminColors.surface,
-                      borderWidth: 1,
-                      borderColor:
-                        priority === p ? adminColors.primary : adminColors.border,
-                    }}
+              {[
+                PROJECT_PRIORITY.LOW,
+                PROJECT_PRIORITY.MEDIUM,
+                PROJECT_PRIORITY.HIGH,
+              ].map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  onPress={() => setPriority(p)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing.sm,
+                    borderRadius: radius.md,
+                    alignItems: "center",
+                    backgroundColor:
+                      priority === p
+                        ? adminColors.primary
+                        : adminColors.surface,
+                    borderWidth: 1,
+                    borderColor:
+                      priority === p ? adminColors.primary : adminColors.border,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    weight="600"
+                    color={
+                      priority === p ? "#FFFFFF" : adminColors.textSecondary
+                    }
                   >
-                    <AppText
-                      variant="caption"
-                      weight="600"
-                      color={priority === p ? "#FFFFFF" : adminColors.textSecondary}
-                    >
-                      {p}
-                    </AppText>
-                  </TouchableOpacity>
-                )
-              )}
+                    {p}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
             </View>
 
             {/* Status Selector */}
@@ -239,16 +271,17 @@ export default function ProjectModal({
               ))}
             </View>
 
-            <Input
-              label="Start Date (YYYY-MM-DD)"
+            <DatePickerField
+              label="Start Date"
               value={startDate}
-              onChangeText={setStartDate}
+              onChange={setStartDate}
               placeholder="YYYY-MM-DD"
             />
-            <Input
-              label="End Date (Optional YYYY-MM-DD)"
+            <DatePickerField
+              label="End Date (Optional)"
               value={endDate}
-              onChangeText={setEndDate}
+              onChange={setEndDate}
+              onClear={() => setEndDate("")}
               placeholder="YYYY-MM-DD"
             />
 

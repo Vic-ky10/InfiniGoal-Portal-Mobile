@@ -15,6 +15,7 @@ export default function EmployeeIncentivesScreen() {
   const [incentives, setIncentives] = useState<Incentive[]>([]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -33,7 +34,9 @@ export default function EmployeeIncentivesScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const renderIncentiveItem = ({ item }: { item: Incentive }) => (

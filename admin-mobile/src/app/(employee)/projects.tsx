@@ -15,6 +15,7 @@ export default function EmployeeProjectsScreen() {
   const [projects, setProjects] = useState<EmployeeProject[]>([]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -33,7 +34,9 @@ export default function EmployeeProjectsScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const renderProjectItem = ({ item }: { item: EmployeeProject }) => {

@@ -1,4 +1,4 @@
-import { PurchaseRemarksMeta } from "./sales.types";
+import { PurchaseRemarksMeta, CustomerPurchase } from "./sales.types";
 
 export function parsePurchaseRemarks(
   remarksStr: string | null,
@@ -54,4 +54,34 @@ export function parsePurchaseRemarks(
 
 export function serializePurchaseRemarks(meta: PurchaseRemarksMeta): string {
   return JSON.stringify(meta);
+}
+
+const SHORT_MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+export function getMonthlyRevenueChartData(purchases: CustomerPurchase[]): { label: string; amount: number }[] {
+  const approved = purchases.filter((p) => p.status === "Approved");
+  const monthsData: { [key: string]: number } = {};
+
+  // Initialize last 6 months
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(1); // Prevent month overflow
+    d.setMonth(d.getMonth() - i);
+    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    monthsData[key] = 0;
+  }
+
+  approved.forEach((p) => {
+    const date = new Date(p.purchase_date);
+    const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+    if (monthsData[key] !== undefined) {
+      monthsData[key] += p.amount;
+    }
+  });
+
+  return Object.entries(monthsData).map(([key, val]) => {
+    const [, month] = key.split("-");
+    const label = SHORT_MONTHS[Number(month) - 1];
+    return { label, amount: val };
+  });
 }

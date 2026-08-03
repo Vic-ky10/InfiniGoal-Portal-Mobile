@@ -10,6 +10,7 @@ import { useCustomers, useCustomerPurchases, useSalesAreas, useIncentiveRules } 
 import { parsePurchaseRemarks } from "@/features/sales/sales.utils";
 import StatCard from "@/features/dashboard/components/StatCard";
 import QuickActionCard from "@/features/dashboard/components/QuickActionCard";
+import { MonthlyRevenueChart } from "@/features/sales/components";
 
 export default function SalesDashboardScreen() {
   const router = useRouter();
@@ -141,8 +142,17 @@ export default function SalesDashboardScreen() {
         </View>
       </View>
 
+      {/* Monthly Revenue Chart */}
+      <View style={{ marginTop: spacing.xl }}>
+        <MonthlyRevenueChart
+          purchases={purchases}
+          isLoading={loadPur}
+          isError={errPur}
+        />
+      </View>
+
       {/* Quick Actions */}
-      <AppText variant="h3" weight="700" style={[styles.sectionTitle, { marginTop: spacing.lg }]}>
+      <AppText variant="h3" weight="700" style={[styles.sectionTitle, { marginTop: spacing.xl }]}>
         Quick Actions
       </AppText>
       <View style={styles.actionsContainer}>
@@ -207,7 +217,7 @@ export default function SalesDashboardScreen() {
       </View>
 
       {/* Recent Customers List */}
-      <View style={[styles.sectionHeaderRow, { marginTop: spacing.lg }]}>
+      <View style={[styles.sectionHeaderRow, { marginTop: spacing.xl }]}>
         <AppText variant="h3" weight="700">
           Recent Customers
         </AppText>

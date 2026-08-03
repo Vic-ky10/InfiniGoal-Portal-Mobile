@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, DatePickerField } from "@/components/ui";
 
 import { adminColors, radius, spacing } from "@/theme";
 
@@ -116,27 +116,35 @@ export default function AnnouncementModal({
   useEffect(() => {
     if (!visible) return;
 
-    if (announcementToEdit) {
-      setTitle(announcementToEdit.title);
+    let active = true;
+    Promise.resolve().then(() => {
+      if (!active) return;
+      if (announcementToEdit) {
+        setTitle(announcementToEdit.title);
 
-      setMessage(announcementToEdit.message);
+        setMessage(announcementToEdit.message);
 
-      setAnnouncementType(announcementToEdit.announcement_type);
+        setAnnouncementType(announcementToEdit.announcement_type);
 
-      setTargetAudience(announcementToEdit.target_audience);
+        setTargetAudience(announcementToEdit.target_audience);
 
-      setDepartment(announcementToEdit.department ?? "");
+        setDepartment(announcementToEdit.department ?? "");
 
-      setStatus(announcementToEdit.status);
+        setStatus(announcementToEdit.status);
 
-      setPublishAt(announcementToEdit.publish_at ?? "");
+        setPublishAt(announcementToEdit.publish_at ?? "");
 
-      setExpiresAt(announcementToEdit.expires_at ?? "");
+        setExpiresAt(announcementToEdit.expires_at ?? "");
 
-      setIsPinned(announcementToEdit.is_pinned);
-    } else {
-      resetForm();
-    }
+        setIsPinned(announcementToEdit.is_pinned);
+      } else {
+        resetForm();
+      }
+    });
+
+    return () => {
+      active = false;
+    };
   }, [visible, announcementToEdit]);
 
   const handleSubmit = async () => {
@@ -439,18 +447,21 @@ export default function AnnouncementModal({
               })}
             </View>
 
-            <Input
+            <DatePickerField
               label="Publish At"
-              placeholder="YYYY-MM-DD HH:mm:ss"
+              placeholder="Select publication date & time"
               value={publishAt}
-              onChangeText={setPublishAt}
+              onChange={setPublishAt}
+              mode="datetime"
             />
 
-            <Input
+            <DatePickerField
               label="Expires At"
-              placeholder="YYYY-MM-DD HH:mm:ss"
+              placeholder="Select expiration date & time"
               value={expiresAt}
-              onChangeText={setExpiresAt}
+              onChange={setExpiresAt}
+              onClear={() => setExpiresAt("")}
+              mode="datetime"
             />
 
             <View
@@ -494,3 +505,5 @@ export default function AnnouncementModal({
     </Modal>
   );
 }
+
+

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
@@ -25,9 +25,6 @@ import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 import { logout } from "@/features/auth/auth.service";
 import { updateSelfProfile } from "@/features/employee/employee.service";
-import { getEmployeeLeaveRequests } from "@/features/leave/leave.service";
-import { getEmployeeProjects } from "@/features/project/project.service";
-import { getEmployeeTasks } from "@/features/task/task.service";
 import { uploadAvatar } from "@/lib/storage/uploadAvatar";
 
 interface ProfileData {
@@ -50,17 +47,13 @@ export default function EmployeeProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
-  // Statistics
-  const [projectCount, setProjectCount] = useState(0);
-  const [pendingLeaves, setPendingLeaves] = useState(0);
-  const [activeTasks, setActiveTasks] = useState(0);
-
   // Editing state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
+    await Promise.resolve();
     try {
       setLoading(true);
       const {
@@ -81,28 +74,19 @@ export default function EmployeeProfileScreen() {
         setProfile(profileData);
         setEditName(profileData.full_name || "");
         setEditPhone(profileData.phone || "");
-
-        // Load stats in parallel
-        const [projects, leaves, tasks] = await Promise.all([
-          getEmployeeProjects(user.id),
-          getEmployeeLeaveRequests(user.id),
-          getEmployeeTasks(user.id),
-        ]);
-
-        setProjectCount(projects.length);
-        setPendingLeaves(leaves.filter((l) => l.status === "Pending").length);
-        setActiveTasks(tasks.filter((t) => t.status !== "Completed").length);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    Promise.resolve().then(() => {
+      loadProfile();
+    });
+  }, [loadProfile]);
 
   const handleLogout = async () => {
     setLoggingOut(true);
@@ -154,14 +138,6 @@ export default function EmployeeProfileScreen() {
       );
     } finally {
       setSaving(false);
-    }
-  };
-
-  const removeOldAvatars = async (userId: string) => {
-    const { data: files } = await supabase.storage.from("avatars").list(userId);
-    if (files && files.length > 0) {
-      const paths = files.map((f) => `${userId}/${f.name}`);
-      await supabase.storage.from("avatars").remove(paths);
     }
   };
 

@@ -7,4 +7,6 @@ export { default as NotificationBell } from "./NotificationBell";
 export { default as CustomDrawerContent } from "./CustomDrawerContent";
 export { default as ToastContainer } from "./ToastContainer";
 export { default as ConfirmModal } from "./ConfirmModal";
+export { default as ActionSheet } from "./ActionSheet";
+export type { ActionSheetOption } from "./ActionSheet";
 export type { DrawerRoute } from "./CustomDrawerContent";

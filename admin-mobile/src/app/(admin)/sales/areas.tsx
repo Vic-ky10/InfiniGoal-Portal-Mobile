@@ -128,7 +128,7 @@ export default function AreasScreen() {
           {!!item.notes && (
             <View style={styles.notesRow}>
               <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic" }}>
-                Notes: "{item.notes}"
+                Notes: &quot;{item.notes}&quot;
               </AppText>
             </View>
           )}

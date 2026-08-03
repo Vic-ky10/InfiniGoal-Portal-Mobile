@@ -52,7 +52,7 @@ export default function IncentiveRuleModal({ visible, onClose, ruleToEdit }: Pro
         });
       }
     }
-  }, [visible, ruleToEdit]);
+  }, [visible, ruleToEdit, reset]);
 
   const onSubmit = async (values: IncentiveRuleForm) => {
     const { data: authData } = await supabase.auth.getUser();
@@ -226,6 +226,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.sm,
   },
+
   fieldLabel: {
     fontSize: 13,
     color: adminColors.textSecondary,

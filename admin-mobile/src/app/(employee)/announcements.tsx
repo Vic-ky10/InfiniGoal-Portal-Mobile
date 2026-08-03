@@ -14,6 +14,7 @@ export default function EmployeeAnnouncementsScreen() {
   const [announcements, setAnnouncements] = useState<AnnouncementWithCreator[]>([]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -29,7 +30,9 @@ export default function EmployeeAnnouncementsScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const renderAnnouncementItem = ({ item }: { item: AnnouncementWithCreator }) => {

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { View, TouchableOpacity, Alert, Modal, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
@@ -41,7 +41,8 @@ export default function SettingsScreen() {
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
 
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
+    await Promise.resolve();
     try {
       setLoading(true);
       const {
@@ -68,11 +69,13 @@ export default function SettingsScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    loadProfile();
-  }, []);
+    Promise.resolve().then(() => {
+      loadProfile();
+    });
+  }, [loadProfile]);
 
   const handleLogout = async () => {
     setLoggingOut(true);

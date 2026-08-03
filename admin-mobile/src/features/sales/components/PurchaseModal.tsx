@@ -1,13 +1,12 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import DateTimePicker from "@react-native-community/datetimepicker";
 
-import { AppText, Button, Input } from "@/components/ui";
+import { AppText, Button, Input, DatePickerField } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
-import { CustomerPurchase, Customer } from "../sales.types";
+import { CustomerPurchase } from "../sales.types";
 import { customerPurchaseSchema, CustomerPurchaseForm } from "../sales.validation";
 import { useCreateCustomerPurchase, useUpdateCustomerPurchase, useCustomers } from "../hooks/useSales";
 import { parsePurchaseRemarks } from "../sales.utils";
@@ -32,15 +31,10 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
   const createMutation = useCreateCustomerPurchase();
   const updateMutation = useUpdateCustomerPurchase();
 
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateValue, setDateValue] = useState(new Date());
-
   const {
     control,
     handleSubmit,
     reset,
-    setValue,
-    watch,
     formState: { errors },
   } = useForm({
     resolver: zodResolver(customerPurchaseSchema),
@@ -54,15 +48,11 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
     },
   });
 
-  const selectedCustomerId = watch("customer_id");
-  const purchaseDate = watch("purchase_date");
-
   useEffect(() => {
     if (visible) {
       if (purchaseToEdit) {
         const meta = parsePurchaseRemarks(purchaseToEdit.remarks, purchaseToEdit.status);
         const parsedDate = purchaseToEdit.purchase_date ? new Date(purchaseToEdit.purchase_date) : new Date();
-        setDateValue(parsedDate);
 
         reset({
           customer_id: purchaseToEdit.customer_id,
@@ -74,7 +64,6 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
         });
       } else {
         const todayStr = formatDateToString(new Date());
-        setDateValue(new Date());
         reset({
           customer_id: "",
           amount: 0,
@@ -85,7 +74,7 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
         });
       }
     }
-  }, [visible, purchaseToEdit]);
+  }, [visible, purchaseToEdit, reset]);
 
   const onSubmit = async (values: CustomerPurchaseForm) => {
     const { data: authData } = await supabase.auth.getUser();
@@ -98,7 +87,7 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
 
     if (purchaseToEdit) {
       updateMutation.mutate(
-        { id: purchaseToEdit.id, data: values, adminReviewedBy: currentUserId },
+         { id: purchaseToEdit.id, data: values, adminReviewedBy: currentUserId },
         {
           onSuccess: (res) => {
             if (res.success) {
@@ -219,31 +208,18 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
             />
 
             {/* Date Field */}
-            <AppText weight="600" style={styles.fieldLabel}>
-              Purchase Date
-            </AppText>
-            <TouchableOpacity
-              onPress={() => setShowDatePicker(true)}
-              style={styles.dateField}
-            >
-              <AppText color={adminColors.text}>{purchaseDate || "Select Date"}</AppText>
-              <Feather name="calendar" size={16} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-
-            {showDatePicker && (
-              <DateTimePicker
-                value={dateValue}
-                mode="date"
-                display="default"
-                onChange={(event, selectedDate) => {
-                  setShowDatePicker(false);
-                  if (selectedDate) {
-                    setDateValue(selectedDate);
-                    setValue("purchase_date", formatDateToString(selectedDate));
-                  }
-                }}
-              />
-            )}
+            <Controller
+              control={control}
+              name="purchase_date"
+              render={({ field: { onChange, value } }) => (
+                <DatePickerField
+                  label="Purchase Date"
+                  value={value}
+                  onChange={onChange}
+                  error={errors.purchase_date?.message}
+                />
+              )}
+            />
 
             <Controller
               control={control}
@@ -374,6 +350,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.sm,
   },
+
   fieldLabel: {
     fontSize: 13,
     color: adminColors.textSecondary,
