@@ -10,6 +10,7 @@ const ADMIN_ROUTES: DrawerRoute[] = [
   { name: "leave",         title: "Leave",         icon: "calendar",      path: "/(admin)/leave" },
   { name: "expenses",      title: "Expenses",      icon: "dollar-sign",   path: "/(admin)/expenses" },
   { name: "expense-tracker", title: "Expense Tracker", icon: "trending-up", path: "/(admin)/expense-tracker" },
+  { name: "sales",         title: "Sales Module",  icon: "shopping-cart", path: "/(admin)/sales" },
   { name: "projects",      title: "Projects",      icon: "folder",        path: "/(admin)/projects" },
   { name: "tasks",         title: "Tasks",         icon: "check-square",  path: "/(admin)/tasks" },
   { name: "incentives",    title: "Incentives",    icon: "award",         path: "/(admin)/incentives" },
@@ -55,6 +56,7 @@ export default function AdminLayout() {
       <Drawer.Screen name="leave"         options={{ title: "Leave" }} />
       <Drawer.Screen name="expenses"      options={{ title: "Expenses" }} />
       <Drawer.Screen name="expense-tracker" options={{ title: "Expense Tracker" }} />
+      <Drawer.Screen name="sales"         options={{ title: "Sales Module" }} />
       <Drawer.Screen name="projects"      options={{ title: "Projects" }} />
       <Drawer.Screen name="tasks"         options={{ title: "Tasks" }} />
       <Drawer.Screen name="incentives"    options={{ title: "Incentives" }} />

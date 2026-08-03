@@ -9,6 +9,7 @@ const EMPLOYEE_ROUTES: DrawerRoute[] = [
   { name: "leave",         title: "Leave",         icon: "calendar",      path: "/(employee)/leave" },
   { name: "expenses",      title: "My Expenses",   icon: "dollar-sign",   path: "/(employee)/expenses" },
   { name: "expense-tracker", title: "Expense Tracker", icon: "trending-up", path: "/(employee)/expense-tracker" },
+  { name: "sales",         title: "My Sales",      icon: "shopping-cart", path: "/(employee)/sales" },
   { name: "projects",      title: "My Projects",   icon: "folder",        path: "/(employee)/projects" },
   { name: "tasks",         title: "My Tasks",      icon: "check-square",  path: "/(employee)/tasks" },
   { name: "incentives",    title: "Incentives",    icon: "award",         path: "/(employee)/incentives" },
@@ -53,6 +54,7 @@ export default function EmployeeLayout() {
       <Drawer.Screen name="leave"         options={{ title: "Leave" }} />
       <Drawer.Screen name="expenses"      options={{ title: "My Expenses" }} />
       <Drawer.Screen name="expense-tracker" options={{ title: "Expense Tracker" }} />
+      <Drawer.Screen name="sales"         options={{ title: "My Sales" }} />
       <Drawer.Screen name="projects"      options={{ title: "My Projects" }} />
       <Drawer.Screen name="tasks"         options={{ title: "My Tasks" }} />
       <Drawer.Screen name="incentives"    options={{ title: "Incentives" }} />

@@ -24,6 +24,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
@@ -42,11 +43,11 @@ export default function LoginScreen() {
         return;
       }
 
-      if (isEmployee) {
-        router.replace("/(employee)/dashboard");
-      } else {
-        router.replace("/(admin)/dashboard");
-      }
+      // if (isEmployee) {
+      //   router.replace("/(employee)/dashboard");
+      // } else {
+      //   router.replace("/(admin)/dashboard");
+      // }
     } catch (error) {
       Alert.alert(
         "Error",
@@ -213,24 +214,40 @@ export default function LoginScreen() {
           Password
         </Text>
 
-        <TextInput
-          value={password}
-          onChangeText={setPassword}
-          placeholder="Enter your password"
-          placeholderTextColor="#94A3B8"
-          secureTextEntry
-          onFocus={() => setPassFocused(true)}
-          onBlur={() => setPassFocused(false)}
+        <View
           style={{
+            flexDirection: "row",
+            alignItems: "center",
             borderWidth: 1.5,
             borderColor: passFocused ? primaryColor : "#E2E8F0",
             borderRadius: 12,
-            padding: 14,
-            fontSize: 16,
             backgroundColor: "#FFFFFF",
-            color: "#0F172A",
+            paddingRight: 14,
           }}
-        />
+        >
+          <TextInput
+            value={password}
+            onChangeText={setPassword}
+            placeholder="Enter your password"
+            placeholderTextColor="#94A3B8"
+            secureTextEntry={!showPassword}
+            onFocus={() => setPassFocused(true)}
+            onBlur={() => setPassFocused(false)}
+            style={{
+              flex: 1,
+              padding: 14,
+              fontSize: 16,
+              color: "#0F172A",
+            }}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)}>
+            <Feather
+              name={showPassword ? "eye" : "eye-off"}
+              size={20}
+              color="#94A3B8"
+            />
+          </TouchableOpacity>
+        </View>
 
         <TouchableOpacity
           onPress={handleLogin}
@@ -261,6 +278,20 @@ export default function LoginScreen() {
             }}
           >
             {loading ? "Signing In..." : `Sign In`}
+          </Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => {
+            router.replace({
+              pathname: "/(auth)/login",
+              params: { portal: isEmployee ? "admin" : "employee" },
+            });
+          }}
+          style={{ marginTop: 20, alignItems: "center" }}
+        >
+          <Text style={{ color: primaryColor, fontWeight: "600", fontSize: 14 }}>
+            {isEmployee ? "Are you an Admin? Login here" : "Are you an Employee? Login here"}
           </Text>
         </TouchableOpacity>
       </View>
