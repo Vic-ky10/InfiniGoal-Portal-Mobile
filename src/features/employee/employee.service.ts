@@ -32,7 +32,7 @@ export async function getEmployees(): Promise<Employee[]> {
     return [];
   }
 
-  return data as Employee[];
+  return (data || []) as Employee[];
 }
 
 export async function getEmployeeById(

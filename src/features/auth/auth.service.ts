@@ -1,4 +1,5 @@
 import { supabase } from "@/lib/supabase/client";
+import { useAuthStore } from "@/store";
 
 async function authenticate(
   email: string,
@@ -36,6 +37,7 @@ async function authenticate(
     .select("role")
     .eq("id", user.id)
     .single();
+    console.log("LOGIN ROLE:", profile?.role);
 
   if (error || !profile) {
     await supabase.auth.signOut();
@@ -85,6 +87,14 @@ export async function loginAdmin(
     };
   }
 
+  // Update Zustand store immediately to prevent AuthProvider race condition redirect
+  const session = auth.result.data.session;
+  if (session?.user) {
+    useAuthStore.getState().setUser(session.user);
+    useAuthStore.getState().setRole(auth.role);
+    useAuthStore.getState().setIsInitializing(false);
+  }
+
   return auth.result;
 }
 
@@ -116,9 +126,18 @@ export async function loginEmployee(
     };
   }
 
+  // Update Zustand store immediately to prevent AuthProvider race condition redirect
+  const session = auth.result.data.session;
+  if (session?.user) {
+    useAuthStore.getState().setUser(session.user);
+    useAuthStore.getState().setRole(auth.role);
+    useAuthStore.getState().setIsInitializing(false);
+  }
+
   return auth.result;
 }
 
 export async function logout() {
+  useAuthStore.getState().logout();
   return await supabase.auth.signOut();
 }

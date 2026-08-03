@@ -1,0 +1,57 @@
+import { PurchaseRemarksMeta } from "./sales.types";
+
+export function parsePurchaseRemarks(
+  remarksStr: string | null,
+  dbStatus: string
+): PurchaseRemarksMeta {
+  let fallback_status: PurchaseRemarksMeta["incentive_status"] = "Not Eligible";
+  if (dbStatus === "Approved") {
+    fallback_status = "Approved";
+  } else if (dbStatus === "Pending") {
+    fallback_status = "Pending Review";
+  } else if (dbStatus === "Rejected") {
+    fallback_status = "Rejected";
+  } else if (dbStatus === "Not Eligible") {
+    fallback_status = "Not Eligible";
+  }
+
+  if (remarksStr) {
+    const trimmed = remarksStr.trim();
+    if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
+      try {
+        const parsed = JSON.parse(trimmed);
+        if (parsed && typeof parsed === "object") {
+          const status = parsed.incentive_status || fallback_status;
+          let innerRemarks = parsed.remarks !== undefined && parsed.remarks !== null ? String(parsed.remarks) : "";
+          
+          if (innerRemarks.trim().startsWith("{") && innerRemarks.trim().endsWith("}")) {
+            try {
+              const innerParsed = JSON.parse(innerRemarks.trim());
+              if (innerParsed && typeof innerParsed === "object") {
+                innerRemarks = innerParsed.remarks !== undefined && innerParsed.remarks !== null ? String(innerParsed.remarks) : "";
+              }
+            } catch {
+              // ignore
+            }
+          }
+          
+          return {
+            incentive_status: status,
+            remarks: innerRemarks,
+          };
+        }
+      } catch {
+        // ignore
+      }
+    }
+  }
+
+  return {
+    incentive_status: fallback_status,
+    remarks: remarksStr || "",
+  };
+}
+
+export function serializePurchaseRemarks(meta: PurchaseRemarksMeta): string {
+  return JSON.stringify(meta);
+}

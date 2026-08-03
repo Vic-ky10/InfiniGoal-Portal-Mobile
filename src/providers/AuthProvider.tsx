@@ -18,6 +18,7 @@ export default function AuthProvider({ children }: Props) {
   const isInitializing = useAuthStore((state) => state.isInitializing);
   const setUser = useAuthStore((state) => state.setUser);
   const setRole = useAuthStore((state) => state.setRole);
+
   const setIsInitializing = useAuthStore((state) => state.setIsInitializing);
 
   useEffect(() => {
@@ -39,6 +40,7 @@ export default function AuthProvider({ children }: Props) {
           if (mounted && profile?.role) {
             setUser(session.user);
             setRole(profile.role);
+            console.log("AUTH PROVIDER ROLE:", profile.role);
           } else if (mounted) {
             setUser(null);
             setRole(null);
@@ -65,6 +67,12 @@ export default function AuthProvider({ children }: Props) {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (session?.user) {
+        const currentUser = useAuthStore.getState().user;
+        const currentRole = useAuthStore.getState().role;
+        if (currentUser?.id === session.user.id && currentRole) {
+          return;
+        }
+
         const { data: profile } = await supabase
           .from("profiles")
           .select("role")

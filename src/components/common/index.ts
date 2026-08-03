@@ -5,4 +5,6 @@ export { default as SearchBar } from "./SearchBar";
 
 export { default as NotificationBell } from "./NotificationBell";
 export { default as CustomDrawerContent } from "./CustomDrawerContent";
+export { default as ToastContainer } from "./ToastContainer";
+export { default as ConfirmModal } from "./ConfirmModal";
 export type { DrawerRoute } from "./CustomDrawerContent";
