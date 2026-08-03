@@ -1,9 +1,8 @@
-import { View } from "react-native";
+import { View, Image } from "react-native";
 import { useRouter } from "expo-router";
 
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, NotificationBell } from "@/components/common";
-import { Image } from "react-native";
 import {
   NotificationCard,
   QuickActionCard,
@@ -15,7 +14,7 @@ import {
 import { useDashboard } from "../hooks/useDashboard";
 
 import { adminColors, spacing } from "@/theme";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
 
 export default function DashboardScreen() {
@@ -25,11 +24,7 @@ export default function DashboardScreen() {
   const [designation, setDesignation] = useState("System Administrator");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
-  useEffect(() => {
-    loadProfile();
-  }, []);
-
-  const loadProfile = async () => {
+  const loadProfile = useCallback(async () => {
     const {
       data: { user },
     } = await supabase.auth.getUser();
@@ -47,7 +42,13 @@ export default function DashboardScreen() {
       setDesignation(profile.designation ?? "System Administrator");
       setAvatarUrl(profile.avatar_url ?? null);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    Promise.resolve().then(() => {
+      loadProfile();
+    });
+  }, [loadProfile]);
 
   return (
     <Screen

@@ -24,6 +24,7 @@ export default function EmployeeAttendanceScreen() {
   const [history, setHistory] = useState<Attendance[]>([]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -51,7 +52,9 @@ export default function EmployeeAttendanceScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const handleClockIn = async () => {
@@ -160,7 +163,7 @@ export default function EmployeeAttendanceScreen() {
           >
             <View>
               <AppText variant="h3" weight="700" color={employeeColors.text}>
-                Today's Attendance
+                {"Today's Attendance"}
               </AppText>
               <AppText
                 variant="caption"

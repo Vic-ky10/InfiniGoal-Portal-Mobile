@@ -5,10 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Image,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "react-native";
 
 import Logo from "@/assets/images/Logo.png";
 

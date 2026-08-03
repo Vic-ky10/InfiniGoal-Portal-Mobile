@@ -7,11 +7,12 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge, Input, Button } from "@/components/ui";
-import { AppHeader, EmptyState } from "@/components/common";
+import { AppText, Screen, Card, Badge, Input, Button, DatePickerField } from "@/components/ui";
+import { AppHeader, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
@@ -27,9 +28,17 @@ export default function EmployeeLeaveScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-
   const [profileId, setProfileId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
 
 
   const [leaveType, setLeaveType] = useState<string>(LEAVE_TYPE.CASUAL);
@@ -38,6 +47,7 @@ export default function EmployeeLeaveScreen() {
   const [reason, setReason] = useState("");
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -57,7 +67,9 @@ export default function EmployeeLeaveScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const handleApplyLeave = async () => {
@@ -95,25 +107,31 @@ export default function EmployeeLeaveScreen() {
   };
 
   const handleCancelRequest = (requestId: string) => {
-    Alert.alert("Cancel Leave", "Are you sure you want to cancel this pending leave request?", [
-      { text: "No", style: "cancel" },
-      {
-        text: "Yes",
-        onPress: async () => {
-          try {
-            const res = await cancelPendingLeaveRequest(profileId || "", requestId);
-            if (res.success) {
-              Alert.alert("Success", res.message);
-              loadData(true);
-            } else {
-              Alert.alert("Error", res.error);
+    setActionSheetConfig({
+      visible: true,
+      title: "Cancel Leave",
+      subtitle: "Are you sure you want to cancel this pending leave request?",
+      options: [
+        {
+          label: "Yes, Cancel Leave",
+          isDestructive: true,
+          icon: "❌",
+          onPress: async () => {
+            try {
+              const res = await cancelPendingLeaveRequest(profileId || "", requestId);
+              if (res.success) {
+                Alert.alert("Success", res.message);
+                loadData(true);
+              } else {
+                Alert.alert("Error", res.error);
+              }
+            } catch (error) {
+              console.error(error);
             }
-          } catch (error) {
-            console.error(error);
-          }
+          },
         },
-      },
-    ]);
+      ],
+    });
   };
 
   const renderLeaveItem = ({ item }: { item: LeaveRequest }) => (
@@ -140,7 +158,7 @@ export default function EmployeeLeaveScreen() {
           </AppText>
           {item.reason && (
             <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.sm }}>
-             Reasons:  "{item.reason}"
+             Reasons:  &quot;{item.reason}&quot;
             </AppText>
           )}
           {item.review_comment && (
@@ -206,7 +224,7 @@ export default function EmployeeLeaveScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.formScroll} contentContainerStyle={[styles.form, { flexGrow: 1, paddingBottom: spacing.xxxl }]}>
                 <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
                   Leave Type
                 </AppText>
@@ -231,16 +249,18 @@ export default function EmployeeLeaveScreen() {
                   ))}
                 </View>
 
-                <Input
-                  label="Start Date (YYYY-MM-DD)"
+                <DatePickerField
+                  label="Start Date"
                   value={startDate}
-                  onChangeText={setStartDate}
+                  onChange={setStartDate}
+                  placeholder="YYYY-MM-DD"
                 />
 
-                <Input
-                  label="End Date (YYYY-MM-DD)"
+                <DatePickerField
+                  label="End Date"
                   value={endDate}
-                  onChangeText={setEndDate}
+                  onChange={setEndDate}
+                  placeholder="YYYY-MM-DD"
                 />
 
                 <Input
@@ -263,6 +283,24 @@ export default function EmployeeLeaveScreen() {
           </View>
         </Modal>
       </View>
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
+        cancelText="No, Keep It"
+      />
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  formScroll: {
+    flexShrink: 1,
+  },
+  form: {
+    gap: spacing.sm,
+  },
+});

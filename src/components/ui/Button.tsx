@@ -1,17 +1,8 @@
-import { useRef } from "react";
-import {
-  ActivityIndicator,
-  Animated,
-  Pressable,
-} from "react-native";
+import { useMemo } from "react";
+import { ActivityIndicator, Animated, Pressable } from "react-native";
 
 import AppText from "./AppText";
-
-import {
-  useThemeColors,
-  radius,
-  spacing,
-} from "@/theme";
+import { useThemeColors, radius, spacing } from "@/theme";
 
 interface ButtonProps {
   title: string;
@@ -32,7 +23,7 @@ export default function Button({
   size = "md",
 }: ButtonProps) {
   const colors = useThemeColors();
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useMemo(() => new Animated.Value(1), []);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {
@@ -56,32 +47,44 @@ export default function Button({
   const isSmall = size === "sm";
 
   return (
-    <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
+    <Animated.View
+      style={{
+        width: "100%",
+        transform: [{ scale: scaleAnim }],
+      }}
+    >
       <Pressable
         disabled={disabled || loading}
         onPress={onPress}
         onPressIn={handlePressIn}
         onPressOut={handlePressOut}
-        style={({ pressed }) => ({
-          backgroundColor: isFilled ? colors.primary : "transparent",
-          borderWidth: isFilled ? 0 : 1.5,
-          borderColor: colors.primary,
-          paddingVertical: isSmall ? spacing.xs : spacing.lg,
-          paddingHorizontal: isSmall ? spacing.md : undefined,
-          borderRadius: radius.md,
-          alignItems: "center",
-          opacity: disabled || loading ? 0.6 : pressed ? 0.85 : 1,
-          justifyContent: "center",
-          minHeight: isSmall ? 34 : 52,
-        })}
+        style={[
+          {
+            width: "100%",
+            height: isSmall ? 36 : 52,
+            backgroundColor: isFilled ? colors.primary : "transparent",
+            borderWidth: isFilled ? 0 : 1.5,
+            borderColor: colors.primary,
+            borderRadius: radius.md,
+            justifyContent: "center",
+            alignItems: "center",
+            paddingHorizontal: isSmall ? spacing.md : spacing.lg,
+            opacity: disabled || loading ? 0.6 : 1,
+          },
+        ]}
       >
         {loading ? (
-          <ActivityIndicator color={isFilled ? "#ffffff" : colors.primary} size={isSmall ? "small" : "small"} />
+          <ActivityIndicator
+            size="small"
+            color={isFilled ? "#FFFFFF" : colors.primary}
+          />
         ) : (
           <AppText
             weight="700"
-            variant={isSmall ? "caption" : "body"}
-            color={isFilled ? "#ffffff" : colors.primary}
+            style={{
+              fontSize: isSmall ? 15 : 17,
+            }}
+            color={isFilled ? "#FFFFFF" : colors.primary}
           >
             {title}
           </AppText>
@@ -89,4 +92,4 @@ export default function Button({
       </Pressable>
     </Animated.View>
   );
-}
+}

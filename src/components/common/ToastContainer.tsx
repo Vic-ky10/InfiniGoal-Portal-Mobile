@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo } from "react";
 import { View, StyleSheet, Animated, Dimensions, Pressable } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -9,8 +9,8 @@ import { adminColors, radius, spacing, shadows } from "@/theme";
 const { width } = Dimensions.get("window");
 
 function ToastItem({ toast }: { toast: ToastMessage }) {
-  const fadeAnim = useRef(new Animated.Value(0)).current;
-  const slideAnim = useRef(new Animated.Value(-20)).current;
+  const fadeAnim = useMemo(() => new Animated.Value(0), []);
+  const slideAnim = useMemo(() => new Animated.Value(-20), []);
   const removeToast = useToastStore((state) => state.removeToast);
 
   useEffect(() => {
@@ -26,7 +26,7 @@ function ToastItem({ toast }: { toast: ToastMessage }) {
         useNativeDriver: true,
       }),
     ]).start();
-  }, []);
+  }, [fadeAnim, slideAnim]);
 
   const handleDismiss = () => {
     Animated.parallel([

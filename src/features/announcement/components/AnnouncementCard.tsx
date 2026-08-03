@@ -3,6 +3,7 @@ import { View, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge, Button } from "@/components/ui";
+import { ActionSheet, ActionSheetOption } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 import { AnnouncementWithCreator } from "../announcement.types";
 
@@ -32,6 +33,15 @@ export default function AnnouncementCard({
   onDelete,
 }: Props) {
   const [actionLoading, setActionLoading] = useState(false);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
   const isDraft = announcement.status === "Draft";
 
   const getTypeColor = (type: string) => {
@@ -57,21 +67,19 @@ export default function AnnouncementCard({
   };
 
   const handleDelete = () => {
-    Alert.alert(
-      "Delete Announcement",
-      "Are you sure you want to delete this announcement?",
-      [
+    setActionSheetConfig({
+      visible: true,
+      title: "Delete Announcement",
+      subtitle: "Are you sure you want to delete this announcement?",
+      options: [
         {
-          text: "Cancel",
-          style: "cancel",
-        },
-        {
-          text: "Delete",
-          style: "destructive",
+          label: "Delete",
+          isDestructive: true,
+          icon: "🗑",
           onPress: () => onDelete(announcement.id),
         },
       ],
-    );
+    });
   };
 
   return (
@@ -196,6 +204,14 @@ export default function AnnouncementCard({
           />
         </View>
       )}
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
+      />
     </Card>
   );
 }

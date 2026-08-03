@@ -11,6 +11,7 @@
       "icon": "./assets/images/Logo.png"
     },
     "android": {
+      "package": "com.infinigoal.adminmobile",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/Logo.png",
         "backgroundColor": "#E6F4FE"
@@ -38,6 +39,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "2e51da45-86d8-4094-a144-ffaa93d261d8"
+      }
     }
   }
 }

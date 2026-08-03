@@ -1,15 +1,15 @@
-import { useRef, useCallback } from "react";
+import { useMemo, useCallback } from "react";
 import {
   View,
   Animated,
   Pressable,
   ScrollView,
   StyleSheet,
+  Image,
 } from "react-native";
 import { DrawerContentScrollView } from "expo-router/drawer";
 import { usePathname, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
-import { Image } from "react-native";
 
 import Logo from "@/assets/images/Logo.png";
 
@@ -50,8 +50,9 @@ function DrawerItem({
   primaryColor: string;
   onPress: () => void;
 }) {
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-  const bgAnim = useRef(new Animated.Value(isActive ? 1 : 0)).current;
+  const scaleAnim = useMemo(() => new Animated.Value(1), []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const bgAnim = useMemo(() => new Animated.Value(isActive ? 1 : 0), []);
 
   const handlePressIn = useCallback(() => {
     Animated.parallel([
@@ -67,7 +68,7 @@ function DrawerItem({
         useNativeDriver: false,
       }),
     ]).start();
-  }, []);
+  }, [bgAnim, scaleAnim]);
 
   const handlePressOut = useCallback(() => {
     Animated.parallel([
@@ -83,7 +84,7 @@ function DrawerItem({
         useNativeDriver: false,
       }),
     ]).start();
-  }, [isActive]);
+  }, [isActive, bgAnim, scaleAnim]);
 
   const bgColor = bgAnim.interpolate({
     inputRange: [0, 1],

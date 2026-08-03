@@ -159,7 +159,7 @@ export default function PurchasesScreen() {
           {!!meta.remarks && (
             <View style={styles.remarksRow}>
               <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic" }}>
-                Remarks: "{meta.remarks}"
+                Remarks: &quot;{meta.remarks}&quot;
               </AppText>
             </View>
           )}

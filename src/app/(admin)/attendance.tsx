@@ -1,25 +1,15 @@
 import { useEffect, useMemo, useState } from "react";
-import { View, FlatList, TouchableOpacity, Pressable } from "react-native";
+import { View, FlatList, Pressable } from "react-native";
 
 import { AppText, Screen, Card } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
-import { adminColors, radius, spacing } from "@/theme";
+import { adminColors, spacing } from "@/theme";
 
 import { useAttendance } from "@/features/attendance/hooks/useAttendance";
 import AttendanceCard from "@/features/attendance/components/AttendanceCard";
-import { AttendanceStatus } from "@/features/attendance/attendance.types";
 
-const STATUS_OPTIONS: { label: string; value: AttendanceStatus | "" }[] = [
-  { label: "All", value: "" },
-  { label: "Present", value: "Present" },
-  { label: "Short Hours", value: "Short Hours" },
-  { label: "Half Day", value: "Half Day" },
-  { label: "Incomplete", value: "Incomplete" },
-  { label: "Absent", value: "Absent" },
-];
 export default function AttendanceScreen() {
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<AttendanceStatus | "">("");
   const [selectedSummary, setSelectedSummary] = useState<
     "present" | "shortHours" | "halfDay" | "incomplete" | "absent"
   >("present");

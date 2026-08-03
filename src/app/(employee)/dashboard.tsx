@@ -43,6 +43,7 @@ export default function EmployeeDashboard() {
   const [notificationCount, setNotificationCount] = useState(0);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -112,7 +113,9 @@ export default function EmployeeDashboard() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   return (

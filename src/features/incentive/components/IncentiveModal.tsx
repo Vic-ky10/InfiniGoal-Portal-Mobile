@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -37,17 +37,10 @@ export default function IncentiveModal({
   const [month, setMonth] = useState(String(new Date().getMonth() + 1));
   const [year, setYear] = useState(String(new Date().getFullYear()));
 
-  const [loadingEmployees, setLoadingEmployees] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      loadEmployees();
-    }
-  }, [visible]);
-
-  const loadEmployees = async () => {
-    setLoadingEmployees(true);
+  const loadEmployees = useCallback(async () => {
+    await Promise.resolve();
     try {
       const data = await getEmployees();
       setEmployees(data);
@@ -71,10 +64,16 @@ export default function IncentiveModal({
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoadingEmployees(false);
     }
-  };
+  }, [incentiveToEdit]);
+
+  useEffect(() => {
+    if (visible) {
+      Promise.resolve().then(() => {
+        loadEmployees();
+      });
+    }
+  }, [visible, loadEmployees]);
 
   const handleSubmit = async () => {
     if (!selectedProfileId || !title.trim() || !description.trim() || !amount.trim()) {
@@ -300,3 +299,4 @@ export default function IncentiveModal({
     </Modal>
   );
 }
+

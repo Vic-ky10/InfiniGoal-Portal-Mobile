@@ -7,10 +7,11 @@ import {
   TouchableOpacity,
   Alert,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge, Input, Button } from "@/components/ui";
+import { AppText, Screen, Card, Badge, Input, Button, DatePickerField } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
@@ -40,6 +41,7 @@ export default function EmployeeExpensesScreen() {
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -59,7 +61,9 @@ export default function EmployeeExpensesScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const openCreateModal = () => {
@@ -242,7 +246,7 @@ export default function EmployeeExpensesScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false}>
+              <ScrollView showsVerticalScrollIndicator={false} style={styles.formScroll} contentContainerStyle={[styles.form, { flexGrow: 1, paddingBottom: spacing.xxxl }]}>
                 <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
                   Expense Category
                 </AppText>
@@ -282,10 +286,11 @@ export default function EmployeeExpensesScreen() {
                   keyboardType="numeric"
                 />
 
-                <Input
-                  label="Expense Date (YYYY-MM-DD)"
+                <DatePickerField
+                  label="Expense Date"
                   value={expenseDate}
-                  onChangeText={setExpenseDate}
+                  onChange={setExpenseDate}
+                  placeholder="YYYY-MM-DD"
                 />
 
                 <Input
@@ -311,3 +316,12 @@ export default function EmployeeExpensesScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  formScroll: {
+    flexShrink: 1,
+  },
+  form: {
+    gap: spacing.sm,
+  },
+});

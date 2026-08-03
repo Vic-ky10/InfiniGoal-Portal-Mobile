@@ -86,7 +86,7 @@ export default function EmployeeCustomerModal({
         });
       }
     }
-  }, [visible, customerToEdit, employeeId]);
+  }, [visible, customerToEdit, employeeId, reset]);
 
   const onSubmit = async (data: CustomerForm) => {
     // Enforce: assigned_employee_id and created_by must equal the logged-in employee
@@ -377,6 +377,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.sm,
   },
+
   fieldLabel: {
     fontSize: 13,
     color: adminColors.textSecondary,

@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { View, FlatList, TouchableOpacity, Alert, Modal, ScrollView, Animated } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState } from "@/components/common";
+import { AppHeader, SearchBar, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
@@ -20,6 +20,15 @@ export default function EmployeeTasksScreen() {
   // Detail Modal State
   const [selectedTask, setSelectedTask] = useState<TaskWithProject | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
 
   
   const pulseAnim = useMemo(() => new Animated.Value(0.4), []);
@@ -46,6 +55,7 @@ export default function EmployeeTasksScreen() {
   }, [loading, pulseAnim]);
 
   const loadData = useCallback(async (isRefresh = false) => {
+    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -64,7 +74,9 @@ export default function EmployeeTasksScreen() {
   }, []);
 
   useEffect(() => {
-    loadData();
+    Promise.resolve().then(() => {
+      loadData();
+    });
   }, [loadData]);
 
   const applyOptimisticUpdate = (taskId: string, newStatus: string) => {
@@ -85,32 +97,30 @@ export default function EmployeeTasksScreen() {
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
     if (newStatus === "Completed") {
-      Alert.alert(
-        "Confirm Completion",
-        "Are you sure you want to mark this task as completed?",
-        [
-          { text: "No", style: "cancel" },
+      setActionSheetConfig({
+        visible: true,
+        title: "Confirm Completion",
+        subtitle: "Are you sure you want to mark this task as completed?",
+        options: [
           {
-            text: "Yes",
+            label: "Yes, Complete Task",
+            icon: "✔",
             onPress: async () => {
-             
               applyOptimisticUpdate(taskId, newStatus);
               setUpdatingTaskId(taskId);
               try {
                 const res = await updateTaskStatus(taskId, newStatus);
                 if (!res.success) {
-                  
                   Alert.alert("Error", res.error);
                   await loadData(true);
                 }
-              
               } finally {
                 setUpdatingTaskId(null);
               }
             },
           },
-        ]
-      );
+        ],
+      });
     } else {
      
       applyOptimisticUpdate(taskId, newStatus);
@@ -554,6 +564,15 @@ export default function EmployeeTasksScreen() {
           </View>
         </Modal>
       </View>
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
+        cancelText="No, Cancel"
+      />
     </Screen>
   );
 }

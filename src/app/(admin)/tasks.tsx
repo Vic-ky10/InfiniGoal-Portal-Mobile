@@ -3,7 +3,7 @@ import { View, FlatList, TouchableOpacity, Alert, Platform } from "react-native"
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState } from "@/components/common";
+import { AppHeader, SearchBar, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 
 import { useTasks } from "@/features/task/hooks/useTasks";
@@ -20,6 +20,15 @@ export default function TasksScreen() {
 
   const [taskModalVisible, setTaskModalVisible] = useState(false);
   const [selectedTask, setSelectedTask] = useState<TaskWithProject | null>(null);
+  const [actionSheetConfig, setActionSheetConfig] = useState<{
+    visible: boolean;
+    title?: string;
+    subtitle?: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    options: [],
+  });
 
   const { tasks, loading, refreshing, refresh } = useTasks();
 
@@ -49,14 +58,15 @@ export default function TasksScreen() {
   };
 
   const handleDelete = (task: TaskWithProject) => {
-    Alert.alert(
-      "Delete Task",
-      `Are you sure you want to delete task "${task.title}" (${task.task_code})?`,
-      [
-        { text: "Cancel", style: "cancel" },
+    setActionSheetConfig({
+      visible: true,
+      title: "Delete Task",
+      subtitle: `Are you sure you want to delete task "${task.title}" (${task.task_code})?`,
+      options: [
         {
-          text: "Delete",
-          style: "destructive",
+          label: "Delete",
+          isDestructive: true,
+          icon: "🗑",
           onPress: async () => {
             const res = await deleteTask(task.id);
             if (res.success) {
@@ -67,27 +77,29 @@ export default function TasksScreen() {
             }
           },
         },
-      ]
-    );
+      ],
+    });
   };
 
   const handleTaskCardPress = (task: TaskWithProject) => {
-    Alert.alert(
-      task.title,
-      `Code: ${task.task_code}\nProject: ${task.project?.project_name ?? "N/A"}\nAssignee: ${task.member?.profile?.full_name ?? "Unassigned"}\nStatus: ${task.status}`,
-      [
-        { text: "Cancel", style: "cancel" },
+    setActionSheetConfig({
+      visible: true,
+      title: task.title,
+      subtitle: `Code: ${task.task_code}\nProject: ${task.project?.project_name ?? "N/A"}\nAssignee: ${task.member?.profile?.full_name ?? "Unassigned"}\nStatus: ${task.status}`,
+      options: [
         {
-          text: "Edit Task",
+          label: "Edit Task",
+          icon: "✏️",
           onPress: () => handleEdit(task),
         },
         {
-          text: "Delete Task",
-          style: "destructive",
+          label: "Delete Task",
+          isDestructive: true,
+          icon: "🗑",
           onPress: () => handleDelete(task),
         },
-      ]
-    );
+      ],
+    });
   };
 
   return (
@@ -192,6 +204,14 @@ export default function TasksScreen() {
         onClose={() => setTaskModalVisible(false)}
         onSuccess={refresh}
         taskToEdit={selectedTask}
+      />
+
+      <ActionSheet
+        visible={actionSheetConfig.visible}
+        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={actionSheetConfig.title}
+        subtitle={actionSheetConfig.subtitle}
+        options={actionSheetConfig.options}
       />
     </Screen>
   );

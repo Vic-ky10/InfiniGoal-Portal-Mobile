@@ -210,7 +210,7 @@ export async function getEmployeeSalesDashboardData(profileId: string) {
   });
 
   // 4. Chronological Recent Activities
-  const recentActivities: Array<{ id: string; type: string; title: string; description: string; date: string }> = [];
+  const recentActivities: { id: string; type: string; title: string; description: string; date: string }[] = [];
 
   customers.slice(0, 5).forEach((c) => {
     recentActivities.push({
@@ -249,7 +249,7 @@ export async function getEmployeeSalesDashboardData(profileId: string) {
     .slice(0, 5);
 
   // 5. Monthly Trend Chart (Last 6 Months)
-  const monthlyTrend: Array<{ label: string; amount: number }> = [];
+  const monthlyTrend: { label: string; amount: number }[] = [];
   const monthsData: { [key: string]: number } = {};
 
   for (let i = 5; i >= 0; i--) {

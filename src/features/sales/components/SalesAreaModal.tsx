@@ -73,7 +73,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
         });
       }
     }
-  }, [visible, areaToEdit]);
+  }, [visible, areaToEdit, reset]);
 
   const onSubmit = async (values: SalesAreaForm) => {
     const { data: authData } = await supabase.auth.getUser();
@@ -369,6 +369,7 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.sm,
   },
+
   fieldLabel: {
     fontSize: 13,
     color: adminColors.textSecondary,

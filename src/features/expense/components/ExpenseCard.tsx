@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { View, ActivityIndicator, TouchableOpacity } from "react-native";
-import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge, Avatar, Button } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
@@ -90,7 +89,7 @@ export default function ExpenseCard({ expense, onReview, onMarkPaid }: Props) {
 
         {expense.description ? (
           <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: spacing.xs }}>
-          Reasons: "{expense.description}"
+          Reasons: &quot;{expense.description}&quot;
           </AppText>
         ) : null}
 

@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useMemo } from "react";
 import { Animated, Pressable, View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -16,7 +16,7 @@ export default function EmployeeCard({
   onPress,
 }: Props) {
   const isActive = employee.status === "Active";
-  const scaleAnim = useRef(new Animated.Value(1)).current;
+  const scaleAnim = useMemo(() => new Animated.Value(1), []);
 
   const handlePressIn = () => {
     Animated.spring(scaleAnim, {

@@ -33,13 +33,22 @@ export default function AppHeader({
   return (
     <View
       style={{
+        width: "100%",
         flexDirection: "row",
         justifyContent: "space-between",
         alignItems: "center",
         marginBottom: spacing.xl,
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+      <View
+        style={{
+          flexDirection: "row",
+          alignItems: "center",
+          flex: 1,
+          minWidth: 0,
+          marginRight: spacing.md,
+        }}
+      >
         {onBack ? (
           <TouchableOpacity
             onPress={onBack}
@@ -56,7 +65,7 @@ export default function AppHeader({
           </TouchableOpacity>
         ) : null}
 
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, minWidth: 0 }}>
           <AppText
             variant="h2"
             weight="700"
@@ -78,7 +87,16 @@ export default function AppHeader({
         </View>
       </View>
 
-      {rightComponent}
+      {rightComponent && (
+        <View
+          style={{
+            flexShrink: 0,
+            alignSelf: "center",
+          }}
+        >
+          {rightComponent}
+        </View>
+      )}
     </View>
   );
 }

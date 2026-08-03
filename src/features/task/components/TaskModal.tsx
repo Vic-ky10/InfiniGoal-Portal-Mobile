@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Modal,
   View,
@@ -8,12 +8,22 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Button, Input, Card } from "@/components/ui";
+import { AppText, Button, Input, DatePickerField } from "@/components/ui";
 import { adminColors, radius, spacing } from "@/theme";
 import { TaskWithProject, TASK_PRIORITY, TASK_STATUS } from "../task.types";
-import { createTask, updateTask, getAuthenticatedProfileId } from "../task.service";
-import { getProjects, getProjectMembers } from "@/features/project/project.service";
-import { ProjectWithMembers, ProjectMemberWithEmployee } from "@/features/project/project.types";
+import {
+  createTask,
+  updateTask,
+  getAuthenticatedProfileId,
+} from "../task.service";
+import {
+  getProjects,
+  getProjectMembers,
+} from "@/features/project/project.service";
+import {
+  ProjectWithMembers,
+  ProjectMemberWithEmployee,
+} from "@/features/project/project.types";
 
 interface Props {
   visible: boolean;
@@ -29,30 +39,40 @@ export default function TaskModal({
   taskToEdit,
 }: Props) {
   const [projects, setProjects] = useState<ProjectWithMembers[]>([]);
+  const [selectedProjectId, setSelectedProjectId] = useState("");
   const [members, setMembers] = useState<ProjectMemberWithEmployee[]>([]);
-
-  const [selectedProjectId, setSelectedProjectId] = useState<string>("");
-  const [selectedMemberId, setSelectedMemberId] = useState<string>("");
+  const [selectedMemberId, setSelectedMemberId] = useState("");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [priority, setPriority] = useState<string>(TASK_PRIORITY.MEDIUM);
   const [status, setStatus] = useState<string>(TASK_STATUS.TODO);
-  const [dueDate, setDueDate] = useState(
-    new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10)
+  const [dueDate, setDueDate] = useState(() =>
+    new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
   );
   const [estimatedHours, setEstimatedHours] = useState("");
 
-  const [loadingData, setLoadingData] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (visible) {
-      loadProjects();
-    }
-  }, [visible]);
+  const loadMembers = useCallback(
+    async (projId: string, preSelectMemberId?: string) => {
+      try {
+        const mData = await getProjectMembers(projId);
+        setMembers(mData);
+        if (preSelectMemberId) {
+          setSelectedMemberId(preSelectMemberId);
+        } else if (mData.length > 0) {
+          setSelectedMemberId(mData[0].id);
+        } else {
+          setSelectedMemberId("");
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    },
+    [],
+  );
 
-  const loadProjects = async () => {
-    setLoadingData(true);
+  const loadProjects = useCallback(async () => {
     try {
       const data = await getProjects();
       setProjects(data);
@@ -65,7 +85,7 @@ export default function TaskModal({
         setStatus(taskToEdit.status || TASK_STATUS.TODO);
         setDueDate(taskToEdit.due_date ? taskToEdit.due_date.slice(0, 10) : "");
         setEstimatedHours(
-          taskToEdit.estimated_hours ? String(taskToEdit.estimated_hours) : ""
+          taskToEdit.estimated_hours ? String(taskToEdit.estimated_hours) : "",
         );
         loadMembers(taskToEdit.project_id, taskToEdit.project_member_id);
       } else if (data.length > 0) {
@@ -75,26 +95,16 @@ export default function TaskModal({
       }
     } catch (err) {
       console.error(err);
-    } finally {
-      setLoadingData(false);
     }
-  };
+  }, [taskToEdit, loadMembers]);
 
-  const loadMembers = async (projId: string, preSelectMemberId?: string) => {
-    try {
-      const mData = await getProjectMembers(projId);
-      setMembers(mData);
-      if (preSelectMemberId) {
-        setSelectedMemberId(preSelectMemberId);
-      } else if (mData.length > 0) {
-        setSelectedMemberId(mData[0].id);
-      } else {
-        setSelectedMemberId("");
-      }
-    } catch (err) {
-      console.error(err);
+  useEffect(() => {
+    if (visible) {
+      Promise.resolve().then(() => {
+        loadProjects();
+      });
     }
-  };
+  }, [visible, loadProjects]);
 
   const handleSelectProject = (projId: string) => {
     setSelectedProjectId(projId);
@@ -102,8 +112,16 @@ export default function TaskModal({
   };
 
   const handleSubmit = async () => {
-    if (!title.trim() || !selectedProjectId || !selectedMemberId || !dueDate.trim()) {
-      Alert.alert("Validation Error", "Please fill in Task Title, Project, Member, and Due Date.");
+    if (
+      !title.trim() ||
+      !selectedProjectId ||
+      !selectedMemberId ||
+      !dueDate.trim()
+    ) {
+      Alert.alert(
+        "Validation Error",
+        "Please fill in Task Title, Project, Member, and Due Date.",
+      );
       return;
     }
 
@@ -192,7 +210,11 @@ export default function TaskModal({
                   No active projects available. Please create a project first.
                 </AppText>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: spacing.xs }}
+                >
                   {projects.map((p) => {
                     const isSel = selectedProjectId === p.id;
                     return (
@@ -203,9 +225,13 @@ export default function TaskModal({
                           paddingHorizontal: spacing.md,
                           paddingVertical: spacing.xs,
                           borderRadius: radius.md,
-                          backgroundColor: isSel ? adminColors.primary : adminColors.surface,
+                          backgroundColor: isSel
+                            ? adminColors.primary
+                            : adminColors.surface,
                           borderWidth: 1,
-                          borderColor: isSel ? adminColors.primary : adminColors.border,
+                          borderColor: isSel
+                            ? adminColors.primary
+                            : adminColors.border,
                         }}
                       >
                         <AppText
@@ -219,10 +245,9 @@ export default function TaskModal({
                     );
                   })}
                 </ScrollView>
-              )} 
+              )}
             </View>
-              
-              
+
             {/* Select Assignee Member */}
             <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Assign to Employee (Project Member)
@@ -230,10 +255,15 @@ export default function TaskModal({
             <View style={{ gap: spacing.xs, marginBottom: spacing.lg }}>
               {members.length === 0 ? (
                 <AppText variant="caption" color={adminColors.danger}>
-                  No members assigned to this project yet. Please assign members in Projects tab first.
+                  No members assigned to this project yet. Please assign members
+                  in Projects tab first.
                 </AppText>
               ) : (
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs }}>
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={{ gap: spacing.xs }}
+                >
                   {members.map((m) => {
                     const isSel = selectedMemberId === m.id;
                     return (
@@ -244,9 +274,13 @@ export default function TaskModal({
                           paddingHorizontal: spacing.md,
                           paddingVertical: spacing.xs,
                           borderRadius: radius.md,
-                          backgroundColor: isSel ? adminColors.primary : adminColors.surface,
+                          backgroundColor: isSel
+                            ? adminColors.primary
+                            : adminColors.surface,
                           borderWidth: 1,
-                          borderColor: isSel ? adminColors.primary : adminColors.border,
+                          borderColor: isSel
+                            ? adminColors.primary
+                            : adminColors.border,
                         }}
                       >
                         <AppText
@@ -254,7 +288,8 @@ export default function TaskModal({
                           weight="600"
                           color={isSel ? "#FFFFFF" : adminColors.textSecondary}
                         >
-                          {m.employee?.full_name || "Employee"} ({m.member_role})
+                          {m.employee?.full_name || "Employee"} ({m.member_role}
+                          )
                         </AppText>
                       </TouchableOpacity>
                     );
@@ -278,8 +313,6 @@ export default function TaskModal({
               numberOfLines={3}
             />
 
-           
-
             <AppText weight="600" style={{ marginBottom: spacing.xs }}>
               Priority
             </AppText>
@@ -290,33 +323,40 @@ export default function TaskModal({
                 marginBottom: spacing.lg,
               }}
             >
-              {[TASK_PRIORITY.LOW, TASK_PRIORITY.MEDIUM, TASK_PRIORITY.HIGH, TASK_PRIORITY.URGENT].map(
-                (p) => (
-                  <TouchableOpacity
-                    key={p}
-                    onPress={() => setPriority(p)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: spacing.xs,
-                      borderRadius: radius.md,
-                      alignItems: "center",
-                      backgroundColor:
-                        priority === p ? adminColors.primary : adminColors.surface,
-                      borderWidth: 1,
-                      borderColor:
-                        priority === p ? adminColors.primary : adminColors.border,
-                    }}
+              {[
+                TASK_PRIORITY.LOW,
+                TASK_PRIORITY.MEDIUM,
+                TASK_PRIORITY.HIGH,
+                TASK_PRIORITY.URGENT,
+              ].map((p) => (
+                <TouchableOpacity
+                  key={p}
+                  onPress={() => setPriority(p)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing.xs,
+                    borderRadius: radius.md,
+                    alignItems: "center",
+                    backgroundColor:
+                      priority === p
+                        ? adminColors.primary
+                        : adminColors.surface,
+                    borderWidth: 1,
+                    borderColor:
+                      priority === p ? adminColors.primary : adminColors.border,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    weight="600"
+                    color={
+                      priority === p ? "#FFFFFF" : adminColors.textSecondary
+                    }
                   >
-                    <AppText
-                      variant="caption"
-                      weight="600"
-                      color={priority === p ? "#FFFFFF" : adminColors.textSecondary}
-                    >
-                      {p}
-                    </AppText>
-                  </TouchableOpacity>
-                )
-              )}
+                    {p}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
             </View>
 
             {/* Status Selector */}
@@ -330,39 +370,41 @@ export default function TaskModal({
                 marginBottom: spacing.lg,
               }}
             >
-              {[TASK_STATUS.TODO, TASK_STATUS.IN_PROGRESS, TASK_STATUS.COMPLETED].map(
-                (s) => (
-                  <TouchableOpacity
-                    key={s}
-                    onPress={() => setStatus(s)}
-                    style={{
-                      flex: 1,
-                      paddingVertical: spacing.xs,
-                      borderRadius: radius.md,
-                      alignItems: "center",
-                      backgroundColor:
-                        status === s ? adminColors.primary : adminColors.surface,
-                      borderWidth: 1,
-                      borderColor:
-                        status === s ? adminColors.primary : adminColors.border,
-                    }}
+              {[
+                TASK_STATUS.TODO,
+                TASK_STATUS.IN_PROGRESS,
+                TASK_STATUS.COMPLETED,
+              ].map((s) => (
+                <TouchableOpacity
+                  key={s}
+                  onPress={() => setStatus(s)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: spacing.xs,
+                    borderRadius: radius.md,
+                    alignItems: "center",
+                    backgroundColor:
+                      status === s ? adminColors.primary : adminColors.surface,
+                    borderWidth: 1,
+                    borderColor:
+                      status === s ? adminColors.primary : adminColors.border,
+                  }}
+                >
+                  <AppText
+                    variant="caption"
+                    weight="600"
+                    color={status === s ? "#FFFFFF" : adminColors.textSecondary}
                   >
-                    <AppText
-                      variant="caption"
-                      weight="600"
-                      color={status === s ? "#FFFFFF" : adminColors.textSecondary}
-                    >
-                      {s}
-                    </AppText>
-                  </TouchableOpacity>
-                )
-              )}
+                    {s}
+                  </AppText>
+                </TouchableOpacity>
+              ))}
             </View>
 
-            <Input
-              label="Due Date (YYYY-MM-DD)"
+            <DatePickerField
+              label="Due Date"
               value={dueDate}
-              onChangeText={setDueDate}
+              onChange={setDueDate}
               placeholder="YYYY-MM-DD"
             />
             <Input
@@ -386,3 +428,4 @@ export default function TaskModal({
     </Modal>
   );
 }
+

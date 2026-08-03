@@ -87,7 +87,7 @@ export default function LeaveCard({ leave, onReview }: Props) {
             color={adminColors.textSecondary}
             style={{ marginTop: spacing.xs }}
           >
-           Reason : "{leave.reason}"
+           Reason : &quot;{leave.reason}&quot;
           </AppText>
         ) : null}
 

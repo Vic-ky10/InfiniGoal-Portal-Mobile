@@ -1,6 +1,7 @@
 
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { useState, useMemo } from "react";
+import { Feather } from "@expo/vector-icons";
 import AnnouncementModal from "@/features/announcement/components/AnnouncementModal";
 import { AnnouncementWithCreator } from "@/features/announcement/announcement.types";
 import { AppText, Screen } from "@/components/ui";
@@ -52,7 +53,32 @@ export default function AnnouncementsScreen() {
       onRefresh={refresh}
     >
       <View style={{ flex: 1, gap: spacing.md }}>
-        <AppHeader title="Announcements" subtitle="Company broadcasts & news" />
+        <AppHeader
+          title="Announcements"
+          subtitle="Company broadcasts & news"
+          rightComponent={
+            <TouchableOpacity
+              onPress={() => {
+                setSelectedAnnouncement(null);
+                setModalVisible(true);
+              }}
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                backgroundColor: adminColors.primary,
+                paddingHorizontal: spacing.md,
+                paddingVertical: spacing.xs,
+                borderRadius: radius.md,
+                gap: 4,
+              }}
+            >
+              <Feather name="plus" size={16} color="#FFFFFF" />
+              <AppText variant="caption" weight="700" color="#FFFFFF">
+                New
+              </AppText>
+            </TouchableOpacity>
+          }
+        />
 
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
@@ -94,26 +120,6 @@ export default function AnnouncementsScreen() {
             );
           })}
         </View>
-
-        <TouchableOpacity
-          onPress={() => {
-            setSelectedAnnouncement(null);
-            setModalVisible(true);
-          }}
-          style={{
-            backgroundColor: adminColors.primary,
-            paddingVertical: spacing.sm,
-            borderRadius: radius.md,
-            alignItems: "center",
-            flexDirection: "row",
-            justifyContent: "center",
-            gap: 6,
-          }}
-        >
-          <AppText color="#FFFFFF" weight="700" variant="caption">
-            + Create Announcement
-          </AppText>
-        </TouchableOpacity>
 
         {/* Announcements List */}
         <FlatList
