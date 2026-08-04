@@ -7,7 +7,7 @@ import { AppText, Screen, Card } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { adminColors, spacing, radius, shadows } from "@/theme";
 import { useCustomers, useCustomerPurchases, useSalesAreas, useIncentiveRules } from "@/features/sales/hooks/useSales";
-import { parsePurchaseRemarks } from "@/features/sales/sales.utils";
+import { parsePurchaseRemarks, getApprovedRevenue } from "@/features/sales/sales.utils";
 import StatCard from "@/features/dashboard/components/StatCard";
 import QuickActionCard from "@/features/dashboard/components/QuickActionCard";
 import { MonthlyRevenueChart } from "@/features/sales/components";
@@ -33,7 +33,7 @@ export default function SalesDashboardScreen() {
   // KPI Calculations
   const stats = useMemo(() => {
     const approvedPurchases = purchases.filter((p) => p.status === "Approved");
-    const totalRev = approvedPurchases.reduce((sum, p) => sum + p.amount, 0);
+    const totalRev = getApprovedRevenue(purchases);
 
     const todayRev = approvedPurchases
       .filter((p) => p.purchase_date.startsWith(todayStr))

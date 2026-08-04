@@ -74,67 +74,104 @@ export default function EmployeePurchasesScreen() {
     const isPending = item.status === "Pending";
 
     return (
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <AppText variant="h3" weight="700" color={adminColors.text}>
-              {customer?.full_name || "Unknown Customer"}
+      <Card
+        style={{
+          borderWidth: 1,
+          borderColor: adminColors.border,
+          borderRadius: radius.lg,
+          ...shadows.sm,
+          padding: spacing.md,
+          backgroundColor: adminColors.background,
+          marginBottom: spacing.md,
+        }}
+      >
+        {/* HEADER */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: spacing.sm,
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.md,
+                backgroundColor: `${employeeColor}10`,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Feather name="shopping-cart" size={18} color={employeeColor} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText weight="700" variant="body" color={adminColors.text}>
+                {customer?.full_name || "Unknown Customer"}
+              </AppText>
+            </View>
+          </View>
+          <Badge label={item.status} color={purchaseBadgeColor} />
+        </View>
+
+        {/* MIDDLE */}
+        <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
+          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+            <AppText weight="700" variant="h2" color={employeeColor}>
+              ₹{item.amount.toLocaleString("en-IN")}
             </AppText>
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
-              Invoice: {item.purchase_code} • {item.purchase_date}
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
+              <AppText variant="caption" color={adminColors.textSecondary} weight="600">
+                Incentive:
+              </AppText>
+              <Badge label={meta.incentive_status} color={incentiveBadgeColor} variant="subtle" />
+            </View>
+          </View>
+
+          {item.incentive_amount > 0 && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
+              <Feather name="award" size={12} color={employeeColor} />
+              <AppText variant="caption" color={employeeColor} weight="600">
+                Payout Amount: ₹{item.incentive_amount.toLocaleString("en-IN")}
+              </AppText>
+            </View>
+          )}
+
+          {!!meta.remarks && (
+            <AppText
+              variant="caption"
+              color={adminColors.textSecondary}
+              style={{ fontStyle: "italic", marginTop: 4, lineHeight: 16 }}
+            >
+              Remarks: &quot;{meta.remarks}&quot;
+            </AppText>
+          )}
+        </View>
+
+        {/* FOOTER */}
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: `${adminColors.border}80`,
+            paddingTop: spacing.sm,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Feather name="calendar" size={12} color={adminColors.textSecondary} />
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              {item.purchase_date}
             </AppText>
           </View>
 
           {isPending && (
-            <View style={styles.actions}>
-              <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
-                <Feather name="edit-2" size={16} color={employeeColor} />
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.cardDetails}>
-          <View style={styles.detailRow}>
-            <AppText variant="body" color={adminColors.textSecondary}>
-              Purchase Amount:
-            </AppText>
-            <AppText weight="700" color={adminColors.text}>
-              ₹{item.amount.toLocaleString("en-IN")}
-            </AppText>
-          </View>
-
-          <View style={styles.detailRow}>
-            <AppText variant="body" color={adminColors.textSecondary}>
-              Incentive Payout:
-            </AppText>
-            <AppText weight="700" color={item.incentive_amount > 0 ? employeeColor : adminColors.textSecondary}>
-              ₹{item.incentive_amount.toLocaleString("en-IN")}
-            </AppText>
-          </View>
-
-          <View style={styles.badgesRow}>
-            <View style={styles.badgeCol}>
-              <AppText variant="caption" color={adminColors.textSecondary} style={styles.badgeLabel}>
-                Purchase Status:
-              </AppText>
-              <Badge label={item.status} color={purchaseBadgeColor} />
-            </View>
-
-            <View style={styles.badgeCol}>
-              <AppText variant="caption" color={adminColors.textSecondary} style={styles.badgeLabel}>
-                Incentive Status:
-              </AppText>
-              <Badge label={meta.incentive_status} color={incentiveBadgeColor} />
-            </View>
-          </View>
-
-          {!!meta.remarks && (
-            <View style={styles.remarksRow}>
-              <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic" }}>
-                Remarks: &quot;{meta.remarks}&quot;
-              </AppText>
-            </View>
+            <TouchableOpacity onPress={() => handleEdit(item)} style={{ padding: 4 }}>
+              <Feather name="edit-2" size={14} color={employeeColor} />
+            </TouchableOpacity>
           )}
         </View>
       </Card>

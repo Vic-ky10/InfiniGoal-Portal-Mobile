@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, TouchableOpacity, Alert, Modal, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -11,6 +11,7 @@ import { supabase } from "@/lib/supabase/client";
 import { logout } from "@/features/auth/auth.service";
 import { updateSelfProfile } from "@/features/employee/employee.service";
 import { uploadAvatar } from "@/lib/storage/uploadAvatar";
+import { toast } from "@/store/toast.store";
 
 interface ProfileData {
   id: string;
@@ -83,7 +84,7 @@ export default function SettingsScreen() {
       await logout();
       router.replace("/");
     } catch {
-      Alert.alert("Error", "Failed to sign out. Please try again.");
+      toast.error("Failed to sign out. Please try again.");
     } finally {
       setLoggingOut(false);
     }
@@ -92,7 +93,7 @@ export default function SettingsScreen() {
   const handleUpdateProfile = async () => {
     if (!profile) return;
     if (!editName.trim()) {
-      Alert.alert("Validation", "Name cannot be empty.");
+      toast.error("Name cannot be empty.");
       return;
     }
 
@@ -119,10 +120,9 @@ export default function SettingsScreen() {
           : null
       );
       setIsEditModalOpen(false);
-      Alert.alert("Success", "Profile updated successfully.");
+      toast.success("Profile updated successfully.");
     } catch (error) {
-      Alert.alert(
-        "Update Error",
+      toast.error(
         error instanceof Error ? error.message : "Failed to update profile."
       );
     } finally {
@@ -137,8 +137,7 @@ export default function SettingsScreen() {
       const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
       if (!permissionResult.granted) {
-        Alert.alert(
-          "Permission Required",
+        toast.error(
           "Permission to access camera roll is required to update photo."
         );
         return;
@@ -186,11 +185,10 @@ export default function SettingsScreen() {
           : null
       );
 
-      Alert.alert("Success", "Profile picture updated successfully.");
+      toast.success("Profile picture updated successfully.");
     } catch (error) {
       console.error(error);
-      Alert.alert(
-        "Upload Error",
+      toast.error(
         error instanceof Error ? error.message : "Failed to upload avatar."
       );
     } finally {

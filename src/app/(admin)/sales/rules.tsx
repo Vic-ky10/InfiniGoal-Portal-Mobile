@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -61,38 +61,91 @@ export default function RulesScreen() {
     const badgeColor = item.status === "Active" ? adminColors.success : adminColors.textSecondary;
 
     return (
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-              <AppText variant="h3" weight="700" color={adminColors.text}>
+      <Card
+        style={{
+          borderWidth: 1,
+          borderColor: adminColors.border,
+          borderRadius: radius.lg,
+          ...shadows.sm,
+          padding: spacing.md,
+          backgroundColor: adminColors.background,
+          marginBottom: spacing.md,
+        }}
+      >
+        {/* HEADER */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: spacing.sm,
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.md,
+                backgroundColor: `${adminColors.primary}10`,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Feather name="settings" size={18} color={adminColors.primary} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText weight="700" variant="body" color={adminColors.text}>
                 Min Purchase: ₹{item.minimum_purchase.toLocaleString("en-IN")}
               </AppText>
-              <Badge label={item.status} color={badgeColor} />
             </View>
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
-              Payout Reward: ₹{item.incentive_amount.toLocaleString("en-IN")}
-            </AppText>
           </View>
+          <Badge label={item.status} color={badgeColor} />
+        </View>
 
-          <View style={styles.actions}>
-            <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
-              <Feather name="edit-2" size={16} color={adminColors.primary} />
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => handleDeleteRequest(item)} style={styles.actionBtn}>
-              <Feather name="trash-2" size={16} color={adminColors.danger} />
-            </TouchableOpacity>
+        {/* MIDDLE */}
+        <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
+          <View style={{ flexDirection: "row", alignItems: "baseline", gap: spacing.xs }}>
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Payout Reward:
+            </AppText>
+            <AppText weight="700" variant="h3" color={adminColors.primary}>
+              ₹{item.incentive_amount.toLocaleString("en-IN")}
+            </AppText>
           </View>
         </View>
 
-        <View style={styles.cardDetails}>
-          <View style={styles.detailRow}>
-            <Feather name="award" size={14} color={item.status === "Active" ? adminColors.success : adminColors.textSecondary} />
-            <AppText variant="body" color={adminColors.textSecondary} style={styles.detailText}>
+        {/* FOOTER */}
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: `${adminColors.border}80`,
+            paddingTop: spacing.sm,
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Feather
+              name="info"
+              size={12}
+              color={item.status === "Active" ? adminColors.success : adminColors.textSecondary}
+            />
+            <AppText variant="caption" color={adminColors.textSecondary} style={{ flex: 1 }}>
               {item.status === "Active"
-                ? "Currently active for matching transactions."
-                : "Inactive — not applied to new purchases."}
+                ? "Active rule"
+                : "Inactive rule"}
             </AppText>
+          </View>
+
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            <TouchableOpacity onPress={() => handleEdit(item)} style={{ padding: 4 }}>
+              <Feather name="edit-2" size={14} color={adminColors.primary} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => handleDeleteRequest(item)} style={{ padding: 4 }}>
+              <Feather name="trash-2" size={14} color={adminColors.danger} />
+            </TouchableOpacity>
           </View>
         </View>
       </Card>

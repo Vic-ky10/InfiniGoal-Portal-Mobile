@@ -4,7 +4,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -14,6 +13,7 @@ import { IncentiveWithEmployee, INCENTIVE_TYPE } from "../incentive.types";
 import { createIncentive, updateIncentive, getAuthenticatedProfileId } from "../incentive.service";
 import { getEmployees } from "@/features/employee/employee.service";
 import { Employee } from "@/features/employee/employee.types";
+import { toast } from "@/store/toast.store";
 
 interface Props {
   visible: boolean;
@@ -44,7 +44,6 @@ export default function IncentiveModal({
     try {
       const data = await getEmployees();
       setEmployees(data);
-
       if (incentiveToEdit) {
         setSelectedProfileId(incentiveToEdit.profile_id);
         setIncentiveType(incentiveToEdit.incentive_type);
@@ -77,13 +76,13 @@ export default function IncentiveModal({
 
   const handleSubmit = async () => {
     if (!selectedProfileId || !title.trim() || !description.trim() || !amount.trim()) {
-      Alert.alert("Validation Error", "Please fill in Employee, Title, Description, and Amount.");
+      toast.error("Please fill in Employee, Title, Description, and Amount.");
       return;
     }
 
     const numAmount = Number(amount);
     if (Number.isNaN(numAmount) || numAmount <= 0) {
-      Alert.alert("Validation Error", "Please enter a valid positive amount.");
+      toast.error("Please enter a valid positive amount.");
       return;
     }
 
@@ -91,7 +90,7 @@ export default function IncentiveModal({
     try {
       const profileId = await getAuthenticatedProfileId();
       if (!profileId) {
-        Alert.alert("Error", "User not authenticated.");
+        toast.error("User not authenticated.");
         return;
       }
 
@@ -113,14 +112,14 @@ export default function IncentiveModal({
       }
 
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Incentive saved successfully.");
         onSuccess();
         onClose();
       } else {
-        Alert.alert("Error", res.error || "Failed to save incentive.");
+        toast.error(res.error || "Failed to save incentive.");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred.");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }

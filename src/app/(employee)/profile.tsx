@@ -2,7 +2,6 @@ import { useState, useEffect, useCallback } from "react";
 import {
   View,
   TouchableOpacity,
-  Alert,
   Modal,
   ActivityIndicator,
 } from "react-native";
@@ -26,6 +25,7 @@ import { supabase } from "@/lib/supabase/client";
 import { logout } from "@/features/auth/auth.service";
 import { updateSelfProfile } from "@/features/employee/employee.service";
 import { uploadAvatar } from "@/lib/storage/uploadAvatar";
+import { toast } from "@/store/toast.store";
 
 interface ProfileData {
   id: string;
@@ -94,7 +94,7 @@ export default function EmployeeProfileScreen() {
       await logout();
       router.replace("/");
     } catch {
-      Alert.alert("Error", "Failed to sign out. Please try again.");
+      toast.error("Failed to sign out. Please try again.");
     } finally {
       setLoggingOut(false);
     }
@@ -103,7 +103,7 @@ export default function EmployeeProfileScreen() {
   const handleUpdateProfile = async () => {
     if (!profile) return;
     if (!editName.trim()) {
-      Alert.alert("Validation", "Name cannot be empty.");
+      toast.error("Name cannot be empty.");
       return;
     }
 
@@ -130,10 +130,9 @@ export default function EmployeeProfileScreen() {
           : null,
       );
       setIsEditModalOpen(false);
-      Alert.alert("Success", "Profile updated successfully.");
+      toast.success("Profile updated successfully.");
     } catch (error) {
-      Alert.alert(
-        "Update Error",
+      toast.error(
         error instanceof Error ? error.message : "Failed to update profile.",
       );
     } finally {
@@ -149,8 +148,7 @@ const handleSelectAvatar = async () => {
       await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permissionResult.granted) {
-      Alert.alert(
-        "Permission Required",
+      toast.error(
         "Permission to access camera roll is required to update photo.",
       );
       return;
@@ -199,15 +197,13 @@ const handleSelectAvatar = async () => {
         : null,
     );
 
-    Alert.alert(
-      "Success",
+    toast.success(
       "Profile picture updated successfully.",
     );
   } catch (error) {
     console.error(error);
 
-    Alert.alert(
-      "Upload Error",
+    toast.error(
       error instanceof Error ? error.message : "Failed to upload avatar.",
     );
   } finally {

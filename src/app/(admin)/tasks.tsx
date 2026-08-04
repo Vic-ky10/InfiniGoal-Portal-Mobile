@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { View, FlatList, TouchableOpacity, Alert, Platform } from "react-native";
+import { View, FlatList, TouchableOpacity, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
@@ -11,6 +11,7 @@ import TaskCard from "@/features/task/components/TaskCard";
 import TaskModal from "@/features/task/components/TaskModal";
 import { TaskWithProject } from "@/features/task/task.types";
 import { deleteTask } from "@/features/task/task.service";
+import { toast } from "@/store/toast.store";
 
 const STATUS_FILTERS = ["All", "Todo", "In Progress", "In Review", "Completed"];
 
@@ -33,7 +34,7 @@ export default function TasksScreen() {
   const { tasks, loading, refreshing, refresh } = useTasks();
 
   const filteredTasks = useMemo(() => {
-    return tasks.filter((t) => {
+    return (tasks || []).filter((t) => {
       const matchesSearch =
         t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         t.task_code.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -70,10 +71,10 @@ export default function TasksScreen() {
           onPress: async () => {
             const res = await deleteTask(task.id);
             if (res.success) {
-               Alert.alert("Success", res.message);
+               toast.success(res.message || "Task deleted successfully.");
                refresh();
             } else {
-               Alert.alert("Error", res.error || "Failed to delete task.");
+               toast.error(res.error || "Failed to delete task.");
             }
           },
         },

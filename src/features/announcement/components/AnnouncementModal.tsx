@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import {
-  Alert,
   Modal,
   ScrollView,
   Switch,
@@ -26,6 +25,7 @@ import {
   updateAnnouncement,
   getAuthenticatedProfileId,
 } from "../announcement.service";
+import { toast } from "@/store/toast.store";
 
 interface Props {
   visible: boolean;
@@ -149,17 +149,17 @@ export default function AnnouncementModal({
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      Alert.alert("Validation", "Title is required.");
+      toast.error("Title is required.");
       return;
     }
 
     if (!message.trim()) {
-      Alert.alert("Validation", "Message is required.");
+      toast.error("Message is required.");
       return;
     }
 
     if (targetAudience === TARGET_AUDIENCE.DEPARTMENT && !department.trim()) {
-      Alert.alert("Validation", "Department is required.");
+      toast.error("Department is required.");
       return;
     }
 
@@ -199,7 +199,7 @@ export default function AnnouncementModal({
         const profileId = await getAuthenticatedProfileId();
 
         if (!profileId) {
-          Alert.alert("Authentication", "Unable to identify current user.");
+          toast.error("Unable to identify current user.");
           return;
         }
 
@@ -207,11 +207,11 @@ export default function AnnouncementModal({
       }
 
       if (!result.success) {
-        Alert.alert("Error", result.error ?? "Something went wrong.");
+        toast.error(result.error ?? "Something went wrong.");
         return;
       }
 
-      Alert.alert("Success", result.message);
+      toast.success(result.message || "Announcement saved successfully.");
 
       resetForm();
 
@@ -221,7 +221,7 @@ export default function AnnouncementModal({
     } catch (error) {
       console.error(error);
 
-      Alert.alert("Error", "Something went wrong.");
+      toast.error("Something went wrong.");
     } finally {
       setLoading(false);
     }

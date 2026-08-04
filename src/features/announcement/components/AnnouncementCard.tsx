@@ -1,29 +1,27 @@
-import { useState } from "react";
-import { View, TouchableOpacity, ActivityIndicator, Alert } from "react-native";
+import React, { useState } from "react";
+import { View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge, Button } from "@/components/ui";
 import { ActionSheet, ActionSheetOption } from "@/components/common";
-import { adminColors, radius, spacing } from "@/theme";
+import { useThemeColors, radius, spacing, shadows } from "@/theme";
 import { AnnouncementWithCreator } from "../announcement.types";
 
 interface Props {
   announcement: AnnouncementWithCreator;
-
-  onPublish: (id: string) => Promise<{
+  onPublish?: (id: string) => Promise<{
     success: boolean;
     error?: string;
   }>;
-
-  onEdit: (announcement: AnnouncementWithCreator) => void;
-
-  onDelete: (
-  id: string
-) => Promise<{
-  success: boolean;
-  error?: string;
-  message?: string;
-}>;
+  onEdit?: (announcement: AnnouncementWithCreator) => void;
+  onDelete?: (
+    id: string
+  ) => Promise<{
+    success: boolean;
+    error?: string;
+    message?: string;
+  }>;
+  showActions?: boolean;
 }
 
 export default function AnnouncementCard({
@@ -31,8 +29,10 @@ export default function AnnouncementCard({
   onPublish,
   onEdit,
   onDelete,
+  showActions = true,
 }: Props) {
   const [actionLoading, setActionLoading] = useState(false);
+  const colors = useThemeColors();
   const [actionSheetConfig, setActionSheetConfig] = useState<{
     visible: boolean;
     title?: string;
@@ -44,20 +44,73 @@ export default function AnnouncementCard({
   });
   const isDraft = announcement.status === "Draft";
 
+  const getIcon = (type: string) => {
+    switch (type) {
+      case "Emergency":
+        return "alert-triangle";
+      case "Policy":
+        return "clipboard";
+      case "Holiday":
+        return "calendar";
+      case "Event":
+        return "gift";
+      case "Meeting":
+        return "users";
+      default:
+        return "bell";
+    }
+  };
+
+  const getIconBgColor = (type: string) => {
+    switch (type) {
+      case "Emergency":
+        return `${colors.danger}15`;
+      case "Policy":
+        return `${colors.warning}15`;
+      case "Holiday":
+        return `${colors.success}15`;
+      case "Event":
+        return `${colors.info}15`;
+      case "Meeting":
+        return `${colors.primary}15`;
+      default:
+        return `${colors.primary}15`;
+    }
+  };
+
+  const getIconColor = (type: string) => {
+    switch (type) {
+      case "Emergency":
+        return colors.danger;
+      case "Policy":
+        return colors.warning;
+      case "Holiday":
+        return colors.success;
+      case "Event":
+        return colors.info;
+      case "Meeting":
+        return colors.primary;
+      default:
+        return colors.primary;
+    }
+  };
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case "Important":
-        return adminColors.danger;
+      case "Emergency":
+        return colors.danger;
       case "Event":
-        return adminColors.info;
+        return colors.info;
       case "Policy":
-        return adminColors.warning;
+        return colors.warning;
       default:
-        return adminColors.primary;
+        return colors.primary;
     }
   };
 
   const handlePublish = async () => {
+    if (!onPublish) return;
     setActionLoading(true);
     try {
       await onPublish(announcement.id);
@@ -67,6 +120,7 @@ export default function AnnouncementCard({
   };
 
   const handleDelete = () => {
+    if (!onDelete) return;
     setActionSheetConfig({
       visible: true,
       title: "Delete Announcement",
@@ -75,7 +129,7 @@ export default function AnnouncementCard({
         {
           label: "Delete",
           isDestructive: true,
-          icon: "🗑",
+          icon: "trash-2",
           onPress: () => onDelete(announcement.id),
         },
       ],
@@ -83,125 +137,139 @@ export default function AnnouncementCard({
   };
 
   return (
-    <Card>
+    <Card
+      style={{
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: radius.lg,
+        ...shadows.sm,
+        padding: spacing.md,
+        backgroundColor: colors.background,
+        marginBottom: spacing.md,
+      }}
+    >
+      {/* HEADER */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "flex-start",
-          marginBottom: spacing.xs,
+          marginBottom: spacing.sm,
         }}
       >
-        <View style={{ flex: 1, marginRight: spacing.sm }}>
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
           <View
             style={{
-              flexDirection: "row",
+              width: 36,
+              height: 36,
+              borderRadius: radius.md,
+              backgroundColor: getIconBgColor(announcement.announcement_type),
               alignItems: "center",
-              gap: spacing.xs,
-              marginBottom: spacing.xs,
+              justifyContent: "center",
             }}
           >
-            {announcement.is_pinned && (
-              <AppText
-                variant="caption"
-                color={adminColors.warning}
-                weight="700"
-              >
-                📌 Pinned
-              </AppText>
-            )}
-            <Badge
-              label={announcement.announcement_type}
-              color={getTypeColor(announcement.announcement_type)}
-              variant="subtle"
+            <Feather
+              name={getIcon(announcement.announcement_type) as any}
+              size={18}
+              color={getIconColor(announcement.announcement_type)}
             />
           </View>
-
-          <AppText weight="700" variant="h3">
-            {announcement.title}
-          </AppText>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, flexWrap: "wrap" }}>
+              {announcement.is_pinned && (
+                <AppText variant="caption" color={colors.warning} weight="700">
+                  📌 Pinned
+                </AppText>
+              )}
+              <Badge
+                label={announcement.announcement_type}
+                color={getTypeColor(announcement.announcement_type)}
+                variant="subtle"
+              />
+            </View>
+            <AppText weight="700" variant="body" color={colors.text} style={{ marginTop: 4 }}>
+              {announcement.title}
+            </AppText>
+          </View>
         </View>
-
         <Badge
           label={announcement.status}
-          color={isDraft ? adminColors.warning : adminColors.success}
+          color={isDraft ? colors.warning : colors.success}
         />
       </View>
 
-      <AppText
-        color={adminColors.text}
-        variant="body"
-        style={{ marginTop: spacing.xs, marginBottom: spacing.md }}
-      >
-        {announcement.message}
-      </AppText>
+      {/* MIDDLE */}
+      <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
+        <AppText
+          color={colors.text}
+          variant="body"
+          style={{ lineHeight: 20 }}
+        >
+          {announcement.message}
+        </AppText>
+      </View>
 
+      {/* FOOTER */}
       <View
         style={{
+          borderTopWidth: 1,
+          borderTopColor: `${colors.border}80`,
+          paddingTop: spacing.sm,
           flexDirection: "row",
           justifyContent: "space-between",
           alignItems: "center",
-          backgroundColor: adminColors.background,
-          padding: spacing.sm,
-          borderRadius: radius.md,
         }}
       >
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Feather
-            name="user"
-            size={12}
-            color={adminColors.textSecondary}
-            style={{ marginRight: 4 }}
-          />
-          <AppText variant="caption" color={adminColors.textSecondary}>
-            By{" "}
-            {Array.isArray(announcement.creator)
-              ? (announcement.creator[0]?.full_name ?? "Admin")
-              : "Admin"}
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+          <Feather name="user" size={12} color={colors.textSecondary} />
+          <AppText variant="caption" color={colors.textSecondary}>
+            By {Array.isArray(announcement.creator) ? (announcement.creator[0]?.full_name ?? "Admin") : "Admin"}
           </AppText>
         </View>
 
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
-          <Feather
-            name="target"
-            size={12}
-            color={adminColors.textSecondary}
-            style={{ marginRight: 4 }}
-          />
-          <AppText variant="caption" color={adminColors.textSecondary}>
-            Target: {announcement.target_audience}
-          </AppText>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.md }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+            <Feather name="target" size={12} color={colors.textSecondary} />
+            <AppText variant="caption" color={colors.textSecondary}>
+              Audience: {announcement.target_audience}
+            </AppText>
+          </View>
+
+          {announcement.created_at && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Feather name="calendar" size={12} color={colors.textSecondary} />
+              <AppText variant="caption" color={colors.textSecondary}>
+                {new Date(announcement.created_at).toLocaleDateString()}
+              </AppText>
+            </View>
+          )}
         </View>
       </View>
 
-      <View
-        style={{
-          flexDirection: "row",
-          gap: spacing.sm,
-          marginTop: spacing.md,
-        }}
-      >
-        <View style={{ flex: 1 }}>
-          <Button title="Edit" onPress={() => onEdit(announcement)} size="sm" />
-        </View>
+      {/* ACTIONS */}
+      {showActions && (onEdit || onDelete || onPublish) && (
+        <View style={{ gap: spacing.sm, marginTop: spacing.md }}>
+          <View style={{ flexDirection: "row", gap: spacing.sm }}>
+            {onEdit && (
+              <View style={{ flex: 1 }}>
+                <Button title="Edit" onPress={() => onEdit(announcement)} size="sm" />
+              </View>
+            )}
+            {onDelete && (
+              <View style={{ flex: 1 }}>
+                <Button title="Delete" onPress={handleDelete} size="sm" />
+              </View>
+            )}
+          </View>
 
-        <View style={{ flex: 1 }}>
-          <Button title="Delete" onPress={handleDelete} size="sm" />
-        </View>
-      </View>
-
-      {isDraft && (
-        <View
-          style={{
-            marginTop: spacing.sm,
-          }}
-        >
-          <Button
-            title="Publish Announcement"
-            onPress={handlePublish}
-            loading={actionLoading}
-            size="sm"
-          />
+          {isDraft && onPublish && (
+            <Button
+              title="Publish Announcement"
+              onPress={handlePublish}
+              loading={actionLoading}
+              size="sm"
+            />
+          )}
         </View>
       )}
 

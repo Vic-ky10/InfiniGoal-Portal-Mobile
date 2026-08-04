@@ -4,7 +4,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -20,6 +19,7 @@ import {
   updateProject,
   getAuthenticatedProfileId,
 } from "../project.service";
+import { toast } from "@/store/toast.store";
 
 interface Props {
   visible: boolean;
@@ -80,10 +80,7 @@ export default function ProjectModal({
 
   const handleSubmit = async () => {
     if (!projectCode.trim() || !projectName.trim()) {
-      Alert.alert(
-        "Validation Error",
-        "Please fill in Project Code and Project Name.",
-      );
+      toast.error("Please fill in Project Code and Project Name.");
       return;
     }
 
@@ -91,7 +88,7 @@ export default function ProjectModal({
     try {
       const profileId = await getAuthenticatedProfileId();
       if (!profileId) {
-        Alert.alert("Error", "User not authenticated.");
+        toast.error("User not authenticated.");
         return;
       }
 
@@ -113,14 +110,14 @@ export default function ProjectModal({
       }
 
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Project saved successfully.");
         onSuccess();
         onClose();
       } else {
-        Alert.alert("Error", res.error || "Failed to save project.");
+        toast.error(res.error || "Failed to save project.");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred.");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }

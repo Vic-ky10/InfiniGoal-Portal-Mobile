@@ -3,25 +3,25 @@ import {
   View,
   FlatList,
   Modal,
-  TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
   StyleSheet,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge, Input, Button, DatePickerField } from "@/components/ui";
+import { AppText, Screen, Input, Button, DatePickerField } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, radius, spacing, shadows } from "@/theme";
+import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from "@/store/toast.store";
 
-import { Expense, EXPENSE_CATEGORY, EXPENSE_STATUS } from "@/features/expense/expense.types";
+import { Expense, EXPENSE_CATEGORY } from "@/features/expense/expense.types";
 import {
   getEmployeeExpenses,
   createExpense,
   updateExpense,
 } from "@/features/expense/expense.service";
+import ExpenseCard from "@/features/expense/components/ExpenseCard";
 
 export default function EmployeeExpensesScreen() {
   const [loading, setLoading] = useState(true);
@@ -86,11 +86,11 @@ export default function EmployeeExpensesScreen() {
 
   const handleSaveExpense = async () => {
     if (!amount.trim() || isNaN(Number(amount))) {
-      Alert.alert("Validation", "Please enter a valid amount.");
+      toast.error("Please enter a valid amount.");
       return;
     }
     if (!expenseDate.trim()) {
-      Alert.alert("Validation", "Please enter an expense date.");
+      toast.error("Please enter an expense date.");
       return;
     }
 
@@ -104,11 +104,11 @@ export default function EmployeeExpensesScreen() {
           description: description.trim() || undefined,
         });
         if (res.success) {
-          Alert.alert("Success", res.message);
+          toast.success(res.message || "Expense updated successfully.");
           setModalVisible(false);
           loadData(true);
         } else {
-          Alert.alert("Error", res.error);
+          toast.error(res.error || "Failed to update expense.");
         }
       } else {
         if (!profileId) return;
@@ -119,11 +119,11 @@ export default function EmployeeExpensesScreen() {
           description: description.trim(),
         });
         if (res.success) {
-          Alert.alert("Success", res.message);
+          toast.success(res.message || "Expense logged successfully.");
           setModalVisible(false);
           loadData(true);
         } else {
-          Alert.alert("Error", res.error);
+          toast.error(res.error || "Failed to log expense.");
         }
       }
     } finally {
@@ -137,46 +137,12 @@ export default function EmployeeExpensesScreen() {
   });
 
   const renderExpenseItem = ({ item }: { item: Expense }) => (
-    <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <AppText weight="700" variant="h3" color={employeeColors.text}>
-              ₹{item.amount.toLocaleString()}
-            </AppText>
-            <Badge
-              label={item.status}
-              color={
-                item.status === "Approved"
-                  ? employeeColors.primary
-                  : item.status === "Pending"
-                  ? employeeColors.warning
-                  : employeeColors.danger
-              }
-            />
-          </View>
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs }}>
-            Code: {item.expense_code} | Category: {item.expense_type} | Date: {item.expense_date}
-          </AppText>
-          {item.description ? (
-            <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.sm }}>
-             Reason:   {item.description}
-            </AppText>
-          ) : null}
-          {item.review_comment && (
-            <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs, fontStyle: "italic" }}>
-              Manager Note: {item.review_comment}
-            </AppText>
-          )}
-        </View>
-
-        {item.status === "Pending" && (
-          <TouchableOpacity onPress={() => openEditModal(item)} style={{ padding: spacing.xs, backgroundColor: `${employeeColors.primary}10`, borderRadius: radius.sm }}>
-            <Feather name="edit-2" size={14} color={employeeColors.primary} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </Card>
+    <ExpenseCard
+      expense={{ ...item, employee: null }}
+      showAvatar={false}
+      showActions={false}
+      onEdit={item.status === "Pending" ? () => openEditModal(item) : undefined}
+    />
   );
 
   return (

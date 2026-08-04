@@ -1,12 +1,12 @@
-import { View, Image } from "react-native";
+import { View, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
+import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, NotificationBell } from "@/components/common";
 import {
-  NotificationCard,
   QuickActionCard,
-  RecentActivity,
+  SalesRevenueSection,
   StatCard,
   WelcomeCard,
 } from "../components";
@@ -16,6 +16,36 @@ import { useDashboard } from "../hooks/useDashboard";
 import { adminColors, spacing } from "@/theme";
 import { useEffect, useState, useCallback } from "react";
 import { supabase } from "@/lib/supabase/client";
+
+interface SectionHeaderProps {
+  title: string;
+  icon: string;
+  iconColor?: string;
+  iconBg?: string;
+}
+
+function SectionHeader({
+  title,
+  icon,
+  iconColor = adminColors.primary,
+  iconBg,
+}: SectionHeaderProps) {
+  return (
+    <View style={styles.sectionHeader}>
+      <View
+        style={[
+          styles.sectionIconBg,
+          { backgroundColor: iconBg ?? `${iconColor}15` },
+        ]}
+      >
+        <Feather name={icon as any} size={14} color={iconColor} />
+      </View>
+      <AppText variant="h3" weight="700">
+        {title}
+      </AppText>
+    </View>
+  );
+}
 
 export default function DashboardScreen() {
   const router = useRouter();
@@ -72,16 +102,12 @@ export default function DashboardScreen() {
         designation={designation}
         avatarUrl={avatarUrl}
       />
-      <AppText
-        variant="h3"
-        weight="700"
-        style={{ marginTop: spacing.xl, marginBottom: spacing.md }}
-      >
-        Overview
-      </AppText>
 
-      <View style={{ gap: spacing.md }}>
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+      {/*  overview Stats  */}
+      <SectionHeader title="Overview" icon="grid" />
+
+      <View style={styles.statsGrid}>
+        <View style={styles.statsRow}>
           <StatCard
             title="Total Employees"
             value={data?.totalEmployees ?? 0}
@@ -90,15 +116,15 @@ export default function DashboardScreen() {
             onPress={() => router.push("/(admin)/employees")}
           />
           <StatCard
-            title="Present Today "
+            title="Present Today"
             value={data?.attendanceToday ?? "0 / 0"}
-            icon= "check-circle"
+            icon="check-circle"
             color={adminColors.success}
             onPress={() => router.push("/(admin)/attendance")}
           />
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={styles.statsRow}>
           <StatCard
             title="Pending Leaves"
             value={data?.pendingLeaves ?? 0}
@@ -115,7 +141,7 @@ export default function DashboardScreen() {
           />
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={styles.statsRow}>
           <StatCard
             title="Active Projects"
             value={data?.activeProjects ?? 0}
@@ -132,7 +158,7 @@ export default function DashboardScreen() {
           />
         </View>
 
-        <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <View style={styles.statsRow}>
           <StatCard
             title="Announcements"
             value={data?.totalAnnouncements ?? 0}
@@ -150,21 +176,25 @@ export default function DashboardScreen() {
         </View>
       </View>
 
-      {/* Quick Actions */}
+     
+ <View style={{ marginTop: spacing.xxl }}>
+  <SalesRevenueSection />
+</View>
 
-      <AppText
-        variant="h3"
-        weight="700"
-        style={{ marginTop: spacing.xxl, marginBottom: spacing.md }}
-      >
-        Quick Management
-      </AppText>
+   {/* quick Management */}
+      <SectionHeader
+        title="Quick Management"
+        icon="zap"
+        iconColor={adminColors.warning}
+        iconBg={`${adminColors.warning}15`}
+      />
 
-      <View style={{ gap: spacing.sm }}>
+      <View style={styles.quickActions}>
         <QuickActionCard
           title="Employees"
           subtitle="Manage directory & profiles"
           icon="users"
+          accentColor={adminColors.primary}
           onPress={() => router.push("/(admin)/employees")}
         />
 
@@ -172,6 +202,7 @@ export default function DashboardScreen() {
           title="Attendance"
           subtitle="View records & logins"
           icon="clock"
+          accentColor={adminColors.success}
           onPress={() => router.push("/(admin)/attendance")}
         />
 
@@ -179,6 +210,7 @@ export default function DashboardScreen() {
           title="Leave Requests"
           subtitle="Review & approve leave applications"
           icon="calendar"
+          accentColor={adminColors.warning}
           onPress={() => router.push("/(admin)/leave")}
         />
 
@@ -186,6 +218,7 @@ export default function DashboardScreen() {
           title="Expenses"
           subtitle="Review claims & reimbursements"
           icon="credit-card"
+          accentColor={adminColors.danger}
           onPress={() => router.push("/(admin)/expenses")}
         />
 
@@ -193,9 +226,46 @@ export default function DashboardScreen() {
           title="Projects"
           subtitle="Monitor active project progress"
           icon="folder"
+          accentColor={adminColors.info}
           onPress={() => router.push("/(admin)/projects")}
+        />
+
+        <QuickActionCard
+          title="Sales"
+          subtitle="Customers, purchases & revenue"
+          icon="trending-up"
+          accentColor={adminColors.secondary ?? adminColors.primaryLight ?? adminColors.primary}
+          onPress={() => router.push("/(admin)/sales")}
         />
       </View>
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  sectionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    marginTop: spacing.xxl,
+    marginBottom: spacing.md,
+  },
+  sectionIconBg: {
+    width: 28,
+    height: 28,
+    borderRadius: 8,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  statsGrid: {
+    gap: spacing.md,
+  },
+  statsRow: {
+    flexDirection: "row",
+    gap: spacing.md,
+  },
+  quickActions: {
+    gap: spacing.sm,
+    marginBottom: spacing.xl,
+  },
+});

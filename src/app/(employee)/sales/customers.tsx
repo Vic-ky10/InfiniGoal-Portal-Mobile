@@ -9,7 +9,6 @@ import { useAuthStore } from "@/store";
 import { useMyCustomers, useMySalesAreas } from "@/features/sales/hooks/useEmployeeSales";
 import { Customer } from "@/features/sales/sales.types";
 import { EmployeeCustomerModal } from "@/features/sales/components";
-import { toast } from "@/store/toast.store";
 
 const STATUS_FILTERS = ["All", "Active", "Inactive", "Blocked"];
 const EMPLOYEE_COLOR = "#22C55E";
@@ -73,62 +72,103 @@ export default function EmployeeCustomersScreen() {
     const badgeColor =
       item.status === "Active"
         ? EMPLOYEE_COLOR
-        : item.status === "Inactive"
-        ? adminColors.textSecondary
-        : adminColors.danger;
+        : item.status === "Blocked"
+        ? adminColors.danger
+        : adminColors.textSecondary;
 
     return (
-      <Card style={styles.card}>
-        <View style={styles.cardHeader}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-              <AppText variant="h3" weight="700" color={adminColors.text}>
+      <Card
+        style={{
+          borderWidth: 1,
+          borderColor: adminColors.border,
+          borderRadius: radius.lg,
+          ...shadows.sm,
+          padding: spacing.md,
+          backgroundColor: adminColors.background,
+          marginBottom: spacing.md,
+        }}
+      >
+        {/* HEADER */}
+        <View
+          style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            marginBottom: spacing.sm,
+          }}
+        >
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+            <View
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: radius.md,
+                backgroundColor: `${EMPLOYEE_COLOR}10`,
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              <Feather name="user" size={18} color={EMPLOYEE_COLOR} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <AppText weight="700" variant="body" color={adminColors.text}>
                 {item.full_name}
               </AppText>
-              <Badge label={item.status} color={badgeColor} />
             </View>
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
-              Code: {item.customer_code}
-            </AppText>
           </View>
-
-          {/* Edit only — employees cannot delete customers */}
-          <TouchableOpacity onPress={() => handleEdit(item)} style={styles.actionBtn}>
-            <Feather name="edit-2" size={16} color={EMPLOYEE_COLOR} />
-          </TouchableOpacity>
+          <Badge label={item.status} color={badgeColor} />
         </View>
 
-        <View style={styles.cardDetails}>
-          <View style={styles.detailRow}>
-            <Feather name="phone" size={14} color={adminColors.textSecondary} />
-            <AppText variant="body" color={adminColors.textSecondary} style={styles.detailText}>
+        {/* MIDDLE */}
+        <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Feather name="phone" size={12} color={adminColors.textSecondary} />
+            <AppText variant="caption" color={adminColors.textSecondary}>
               {item.phone}
             </AppText>
           </View>
 
           {!!item.email && (
-            <View style={styles.detailRow}>
-              <Feather name="mail" size={14} color={adminColors.textSecondary} />
-              <AppText variant="body" color={adminColors.textSecondary} style={styles.detailText}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+              <Feather name="mail" size={12} color={adminColors.textSecondary} />
+              <AppText variant="caption" color={adminColors.textSecondary}>
                 {item.email}
               </AppText>
             </View>
           )}
 
-          <View style={styles.detailRow}>
-            <Feather name="map-pin" size={14} color={adminColors.textSecondary} />
-            <AppText variant="body" color={adminColors.textSecondary} style={styles.detailText}>
-              {area?.area_name || "No Area Assigned"}
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Feather name="map-pin" size={12} color={adminColors.textSecondary} />
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Area: {area?.area_name || "No Area Assigned"}
             </AppText>
           </View>
 
           {!!item.notes && (
-            <View style={styles.notesRow}>
-              <AppText variant="caption" color={adminColors.textSecondary} style={{ fontStyle: "italic" }}>
-                {item.notes}
-              </AppText>
-            </View>
+            <AppText
+              variant="caption"
+              color={adminColors.textSecondary}
+              style={{ fontStyle: "italic", marginTop: 4, lineHeight: 16 }}
+            >
+              Notes: &quot;{item.notes}&quot;
+            </AppText>
           )}
+        </View>
+
+        {/* FOOTER */}
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: `${adminColors.border}80`,
+            paddingTop: spacing.sm,
+            flexDirection: "row",
+            justifyContent: "flex-end",
+            alignItems: "center",
+          }}
+        >
+          <TouchableOpacity onPress={() => handleEdit(item)} style={{ padding: 4 }}>
+            <Feather name="edit-2" size={14} color={EMPLOYEE_COLOR} />
+          </TouchableOpacity>
         </View>
       </Card>
     );
@@ -161,7 +201,7 @@ export default function EmployeeCustomersScreen() {
 
         <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
 
-        {/* Status filters */}
+       
         <View style={styles.filterRow}>
           {STATUS_FILTERS.map((s) => {
             const isSelected = selectedStatus === s;
@@ -208,7 +248,7 @@ export default function EmployeeCustomersScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Dedicated Employee modal — no Assign Staff, auto-sets assigned_employee_id */}
+        {/* dedicated Employee modal — no Assign staff, */}
         <EmployeeCustomerModal
           visible={modalVisible}
           onClose={handleCloseModal}

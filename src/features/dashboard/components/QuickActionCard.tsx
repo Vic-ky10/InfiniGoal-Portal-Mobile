@@ -1,14 +1,16 @@
-import { TouchableOpacity, View, Platform, Pressable } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
-import { adminColors, radius, spacing, shadows } from "@/theme";
+import { adminColors, employeeColors, useThemeColors, radius, spacing, shadows } from "@/theme";
 
 interface Props {
   title: string;
   subtitle?: string;
   icon?: string;
   onPress: () => void;
+  accentColor?: string;
+  theme?: "admin" | "employee";
 }
 
 export default function QuickActionCard({
@@ -16,52 +18,103 @@ export default function QuickActionCard({
   subtitle,
   icon,
   onPress,
+  accentColor,
+  theme,
 }: Props) {
-  return (
-  <Pressable
-  onPress={onPress}
-  android_ripple={{ color: "transparent" }}
-  style={({ pressed }) => [
-    {
-      transform: [{ scale: pressed ? 0.985 : 1 }],
-      opacity: pressed ? 0.98 : 1,
-      borderRadius: 24,
-    },
-  ]}
->
+  const fallbackColors = useThemeColors();
+  const colors = theme === "employee" ? employeeColors : theme === "admin" ? adminColors : fallbackColors;
+  const actualAccentColor = accentColor || colors.primary;
 
-      <Card style={{ borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
-        <View style={{ flexDirection: "row", alignItems: "center" }}>
+  return (
+    <Pressable
+      onPress={onPress}
+      android_ripple={{ color: "transparent" }}
+      style={({ pressed }) => [
+        {
+          transform: [{ scale: pressed ? 0.985 : 1 }],
+          opacity: pressed ? 0.95 : 1,
+          borderRadius: 24,
+        },
+      ]}
+    >
+      <Card style={{ ...styles.card, borderColor: colors.border }}>
+        <View style={styles.row}>
           {icon && (
             <View
-              style={{
-                width: 42,
-                height: 42,
-                borderRadius: radius.md,
-                backgroundColor: `${adminColors.primary}10`,
-                justifyContent: "center",
-                alignItems: "center",
-                marginRight: spacing.md,
-              }}
+              style={[
+                styles.iconWrapper,
+                { backgroundColor: `${actualAccentColor}15` },
+              ]}
             >
-              <Feather name={icon} size={20} color={adminColors.primary} />
+              <Feather name={icon as any} size={20} color={actualAccentColor} />
             </View>
           )}
 
-          <View style={{ flex: 1 }}>
+          <View style={styles.textBlock}>
             <AppText weight="700" variant="body">
               {title}
             </AppText>
             {subtitle && (
-              <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
+              <AppText
+                variant="caption"
+                color={colors.textSecondary}
+                style={styles.subtitle}
+              >
                 {subtitle}
               </AppText>
             )}
           </View>
 
-          <Feather name="chevron-right" size={16} color={adminColors.textSecondary} />
+          <View
+            style={[
+              styles.arrowWrapper,
+              { backgroundColor: `${actualAccentColor}12` },
+            ]}
+          >
+            <Feather
+              name="arrow-right"
+              size={15}
+              color={actualAccentColor}
+            />
+          </View>
         </View>
       </Card>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  card: {
+    borderWidth: 1,
+    borderColor: adminColors.border,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    ...shadows.sm,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  iconWrapper: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.md,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: spacing.md,
+  },
+  textBlock: {
+    flex: 1,
+  },
+  subtitle: {
+    marginTop: 2,
+  },
+  arrowWrapper: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    justifyContent: "center",
+    alignItems: "center",
+    marginLeft: spacing.sm,
+  },
+});
