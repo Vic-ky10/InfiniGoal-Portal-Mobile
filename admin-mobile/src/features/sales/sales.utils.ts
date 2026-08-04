@@ -85,3 +85,32 @@ export function getMonthlyRevenueChartData(purchases: CustomerPurchase[]): { lab
     return { label, amount: val };
   });
 }
+
+export function getApprovedRevenue(purchases: CustomerPurchase[]): number {
+  return purchases
+    .filter((p) => p.status === "Approved")
+    .reduce((sum, p) => sum + p.amount, 0);
+}
+
+export function getCurrentMonthRevenue(purchases: CustomerPurchase[]): number {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  return purchases
+    .filter((p) => {
+      if (p.status !== "Approved") return false;
+      const purchaseDate = new Date(p.purchase_date);
+      return (
+        purchaseDate.getMonth() === currentMonth &&
+        purchaseDate.getFullYear() === currentYear
+      );
+    })
+    .reduce((sum, p) => sum + p.amount, 0);
+}
+
+export function formatCurrency(value: number): string {
+  if (value >= 10000000) return `Rs. ${(value / 10000000).toFixed(1)}Cr`;
+  if (value >= 100000) return `Rs. ${(value / 100000).toFixed(1)}L`;
+  if (value >= 1000) return `Rs. ${(value / 1000).toFixed(1)}K`;
+  return `Rs. ${value}`;
+}

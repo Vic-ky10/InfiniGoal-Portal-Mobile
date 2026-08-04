@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Text,
   TextInput,
   TouchableOpacity,
@@ -8,6 +7,7 @@ import {
 } from "react-native";
 
 import { loginAdmin } from "@/features/auth/auth.service";
+import { toast } from "@/store/toast.store";
 
 export default function LoginForm() {
   const [email, setEmail] = useState("");
@@ -16,7 +16,7 @@ export default function LoginForm() {
 
   async function handleLogin() {
     if (!email || !password) {
-      Alert.alert("Validation", "Please enter email and password.");
+      toast.error("Please enter email and password.");
       return;
     }
 
@@ -26,11 +26,11 @@ export default function LoginForm() {
       const { error } = await loginAdmin(email, password);
 
       if (error) {
-        Alert.alert("Login Failed", error.message);
+        toast.error(error.message);
         return;
       }
 
-      Alert.alert("Success", "Login successful.");
+      toast.success("Login successful.");
     } finally {
       setLoading(false);
     }

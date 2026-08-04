@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, FlatList } from "react-native";
 
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, spacing, shadows } from "@/theme";
+import { spacing } from "@/theme";
 
 import { AnnouncementWithCreator } from "@/features/announcement/announcement.types";
 import { getAnnouncements } from "@/features/announcement/announcement.service";
+import AnnouncementCard from "@/features/announcement/components/AnnouncementCard";
 
 export default function EmployeeAnnouncementsScreen() {
   const [loading, setLoading] = useState(true);
@@ -36,37 +37,7 @@ export default function EmployeeAnnouncementsScreen() {
   }, [loadData]);
 
   const renderAnnouncementItem = ({ item }: { item: AnnouncementWithCreator }) => {
-    const creatorName = Array.isArray(item.creator)
-      ? item.creator[0]?.full_name
-      : (item.creator as any)?.full_name;
-
-    return (
-      <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
-        <View style={{ gap: spacing.xs }}>
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <Badge label={item.announcement_type} color={employeeColors.primary} variant="subtle" />
-            {item.is_pinned && <Badge label="Pinned" color={employeeColors.warning} />}
-          </View>
-
-          <AppText weight="700" variant="h3" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
-            {item.title}
-          </AppText>
-
-          <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs, lineHeight: 22 }}>
-            {item.message}
-          </AppText>
-
-          <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: spacing.sm }}>
-            <AppText variant="caption" color={employeeColors.textSecondary}>
-              By: {creatorName ?? "Management"}
-            </AppText>
-            <AppText variant="caption" color={employeeColors.textSecondary}>
-              {new Date(item.created_at).toLocaleDateString()}
-            </AppText>
-          </View>
-        </View>
-      </Card>
-    );
+    return <AnnouncementCard announcement={item} showActions={false} />;
   };
 
   return (

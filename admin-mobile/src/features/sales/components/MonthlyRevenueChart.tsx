@@ -4,7 +4,7 @@ import Svg, { Path, Circle, Text as SvgText, Line, Defs, LinearGradient, Stop, G
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Card } from "@/components/ui";
-import { adminColors, spacing, radius, shadows } from "@/theme";
+import { adminColors, employeeColors, useThemeColors, spacing, radius, shadows } from "@/theme";
 import { CustomerPurchase } from "../sales.types";
 import { getMonthlyRevenueChartData } from "../sales.utils";
 
@@ -12,14 +12,19 @@ interface MonthlyRevenueChartProps {
   purchases: CustomerPurchase[];
   isLoading?: boolean;
   isError?: boolean;
+  theme?: "admin" | "employee";
 }
 
 export default function MonthlyRevenueChart({
   purchases,
   isLoading = false,
   isError = false,
+  theme,
 }: MonthlyRevenueChartProps) {
   const [chartWidth, setChartWidth] = useState(0);
+
+  const fallbackColors = useThemeColors();
+  const colors = theme === "employee" ? employeeColors : theme === "admin" ? adminColors : fallbackColors;
 
   // Animation values
   const fadeAnim = useMemo(() => new Animated.Value(0), []);
@@ -104,7 +109,7 @@ export default function MonthlyRevenueChart({
     const gridDivisions = [0, 0.33, 0.66, 1.0];
     const gridYValues = gridDivisions.map((pct) => pct * maxChartAmount);
 
-    // Format utility for Y axis labels (e.g. ₹45K or ₹1.2L)
+    
     const formatYLabel = (val: number) => {
       if (val === 0) return "₹0";
       if (val >= 100000) {
@@ -132,12 +137,12 @@ export default function MonthlyRevenueChart({
       <Svg width={chartWidth} height={containerHeight}>
         <Defs>
           <LinearGradient id="gradientArea" x1="0" y1="0" x2="0" y2="1">
-            <Stop offset="0%" stopColor={adminColors.primary} stopOpacity={0.25} />
-            <Stop offset="100%" stopColor={adminColors.primary} stopOpacity={0.0} />
+            <Stop offset="0%" stopColor={colors.primary} stopOpacity={0.25} />
+            <Stop offset="100%" stopColor={colors.primary} stopOpacity={0.0} />
           </LinearGradient>
           <LinearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
-            <Stop offset="0%" stopColor={adminColors.primary} />
-            <Stop offset="100%" stopColor={adminColors.primaryLight} />
+            <Stop offset="0%" stopColor={colors.primary} />
+            <Stop offset="100%" stopColor={colors.primaryLight} />
           </LinearGradient>
         </Defs>
 
@@ -151,14 +156,14 @@ export default function MonthlyRevenueChart({
                 y1={y}
                 x2={chartWidth - paddingRight}
                 y2={y}
-                stroke={adminColors.border}
+                stroke={colors.border}
                 strokeWidth={1}
                 strokeDasharray="4, 4"
               />
               <SvgText
-                x={paddingLeft - 8}
+               x={paddingLeft - 20}
                 y={y + 4}
-                fill={adminColors.textSecondary}
+                fill={colors.textSecondary}
                 fontSize={10}
                 fontWeight="500"
                 textAnchor="end"
@@ -190,7 +195,7 @@ export default function MonthlyRevenueChart({
               cx={p.x}
               cy={p.y}
               r={6}
-              fill={adminColors.primary}
+              fill={colors.primary}
               opacity={0.15}
             />
             {/* Inner solid circle */}
@@ -198,7 +203,7 @@ export default function MonthlyRevenueChart({
               cx={p.x}
               cy={p.y}
               r={4}
-              fill={adminColors.primary}
+              fill={colors.primary}
               stroke="#FFFFFF"
               strokeWidth={1.5}
             />
@@ -206,7 +211,7 @@ export default function MonthlyRevenueChart({
             <SvgText
               x={p.x}
               y={p.y - 10}
-              fill={adminColors.text}
+              fill={colors.text}
               fontSize={9}
               fontWeight="700"
               textAnchor="middle"
@@ -218,7 +223,7 @@ export default function MonthlyRevenueChart({
             <SvgText
               x={p.x}
               y={paddingTop + graphHeight + 16}
-              fill={adminColors.textSecondary}
+              fill={colors.textSecondary}
               fontSize={10}
               fontWeight="600"
               textAnchor="middle"
@@ -229,53 +234,53 @@ export default function MonthlyRevenueChart({
         ))}
       </Svg>
     );
-  }, [chartWidth, chartData, graphWidth, graphHeight, maxChartAmount, isEmpty]);
+  }, [chartWidth, chartData, graphWidth, graphHeight, maxChartAmount, isEmpty, colors]);
 
   return (
-    <Card style={styles.container}>
+    <Card style={{ ...styles.container, borderColor: colors.border, backgroundColor: colors.background }}>
       <View style={styles.header}>
         <View style={styles.titleContainer}>
-          <AppText variant="h3" weight="700" color={adminColors.text}>
+          <AppText variant="h3" weight="700" color={colors.text}>
             Monthly Revenue
           </AppText>
-          <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
+          <AppText variant="caption" color={colors.textSecondary} style={{ marginTop: 2 }}>
             Total approved revenue generated over the last 6 months
           </AppText>
         </View>
-        <View style={styles.headerIcon}>
-          <Feather name="trending-up" size={16} color={adminColors.primary} />
+        <View style={[styles.headerIcon, { backgroundColor: `${colors.primary}10` }]}>
+          <Feather name="trending-up" size={16} color={colors.primary} />
         </View>
       </View>
 
       <View style={styles.chartWrapper} onLayout={handleLayout}>
         {isLoading ? (
           <View style={styles.centerContainer}>
-            <ActivityIndicator size="large" color={adminColors.primary} />
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: spacing.sm }}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <AppText variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
               Loading chart metrics...
             </AppText>
           </View>
         ) : isError ? (
           <View style={styles.centerContainer}>
-            <View style={styles.errorIconBg}>
-              <Feather name="alert-circle" size={22} color={adminColors.danger} />
+            <View style={[styles.errorIconBg, { backgroundColor: `${colors.danger}10` }]}>
+              <Feather name="alert-circle" size={22} color={colors.danger} />
             </View>
-            <AppText weight="700" color={adminColors.text} style={{ marginTop: spacing.sm }}>
+            <AppText weight="700" color={colors.text} style={{ marginTop: spacing.sm }}>
               Failed to load chart data
             </AppText>
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2, textAlign: "center" }}>
+            <AppText variant="caption" color={colors.textSecondary} style={{ marginTop: 2, textAlign: "center" }}>
               Check your connection and try refreshing.
             </AppText>
           </View>
         ) : isEmpty ? (
           <View style={styles.centerContainer}>
-            <View style={styles.emptyIconBg}>
-              <Feather name="bar-chart-2" size={24} color={adminColors.textSecondary} />
+            <View style={[styles.emptyIconBg, { backgroundColor: `${colors.textSecondary}10` }]}>
+              <Feather name="bar-chart-2" size={24} color={colors.textSecondary} />
             </View>
-            <AppText weight="700" color={adminColors.textSecondary} style={{ marginTop: spacing.sm }}>
+            <AppText weight="700" color={colors.textSecondary} style={{ marginTop: spacing.sm }}>
               No Approved Revenue
             </AppText>
-            <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2, textAlign: "center" }}>
+            <AppText variant="caption" color={colors.textSecondary} style={{ marginTop: 2, textAlign: "center" }}>
               Approved sales in the last 6 months will appear here.
             </AppText>
           </View>

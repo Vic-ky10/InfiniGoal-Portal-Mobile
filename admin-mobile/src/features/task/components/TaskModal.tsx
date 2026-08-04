@@ -4,7 +4,6 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -24,6 +23,7 @@ import {
   ProjectWithMembers,
   ProjectMemberWithEmployee,
 } from "@/features/project/project.types";
+import { toast } from "@/store/toast.store";
 
 interface Props {
   visible: boolean;
@@ -118,8 +118,7 @@ export default function TaskModal({
       !selectedMemberId ||
       !dueDate.trim()
     ) {
-      Alert.alert(
-        "Validation Error",
+      toast.error(
         "Please fill in Task Title, Project, Member, and Due Date.",
       );
       return;
@@ -129,7 +128,7 @@ export default function TaskModal({
     try {
       const profileId = await getAuthenticatedProfileId();
       if (!profileId) {
-        Alert.alert("Error", "User not authenticated.");
+        toast.error("User not authenticated.");
         return;
       }
 
@@ -152,14 +151,14 @@ export default function TaskModal({
       }
 
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Task saved successfully.");
         onSuccess();
         onClose();
       } else {
-        Alert.alert("Error", res.error || "Failed to save task.");
+        toast.error(res.error || "Failed to save task.");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred.");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }

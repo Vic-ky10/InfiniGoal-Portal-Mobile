@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { Modal, View, ScrollView, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Button, Card, Badge } from "@/components/ui";
@@ -11,6 +11,7 @@ import {
 } from "../project.service";
 import { getEmployees } from "@/features/employee/employee.service";
 import { Employee } from "@/features/employee/employee.types";
+import { toast } from "@/store/toast.store";
 
 interface Props {
   visible: boolean;
@@ -58,10 +59,7 @@ export default function ProjectAssignModal({
   const handleAssign = async () => {
     if (!project) return;
     if (selectedProfileIds.length === 0) {
-      Alert.alert(
-        "Select Employee",
-        "Please select at least one employee to assign.",
-      );
+      toast.error("Please select at least one employee to assign.");
       return;
     }
 
@@ -69,7 +67,7 @@ export default function ProjectAssignModal({
     try {
       const profileId = await getAuthenticatedProfileId();
       if (!profileId) {
-        Alert.alert("Error", "User not authenticated.");
+        toast.error("User not authenticated.");
         return;
       }
 
@@ -80,14 +78,14 @@ export default function ProjectAssignModal({
       });
 
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Members assigned successfully.");
         setSelectedProfileIds([]);
         onSuccess();
       } else {
-        Alert.alert("Error", res.error || "Failed to assign members.");
+        toast.error(res.error || "Failed to assign members.");
       }
     } catch (err: any) {
-      Alert.alert("Error", err.message || "An unexpected error occurred.");
+      toast.error(err.message || "An unexpected error occurred.");
     } finally {
       setSubmitting(false);
     }

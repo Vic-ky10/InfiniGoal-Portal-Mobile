@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { View, FlatList, TouchableOpacity, Alert } from "react-native";
+import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen, Card } from "@/components/ui";
@@ -21,6 +21,7 @@ import {
   ProjectWithMembers,
 } from "@/features/project/project.types";
 import { deleteProject } from "@/features/project/project.service";
+import { toast } from "@/store/toast.store";
 
 const STATUS_FILTERS: { label: string; value: ProjectStatus | "" }[] = [
   { label: "All", value: "" },
@@ -95,10 +96,10 @@ export default function ProjectsScreen() {
           onPress: async () => {
             const res = await deleteProject(project.id);
             if (res.success) {
-              Alert.alert("Success", res.message);
+              toast.success(res.message || "Project deleted successfully.");
               refresh();
             } else {
-              Alert.alert("Error", res.error || "Failed to delete project.");
+              toast.error(res.error || "Failed to delete project.");
             }
           },
         },

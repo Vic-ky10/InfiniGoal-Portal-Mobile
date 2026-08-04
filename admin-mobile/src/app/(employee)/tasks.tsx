@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { View, FlatList, TouchableOpacity, Alert, Modal, ScrollView, Animated } from "react-native";
+import { View, FlatList, TouchableOpacity, Modal, ScrollView, Animated } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
-import { employeeColors, radius, spacing, shadows } from "@/theme";
+import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
-import { TaskWithProject, TASK_STATUS } from "@/features/task/task.types";
+import { TaskWithProject } from "@/features/task/task.types";
 import { getEmployeeTasks, updateTaskStatus } from "@/features/task/task.service";
+import { toast } from "@/store/toast.store";
+import TaskCard from "@/features/task/components/TaskCard";
 
 export default function EmployeeTasksScreen() {
   const [loading, setLoading] = useState(true);
@@ -30,7 +32,6 @@ export default function EmployeeTasksScreen() {
     options: [],
   });
 
-  
   const pulseAnim = useMemo(() => new Animated.Value(0.4), []);
 
   useEffect(() => {
@@ -55,7 +56,6 @@ export default function EmployeeTasksScreen() {
   }, [loading, pulseAnim]);
 
   const loadData = useCallback(async (isRefresh = false) => {
-    await Promise.resolve();
     try {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
@@ -79,12 +79,13 @@ export default function EmployeeTasksScreen() {
     });
   }, [loadData]);
 
+  // Optimistic update helper
   const applyOptimisticUpdate = (taskId: string, newStatus: string) => {
     const completedAt = newStatus === "Completed" ? new Date().toISOString() : undefined;
     setTasks((prev) => {
       const updated = prev.map((t) =>
         t.id === taskId
-          ? { ...t, status: newStatus, ...(completedAt ? { completed_at: completedAt } : {}) }
+          ? { ...t, status: newStatus as any, ...(completedAt ? { completed_at: completedAt } : {}) }
           : t
       );
       const found = updated.find((t) => t.id === taskId);
@@ -96,6 +97,7 @@ export default function EmployeeTasksScreen() {
   };
 
   const handleStatusChange = async (taskId: string, newStatus: string) => {
+    // If completing, show a simple confirmation action sheet to keep it safe
     if (newStatus === "Completed") {
       setActionSheetConfig({
         visible: true,
@@ -111,7 +113,7 @@ export default function EmployeeTasksScreen() {
               try {
                 const res = await updateTaskStatus(taskId, newStatus);
                 if (!res.success) {
-                  Alert.alert("Error", res.error);
+                  toast.error(res.error || "Failed to update task status.");
                   await loadData(true);
                 }
               } finally {
@@ -122,17 +124,17 @@ export default function EmployeeTasksScreen() {
         ],
       });
     } else {
-     
+      
       applyOptimisticUpdate(taskId, newStatus);
       setUpdatingTaskId(taskId);
       try {
         const res = await updateTaskStatus(taskId, newStatus);
         if (!res.success) {
      
-          Alert.alert("Error", res.error);
+          toast.error(res.error || "Failed to update task status.");
           await loadData(true);
         }
-     
+      
       } finally {
         setUpdatingTaskId(null);
       }
@@ -188,31 +190,6 @@ export default function EmployeeTasksScreen() {
     }
   }, [tasks, searchQuery, statusFilter]);
 
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "Urgent":
-      case "High":
-        return <Feather name="alert-circle" size={12} color={employeeColors.danger} />;
-      case "Medium":
-        return <Feather name="minus-circle" size={12} color={employeeColors.warning} />;
-      case "Low":
-      default:
-        return <Feather name="chevron-down" size={12} color={employeeColors.textSecondary} />;
-    }
-  };
-
-  const getStatusIndicatorColor = (status: string) => {
-    switch (status) {
-      case "Completed":
-        return employeeColors.success || "#10B981";
-      case "In Progress":
-        return employeeColors.info || "#3B82F6";
-      case "Todo":
-      default:
-        return employeeColors.textSecondary || "#94A3B8";
-    }
-  };
-
   const openDetails = (task: TaskWithProject) => {
     setSelectedTask(task);
     setDetailModalVisible(true);
@@ -225,129 +202,68 @@ export default function EmployeeTasksScreen() {
     const isUpdating = updatingTaskId === item.id;
 
     return (
-      <TouchableOpacity onPress={() => openDetails(item)} activeOpacity={1}>
-        <Card
-          style={{
-            marginBottom: spacing.md,
-            borderWidth: 1,
-            borderColor: employeeColors.border,
-            ...shadows.sm,
-            gap: spacing.sm,
-          }}
-        >
-          <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-            <View style={{ flexDirection: "row", gap: spacing.xs, alignItems: "center" }}>
-              <Badge label={item.task_code} color={employeeColors.primary} variant="subtle" />
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 3, backgroundColor: `${employeeColors.border}40`, paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm }}>
-                {getPriorityIcon(item.priority)}
-                <AppText variant="caption" weight="600" color={employeeColors.textSecondary}>
-                  {item.priority}
+      <View style={{ marginBottom: spacing.md }}>
+        <TaskCard
+          task={item}
+          onPress={() => openDetails(item)}
+          showAvatar={false}
+          showActions={true}
+          statusActions={
+            !isCompleted ? (
+              <View style={{ flexDirection: "row", gap: spacing.sm }}>
+                {isTodo ? (
+                  <TouchableOpacity
+                    onPress={() => handleStatusChange(item.id, "In Progress")}
+                    disabled={isUpdating}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      backgroundColor: `${employeeColors.info}10`,
+                      borderWidth: 1.5,
+                      borderColor: employeeColors.info,
+                      borderRadius: radius.md,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: isUpdating ? 0.6 : 1,
+                    }}
+                  >
+                    <AppText variant="caption" weight="700" color={employeeColors.info}>
+                      {isUpdating ? "Starting..." : "Start Task"}
+                    </AppText>
+                  </TouchableOpacity>
+                ) : isInProgress ? (
+                  <TouchableOpacity
+                    onPress={() => handleStatusChange(item.id, "Completed")}
+                    disabled={isUpdating}
+                    style={{
+                      flex: 1,
+                      paddingVertical: 10,
+                      backgroundColor: `${employeeColors.primary}10`,
+                      borderWidth: 1.5,
+                      borderColor: employeeColors.primary,
+                      borderRadius: radius.md,
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: isUpdating ? 0.6 : 1,
+                    }}
+                  >
+                    <AppText variant="caption" weight="700" color={employeeColors.primary}>
+                      {isUpdating ? "Completing..." : "Mark Complete"}
+                    </AppText>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+                <Feather name="check-circle" size={13} color={employeeColors.success} />
+                <AppText variant="caption" weight="700" color={employeeColors.success}>
+                  Completed {item.completed_at ? `on: ${new Date(item.completed_at).toLocaleDateString()}` : ""}
                 </AppText>
               </View>
-            </View>
-            <Badge
-              label={item.status}
-              color={
-                isCompleted
-                  ? employeeColors.success
-                  : isInProgress
-                  ? employeeColors.info
-                  : employeeColors.warning
-              }
-            />
-          </View>
-
-          <AppText weight="700" variant="h3" color={employeeColors.text}>
-            Task : {item.title}
-          </AppText>
-
-          {item.project && (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-              <Feather name="briefcase" size={11} color={employeeColors.textSecondary} />
-              <AppText variant="caption" color={employeeColors.textSecondary}>
-                {item.project.project_name} ({item.project.project_code})
-              </AppText>
-            </View>
-          )}
-
-          {item.description ? (
-            <AppText variant="body" color={employeeColors.textSecondary} numberOfLines={2}>
-             Description :  {item.description}
-            </AppText>
-          ) : null}
-
-          {/* Date Details */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", borderTopWidth: 1, borderTopColor: `${employeeColors.border}50`, paddingTop: spacing.sm, marginTop: 4 }}>
-            <View style={{ flexDirection: "row", gap: spacing.sm }}>
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
-                <Feather name="calendar" size={11} color={employeeColors.textSecondary} />
-                <AppText variant="caption" color={employeeColors.textSecondary}>
-                  Due: {item.due_date || "--"}
-                </AppText>
-              </View>
-              {item.created_at && (
-                <AppText variant="caption" color={employeeColors.textSecondary}>
-                  Assigned: {new Date(item.created_at).toISOString().split("T")[0]}
-                </AppText>
-              )}
-            </View>
-          </View>
-
-          {/* Status Actions */}
-          {!isCompleted ? (
-            <View style={{ flexDirection: "row", gap: spacing.sm, marginTop: spacing.xs }}>
-              {isTodo ? (
-                <TouchableOpacity
-                  onPress={() => handleStatusChange(item.id, "In Progress")}
-                  disabled={isUpdating}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    backgroundColor: `${employeeColors.info}10`,
-                    borderWidth: 1.5,
-                    borderColor: employeeColors.info,
-                    borderRadius: radius.md,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: isUpdating ? 0.6 : 1,
-                  }}
-                >
-                  <AppText variant="caption" weight="700" color={employeeColors.info}>
-                    {isUpdating ? "Starting..." : "Start Task"}
-                  </AppText>
-                </TouchableOpacity>
-              ) : isInProgress ? (
-                <TouchableOpacity
-                  onPress={() => handleStatusChange(item.id, "Completed")}
-                  disabled={isUpdating}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 10,
-                    backgroundColor: `${employeeColors.primary}10`,
-                    borderWidth: 1.5,
-                    borderColor: employeeColors.primary,
-                    borderRadius: radius.md,
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: isUpdating ? 0.6 : 1,
-                  }}
-                >
-                  <AppText variant="caption" weight="700" color={employeeColors.primary}>
-                    {isUpdating ? "Completing..." : "Mark Complete"}
-                  </AppText>
-                </TouchableOpacity>
-              ) : null}
-            </View>
-          ) : (
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: spacing.xs }}>
-              <Feather name="check-circle" size={13} color={employeeColors.success} />
-              <AppText variant="caption" weight="700" color={employeeColors.success}>
-                Completed {item.completed_at ? `on: ${new Date(item.completed_at).toLocaleDateString()}` : ""}
-              </AppText>
-            </View>
-          )}
-        </Card>
-      </TouchableOpacity>
+            )
+          }
+        />
+      </View>
     );
   };
 

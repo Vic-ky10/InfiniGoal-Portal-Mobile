@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, FlatList, TouchableOpacity, Alert } from "react-native";
+import { View, FlatList } from "react-native";
 
 import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
@@ -13,6 +13,8 @@ import {
   loginAttendance,
   logoutAttendance,
 } from "@/features/attendance/attendance.service";
+import { toast } from "@/store/toast.store";
+import AttendanceCard from "@/features/attendance/components/AttendanceCard";
 
 export default function EmployeeAttendanceScreen() {
   const [loading, setLoading] = useState(true);
@@ -63,10 +65,10 @@ export default function EmployeeAttendanceScreen() {
     try {
       const res = await loginAttendance(profileId);
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Clocked in successfully.");
         loadData(true);
       } else {
-        Alert.alert("Error", res.error);
+        toast.error(res.error || "Failed to clock in.");
       }
     } finally {
       setActionLoading(false);
@@ -79,10 +81,10 @@ export default function EmployeeAttendanceScreen() {
     try {
       const res = await logoutAttendance(profileId);
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Clocked out successfully.");
         loadData(true);
       } else {
-        Alert.alert("Error", res.error);
+        toast.error(res.error || "Failed to clock out.");
       }
     } finally {
       setActionLoading(false);
@@ -90,49 +92,7 @@ export default function EmployeeAttendanceScreen() {
   };
 
   const renderHistoryItem = ({ item }: { item: Attendance }) => (
-    <Card style={{ marginBottom: spacing.md }}>
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
-        <View>
-          <AppText weight="700">{item.attendance_date}</AppText>
-          <AppText
-            variant="caption"
-            color={employeeColors.textSecondary}
-            style={{ marginTop: 2 }}
-          >
-            In:{" "}
-            {item.login_time
-              ? new Date(item.login_time).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "--"}{" "}
-            | Out:{" "}
-            {item.logout_time
-              ? new Date(item.logout_time).toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })
-              : "--"}
-          </AppText>
-        </View>
-        <Badge
-          label={item.status}
-          color={
-            item.status === "Present"
-              ? employeeColors.primary
-              : item.status === "Incomplete"
-                ? employeeColors.warning
-                : employeeColors.danger
-          }
-        />
-      </View>
-    </Card>
+    <AttendanceCard record={item as any} showAvatar={false} />
   );
 
   return (

@@ -3,18 +3,17 @@ import {
   View,
   FlatList,
   Modal,
-  TextInput,
   TouchableOpacity,
-  Alert,
   ScrollView,
   StyleSheet,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card, Badge, Input, Button, DatePickerField } from "@/components/ui";
+import { AppText, Screen, Input, Button, DatePickerField } from "@/components/ui";
 import { AppHeader, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
-import { employeeColors, radius, spacing, shadows } from "@/theme";
+import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
+import { toast } from "@/store/toast.store";
 
 import { LeaveRequest, LEAVE_TYPE, LEAVE_DURATION } from "@/features/leave/leave.types";
 import {
@@ -22,6 +21,7 @@ import {
   createLeaveRequest,
   cancelPendingLeaveRequest,
 } from "@/features/leave/leave.service";
+import LeaveCard from "@/features/leave/components/LeaveCard";
 
 export default function EmployeeLeaveScreen() {
   const [loading, setLoading] = useState(true);
@@ -74,11 +74,11 @@ export default function EmployeeLeaveScreen() {
 
   const handleApplyLeave = async () => {
     if (!startDate.trim() || !endDate.trim()) {
-      Alert.alert("Validation Error", "Please select start and end dates.");
+      toast.error("Please select start and end dates.");
       return;
     }
     if (!reason.trim()) {
-      Alert.alert("Validation Error", "Please provide a reason for leave.");
+      toast.error("Please provide a reason for leave.");
       return;
     }
 
@@ -94,12 +94,12 @@ export default function EmployeeLeaveScreen() {
       });
 
       if (res.success) {
-        Alert.alert("Success", res.message);
+        toast.success(res.message || "Leave request submitted successfully.");
         setModalVisible(false);
         setReason("");
         loadData(true);
       } else {
-        Alert.alert("Error", res.error);
+        toast.error(res.error || "Failed to submit leave request.");
       }
     } finally {
       setSubmitting(false);
@@ -120,10 +120,10 @@ export default function EmployeeLeaveScreen() {
             try {
               const res = await cancelPendingLeaveRequest(profileId || "", requestId);
               if (res.success) {
-                Alert.alert("Success", res.message);
+                toast.success(res.message || "Leave request cancelled successfully.");
                 loadData(true);
               } else {
-                Alert.alert("Error", res.error);
+                toast.error(res.error || "Failed to cancel leave request.");
               }
             } catch (error) {
               console.error(error);
@@ -135,46 +135,12 @@ export default function EmployeeLeaveScreen() {
   };
 
   const renderLeaveItem = ({ item }: { item: LeaveRequest }) => (
-    <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
-      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-        <View style={{ flex: 1 }}>
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs }}>
-            <AppText weight="700" variant="title" color={employeeColors.text}>
-              {item.leave_type} 
-            </AppText>
-            <Badge
-              label={item.status}
-              color={
-                item.status === "Approved"
-                  ? employeeColors.primary
-                  : item.status === "Pending"
-                  ? employeeColors.warning
-                  : employeeColors.danger
-              }
-            />
-          </View>
-          <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs }}>
-            {item.start_date} to {item.end_date} ({item.total_days} day{item.total_days > 1 ? "s" : ""})
-          </AppText>
-          {item.reason && (
-            <AppText variant="body" color={employeeColors.text} style={{ marginTop: spacing.sm }}>
-             Reasons:  &quot;{item.reason}&quot;
-            </AppText>
-          )}
-          {item.review_comment && (
-            <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: spacing.xs, fontStyle: "italic" }}>
-              Manager Note: {item.review_comment}
-            </AppText>
-          )}
-        </View>
-
-        {item.status === "Pending" && (
-          <TouchableOpacity onPress={() => handleCancelRequest(item.id)} style={{ padding: spacing.xs, backgroundColor: "#EF444410", borderRadius: radius.sm }}>
-            <Feather name="x-circle" size={16} color={employeeColors.danger} />
-          </TouchableOpacity>
-        )}
-      </View>
-    </Card>
+    <LeaveCard
+      leave={item as any}
+      showAvatar={false}
+      showActions={false}
+      onCancel={item.status === "Pending" ? () => handleCancelRequest(item.id) : undefined}
+    />
   );
 
   return (

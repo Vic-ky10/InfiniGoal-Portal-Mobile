@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, FlatList, TouchableOpacity, Alert } from "react-native";
+import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
@@ -11,6 +11,7 @@ import IncentiveCard from "@/features/incentive/components/IncentiveCard";
 import IncentiveModal from "@/features/incentive/components/IncentiveModal";
 import { IncentiveStatus, IncentiveWithEmployee } from "@/features/incentive/incentive.types";
 import { deleteIncentive } from "@/features/incentive/incentive.service";
+import { toast } from "@/store/toast.store";
 
 const STATUS_FILTERS: { label: string; value: IncentiveStatus | "" }[] = [
   { label: "All", value: "" },
@@ -60,10 +61,10 @@ export default function IncentivesScreen() {
           onPress: async () => {
             const res = await deleteIncentive(incentive.id);
             if (res.success) {
-              Alert.alert("Success", res.message);
+              toast.success(res.message || "Incentive deleted successfully.");
               refresh();
             } else {
-              Alert.alert("Error", res.error || "Failed to delete incentive.");
+              toast.error(res.error || "Failed to delete incentive.");
             }
           },
         },

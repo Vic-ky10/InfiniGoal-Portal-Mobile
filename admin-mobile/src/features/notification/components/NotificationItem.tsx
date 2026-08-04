@@ -75,7 +75,7 @@ export default function NotificationItem({ notification, onPress , colors }: Pro
     opacity: 1,
     transform: [{ scale: pressed ? 0.985 : 1 }],
     backgroundColor: pressed
-      ? `${adminColors.primary}10`
+      ? `${colors.primary}10`
       : "transparent",
     ...Platform.select({
       web: {

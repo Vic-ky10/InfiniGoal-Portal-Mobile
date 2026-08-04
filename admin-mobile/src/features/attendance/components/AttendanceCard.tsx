@@ -1,40 +1,40 @@
+import React from "react";
 import { View } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge, Avatar } from "@/components/ui";
-import { adminColors, spacing } from "@/theme";
+import { useThemeColors, spacing, radius, shadows } from "@/theme";
 import { AttendanceWithEmployee } from "../attendance.types";
 
 interface Props {
   record: AttendanceWithEmployee;
+  showAvatar?: boolean;
 }
 
-export default function AttendanceCard({ record }: Props) {
+export default function AttendanceCard({
+  record,
+  showAvatar = true,
+}: Props) {
+  const colors = useThemeColors();
   const employee = record.employee;
   const name = employee?.full_name ?? "Unknown Employee";
-  const isAbsent = record.status === "Absent";
 
- const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Present":
-      return adminColors.success;
-
-    case "Short Hours":
-      return adminColors.warning;
-
-    case "Half Day":
-      return adminColors.primary;
-
-    case "Incomplete":
-      return adminColors.warning;
-
-    case "Absent":
-      return adminColors.danger;
-
-    default:
-      return adminColors.textSecondary;
-  }
-};
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "Present":
+        return colors.success;
+      case "Short Hours":
+        return colors.warning;
+      case "Half Day":
+        return colors.primary;
+      case "Incomplete":
+        return colors.warning;
+      case "Absent":
+        return colors.danger;
+      default:
+        return colors.textSecondary;
+    }
+  };
 
   const formatTime = (timeStr?: string | null) => {
     if (!timeStr) return "--:--";
@@ -47,57 +47,124 @@ export default function AttendanceCard({ record }: Props) {
   };
 
   return (
-    <Card>
-      <View style={{ flexDirection: "row", alignItems: "center", marginBottom: spacing.sm }}>
-        <Avatar name={name} size={40} />
-        <View style={{ flex: 1, marginLeft: spacing.md }}>
-          <AppText weight="700">{name}</AppText>
-          <AppText variant="caption" color={adminColors.textSecondary}>
-            {employee?.employee_id ? `${employee.employee_id} • ` : ""}{record.attendance_date}
-          </AppText>
-        </View>
-        <Badge label={record.status} color={getStatusColor(record.status)} />
-      </View>
-
+    <Card
+      style={{
+        borderWidth: 1,
+        borderColor: colors.border,
+        borderRadius: radius.lg,
+        ...shadows.sm,
+        padding: spacing.md,
+        backgroundColor: colors.background,
+        marginBottom: spacing.md,
+      }}
+    >
+      {/* HEADER */}
       <View
         style={{
           flexDirection: "row",
           justifyContent: "space-between",
-          backgroundColor: adminColors.background,
-          padding: spacing.md,
-          borderRadius: spacing.sm,
-          marginTop: spacing.xs,
+          alignItems: "flex-start",
+          marginBottom: spacing.sm,
         }}
       >
-        <View style={{ alignItems: "center" }}>
-          <AppText variant="caption" color={adminColors.textSecondary}>
-           Log  In Time
+        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <View
+            style={{
+              width: 36,
+              height: 36,
+              borderRadius: radius.md,
+              backgroundColor: `${colors.primary}10`,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Feather name="clock" size={18} color={colors.primary} />
+          </View>
+          <View style={{ flex: 1 }}>
+            <AppText weight="700" variant="body" color={colors.text}>
+              {record.attendance_date}
+            </AppText>
+          </View>
+        </View>
+        <Badge label={record.status} color={getStatusColor(record.status)} />
+      </View>
+
+      {/* MIDDLE */}
+      <View
+        style={{
+          flexDirection: "row",
+          justifyContent: "space-between",
+          backgroundColor: colors.surface,
+          padding: spacing.md,
+          borderRadius: radius.md,
+          marginBottom: spacing.xs,
+        }}
+      >
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <AppText variant="caption" color={colors.textSecondary}>
+            Log In Time
           </AppText>
-          <AppText weight="600" style={{ marginTop: 2 }}>
+          <AppText weight="700" style={{ marginTop: 4 }} color={colors.text}>
             {formatTime(record.login_time)}
           </AppText>
         </View>
 
-        <View style={{ alignItems: "center" }}>
-          <AppText variant="caption" color={adminColors.textSecondary}>
+        <View
+          style={{
+            width: 1,
+            backgroundColor: colors.border,
+            marginHorizontal: spacing.sm,
+          }}
+        />
+
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <AppText variant="caption" color={colors.textSecondary}>
             Log Out Time
           </AppText>
-          <AppText weight="600" style={{ marginTop: 2 }}>
+          <AppText weight="700" style={{ marginTop: 4 }} color={colors.text}>
             {formatTime(record.logout_time)}
           </AppText>
         </View>
 
-        <View style={{ alignItems: "center" }}>
-          <AppText variant="caption" color={adminColors.textSecondary}>
+        <View
+          style={{
+            width: 1,
+            backgroundColor: colors.border,
+            marginHorizontal: spacing.sm,
+          }}
+        />
+
+        <View style={{ alignItems: "center", flex: 1 }}>
+          <AppText variant="caption" color={colors.textSecondary}>
             Working Hours
           </AppText>
-          <AppText weight="600" color={adminColors.primary} style={{ marginTop: 2 }}>
-           {record.working_hours !== null
-  ? `${record.working_hours.toFixed(1)} hrs`
-  : "--"}
+          <AppText weight="700" color={colors.primary} style={{ marginTop: 4 }}>
+            {record.working_hours !== null
+              ? `${record.working_hours.toFixed(1)} hrs`
+              : "--"}
           </AppText>
         </View>
       </View>
+
+      {/* FOOTER */}
+      {showAvatar && (
+        <View
+          style={{
+            borderTopWidth: 1,
+            borderTopColor: `${colors.border}80`,
+            paddingTop: spacing.sm,
+            flexDirection: "row",
+            alignItems: "center",
+            gap: spacing.xs,
+            marginTop: spacing.sm,
+          }}
+        >
+          <Avatar name={name} size={20} />
+          <AppText variant="caption" color={colors.textSecondary}>
+            {name}
+          </AppText>
+        </View>
+      )}
     </Card>
   );
 }

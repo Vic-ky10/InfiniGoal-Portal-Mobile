@@ -1,8 +1,8 @@
-import { View, TouchableOpacity, Platform, Pressable } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
-import { adminColors, spacing, radius, shadows } from "@/theme";
+import { adminColors, employeeColors, useThemeColors, spacing, shadows } from "@/theme";
 
 interface StatCardProps {
   title: string;
@@ -10,75 +10,76 @@ interface StatCardProps {
   color?: string;
   icon?: string;
   onPress?: () => void;
+  theme?: "admin" | "employee";
 }
 
 export default function StatCard({
   title,
   value,
-  color = adminColors.primary,
+  color,
   icon,
   onPress,
+  theme,
 }: StatCardProps) {
+  const fallbackColors = useThemeColors();
+  const colors = theme === "employee" ? employeeColors : theme === "admin" ? adminColors : fallbackColors;
+  const activeColor = color || colors.primary;
+
   const Content = (
     <Card
       style={{
         flex: 1,
-        minWidth: 140,
+        minWidth: 175,
         borderWidth: 1,
-        borderColor: adminColors.border,
+        borderColor: colors.border,
+        padding: spacing.md,
         ...shadows.sm,
       }}
     >
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-        }}
+      {/* Icon badge */}
+      {icon && (
+        <View
+          style={[
+            styles.iconBadge,
+            { backgroundColor: `${activeColor}15` },
+          ]}
+        >
+          <Feather name={icon as any} size={16} color={activeColor} />
+        </View>
+      )}
+
+      {/* Value */}
+      <AppText
+        variant="h1"
+        weight="700"
+        color={colors.text}
+        style={styles.value}
       >
-        <View style={{ flex: 1 }}>
-          <AppText
-            variant="caption"
-            color={adminColors.textSecondary}
-            weight="600"
-          >
-            {title}
-          </AppText>
+        {value}
+      </AppText>
 
-          <AppText
-            variant="h1"
-            weight="700"
-            color={adminColors.text}
-            style={{ marginTop: spacing.xs }}
-          >
-            {value}
-          </AppText>
-        </View>
+      {/* Title row with optional chevron */}
+      <View style={styles.titleRow}>
+        <AppText
+          variant="caption"
+          color={colors.textSecondary}
+          weight="500"
+          style={styles.title}
+        >
+          {title}
+        </AppText>
+        {onPress && (
+          <Feather
+            name="chevron-right"
+            size={12}
+            color={colors.textSecondary}
+          />
+        )}
+      </View>
 
-        <View style={{ alignItems: "center", gap: spacing.sm }}>
-          {icon && (
-            <View
-              style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
-                backgroundColor: `${color}10`,
-                justifyContent: "center",
-                alignItems: "center",
-              }}
-            >
-              <Feather name={icon} size={18} color={color} />
-            </View>
-          )}
-
-          {onPress && (
-            <Feather
-              name="chevron-right"
-              size={14}
-              color={adminColors.textSecondary}
-            />
-          )}
-        </View>
+      {/* Color accent bar */}
+      <View style={[styles.accentBar, { backgroundColor: `${activeColor}30` }]}>
+        <View style={[styles.accentFill, { backgroundColor: activeColor }]} />
       </View>
     </Card>
   );
@@ -92,8 +93,8 @@ export default function StatCard({
       style={({ pressed }) => [
         {
           flex: 1,
-          transform: [{ scale: pressed ? 0.985 : 1 }],
-          opacity: pressed ? 0.98 : 1,
+          transform: [{ scale: pressed ? 0.97 : 1 }],
+          opacity: pressed ? 0.96 : 1,
           borderRadius: 24,
         },
       ]}
@@ -102,3 +103,37 @@ export default function StatCard({
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  value: {
+    marginBottom: 2,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginTop: 1,
+  },
+  title: {
+    flex: 1,
+  },
+  accentBar: {
+    height: 3,
+    borderRadius: 2,
+    marginTop: spacing.sm,
+    overflow: "hidden",
+  },
+  accentFill: {
+    width: "40%",
+    height: "100%",
+    borderRadius: 2,
+  },
+});

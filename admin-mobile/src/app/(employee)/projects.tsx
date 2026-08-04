@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, FlatList } from "react-native";
 
-import { AppText, Screen, Card, Badge } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { employeeColors, spacing, shadows } from "@/theme";
+import { spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
-import { EmployeeProject } from "@/features/project/project.types";
+import { EmployeeProject, ProjectWithMembers } from "@/features/project/project.types";
 import { getEmployeeProjects } from "@/features/project/project.service";
+import ProjectCard from "@/features/project/components/ProjectCard";
 
 export default function EmployeeProjectsScreen() {
   const [loading, setLoading] = useState(true);
@@ -43,52 +44,20 @@ export default function EmployeeProjectsScreen() {
     const proj = item.project;
     if (!proj) return null;
 
+    const projectWithMembers: ProjectWithMembers = {
+      ...proj,
+      members: item.team ?? [],
+    };
+
     return (
-      <Card style={{ marginBottom: spacing.md, borderWidth: 1, borderColor: employeeColors.border, ...shadows.sm }}>
-        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start" }}>
-          <View style={{ flex: 1 }}>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginBottom: spacing.xs }}>
-              <Badge label={proj.project_code} color={employeeColors.primary} variant="subtle" />
-              <Badge
-                label={proj.status}
-                color={
-                  proj.status === "Active"
-                    ? employeeColors.primary
-                    : proj.status === "Completed"
-                    ? employeeColors.info
-                    : employeeColors.warning
-                }
-              />
-              <Badge label={proj.priority} color={proj.priority === "High" ? employeeColors.danger : employeeColors.textSecondary} variant="subtle" />
-            </View>
-
-            <AppText weight="700" variant="h3" color={employeeColors.text}>
-              {proj.project_name}
-            </AppText>
-
-            <AppText variant="caption" color={employeeColors.textSecondary} style={{ marginTop: 2 }}>
-              Role: {item.member_role} | Assigned: {item.joined_date ?? item.assigned_at?.split("T")[0] ?? "--"}
-            </AppText>
-
-            {proj.description && (
-              <AppText variant="body" color={employeeColors.textSecondary} style={{ marginTop: spacing.sm }}>
-               Task : {proj.description}
-              </AppText>
-            )}
-
-            {proj.status === "Completed" && (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: spacing.md, paddingTop: spacing.sm, borderTopWidth: 1, borderTopColor: `${employeeColors.border}50` }}>
-                <View style={{ width: 18, height: 18, borderRadius: 9, backgroundColor: `${employeeColors.success}20`, alignItems: "center", justifyContent: "center" }}>
-                  <AppText style={{ fontSize: 11, color: employeeColors.success }}>✔</AppText>
-                </View>
-                <AppText variant="caption" weight="700" color={employeeColors.success}>
-                  Project Completed
-                </AppText>
-              </View>
-            )}
-          </View>
-        </View>
-      </Card>
+      <View style={{ marginBottom: spacing.md }}>
+        <ProjectCard
+          project={projectWithMembers}
+          showRoleInfo={true}
+          memberRole={item.member_role}
+          assignedDate={item.joined_date ?? item.assigned_at}
+        />
+      </View>
     );
   };
 

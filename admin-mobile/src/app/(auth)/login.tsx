@@ -1,6 +1,5 @@
 import { useState } from "react";
 import {
-  Alert,
   Text,
   TextInput,
   TouchableOpacity,
@@ -13,6 +12,7 @@ import { Feather } from "@expo/vector-icons";
 import Logo from "@/assets/images/Logo.png";
 
 import { loginAdmin, loginEmployee } from "@/features/auth/auth.service";
+import { toast } from "@/store/toast.store";
 
 export default function LoginScreen() {
   const router = useRouter();
@@ -28,7 +28,7 @@ export default function LoginScreen() {
 
   async function handleLogin() {
     if (!email.trim() || !password.trim()) {
-      Alert.alert("Validation", "Please enter email and password.");
+      toast.error("Please enter email and password.");
       return;
     }
 
@@ -39,7 +39,7 @@ export default function LoginScreen() {
       const { error } = await loginFn(email.trim(), password);
 
       if (error) {
-        Alert.alert("Login Failed", error.message);
+        toast.error(error.message);
         return;
       }
 
@@ -49,8 +49,7 @@ export default function LoginScreen() {
       //   router.replace("/(admin)/dashboard");
       // }
     } catch (error) {
-      Alert.alert(
-        "Error",
+      toast.error(
         error instanceof Error ? error.message : "Something went wrong."
       );
     } finally {
