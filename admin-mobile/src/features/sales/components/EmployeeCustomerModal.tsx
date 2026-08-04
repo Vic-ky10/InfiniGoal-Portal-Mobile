@@ -235,6 +235,12 @@ export default function EmployeeCustomerModal({
                 color={adminColors.primary}
                 style={{ alignSelf: "flex-start", marginBottom: spacing.md }}
               />
+            ) : (!salesAreas || salesAreas.length === 0) ? (
+              <View style={{ marginBottom: spacing.md, padding: spacing.sm, backgroundColor: `${adminColors.warning}15`, borderRadius: radius.md, borderWidth: 1, borderColor: `${adminColors.warning}40` }}>
+                <AppText variant="caption" color={adminColors.warning} weight="600">
+                  No active sales areas available. Please contact your administrator.
+                </AppText>
+              </View>
             ) : (
               <Controller
                 control={control}

@@ -65,7 +65,7 @@ export async function createLeaveRequest(
   await notifyAdmins({
     title: "New Leave Request",
     message: `A new ${values.leave_type} leave request has been submitted.`,
-    notificationType: "LEAVE_REQUEST",
+    notificationType: "Leave",
     referenceId: data.id,
     actionUrl: "/(admin)/leave",
     createdBy: profileId,
@@ -218,23 +218,20 @@ export async function reviewLeaveRequest(
     };
   }
 
-  await createNotification({
-    profileId: existing.profile_id,
-    title:
-      values.status === LEAVE_STATUS.APPROVED
-        ? "Leave Request Approved"
-        : "Leave Request Rejected",
-    message: `Your leave request for ${existing.start_date} has been ${values.status.toLowerCase()}.${
-      values.review_comment ? ` Reason: ${values.review_comment}` : ""
-    }`,
-    notificationType:
-      values.status === LEAVE_STATUS.APPROVED
-        ? "LEAVE_APPROVED"
-        : "LEAVE_REJECTED",
-    referenceId: existing.id,
-    actionUrl: "/(employee)/leave",
-    createdBy: reviewerId,
-  });
+await createNotification({
+  profileId: existing.profile_id,
+  title:
+    values.status === LEAVE_STATUS.APPROVED
+      ? "Leave Request Approved"
+      : "Leave Request Rejected",
+  message: `Your leave request for ${existing.start_date} has been ${values.status.toLowerCase()}.${
+    values.review_comment ? ` Reason: ${values.review_comment}` : ""
+  }`,
+  notificationType: "Leave",
+  referenceId: existing.id,
+  actionUrl: "/(employee)/leave",
+  createdBy: reviewerId,
+});
 
   return {
     success: true,

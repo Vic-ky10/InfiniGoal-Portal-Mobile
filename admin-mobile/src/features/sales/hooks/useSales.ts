@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 import {
   getSalesAreas,
+  getActiveSalesAreas,
   getSalesAreaById,
   createSalesArea,
   updateSalesArea,
@@ -52,6 +53,7 @@ export const salesKeys = {
   all: ["sales"] as const,
 
   areas: () => [...salesKeys.all, "areas"] as const,
+  activeAreas: () => [...salesKeys.areas(), "active"] as const,
   area: (id: string) => [...salesKeys.areas(), id] as const,
 
   customers: () => [...salesKeys.all, "customers"] as const,
@@ -76,6 +78,13 @@ export function useSalesAreas() {
   });
 }
 
+export function useActiveSalesAreas() {
+  return useQuery({
+    queryKey: salesKeys.activeAreas(),
+    queryFn: getActiveSalesAreas,
+  });
+}
+
 export function useSalesArea(id: string) {
   return useQuery({
     queryKey: salesKeys.area(id),
@@ -91,6 +100,7 @@ export function useCreateSalesArea() {
       createSalesArea(data, createdBy),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesKeys.areas() });
+      queryClient.invalidateQueries({ queryKey: ["my-sales-areas"] });
     },
   });
 }
@@ -103,6 +113,7 @@ export function useUpdateSalesArea() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: salesKeys.areas() });
       queryClient.invalidateQueries({ queryKey: salesKeys.area(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["my-sales-areas"] });
     },
   });
 }
@@ -113,6 +124,7 @@ export function useDeleteSalesArea() {
     mutationFn: deleteSalesArea,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: salesKeys.areas() });
+      queryClient.invalidateQueries({ queryKey: ["my-sales-areas"] });
     },
   });
 }

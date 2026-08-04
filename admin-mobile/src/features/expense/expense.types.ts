@@ -36,6 +36,10 @@ export const EXPENSE_CATEGORY = {
   description: string;
 
   receipt_url: string | null;
+  receipt_name?: string | null;
+  receipt_size?: number | null;
+  receipt_type?: string | null;
+  uploaded_at?: string | null;
 
   expense_date: string;
 
@@ -59,7 +63,11 @@ export interface ExpenseInput {
 
   expense_date: string;
 
-  receipt_url?: string;
+  receipt_url?: string | null;
+  receipt_name?: string | null;
+  receipt_size?: number | null;
+  receipt_type?: string | null;
+  uploaded_at?: string | null;
 }
 export const EXPENSE_STATUS = {
   PENDING: "Pending",
@@ -74,8 +82,16 @@ export const PAYMENT_STATUS = {
 
 export interface ExpenseFilters {
   profileId?: string;
-  status?: ExpenseStatus;
+  status?: ExpenseStatus | "All";
   paymentStatus?: PaymentStatus;
+  category?: ExpenseCategory | "All";
+  month?: string;
+  year?: string;
+  employeeId?: string;
+  amountMin?: number;
+  amountMax?: number;
+  hasReceipt?: boolean | null;
+  searchQuery?: string;
 }
 
 export interface ExpenseWithEmployee extends Expense {

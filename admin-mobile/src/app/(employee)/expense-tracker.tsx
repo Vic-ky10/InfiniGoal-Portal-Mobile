@@ -1,6 +1,8 @@
+import React, { useState } from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 
-import { Screen, AppText } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { spacing } from "@/theme";
 
@@ -9,9 +11,14 @@ import EmployeeExpenseSummaryCards from "@/features/expense/components/EmployeeE
 import EmployeeExpenseMonthlyOverview from "@/features/expense/components/EmployeeExpenseMonthlyOverview";
 import EmployeeCategorySummary from "@/features/expense/components/EmployeeCategorySummary";
 import EmployeeRecentExpenseList from "@/features/expense/components/EmployeeRecentExpenseList";
+import ExpenseEmptyState from "@/features/expense/components/ExpenseEmptyState";
+import ExpenseDetailsModal from "@/features/expense/components/ExpenseDetailsModal";
+import { Expense } from "@/features/expense/expense.types";
 
 export default function EmployeeExpenseTrackerScreen() {
+  const router = useRouter();
   const { data, isLoading, isError, error, refetch, isRefetching } = useEmployeeExpenseSummary();
+  const [selectedExpense, setSelectedExpense] = useState<Expense | null>(null);
 
   const isDataEmpty = !data || data.totalExpenseCount === 0;
 
@@ -32,14 +39,11 @@ export default function EmployeeExpenseTrackerScreen() {
         />
 
         {isDataEmpty ? (
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: spacing.xxl }}>
-            <AppText variant="h3" weight="700">
-              No Expense Data
-            </AppText>
-            <AppText variant="body" color="#64748B" style={{ marginTop: spacing.sm, textAlign: "center" }}>
-              You have not submitted any expense claims yet.
-            </AppText>
-          </View>
+          <ExpenseEmptyState
+            onCreatePress={() => router.push("/(employee)/expenses")}
+            title="No Expense Data Yet"
+            message="You have not submitted any expense claims yet. Create your first claim now."
+          />
         ) : (
           <>
             {/* Personal Summary Cards */}
@@ -59,6 +63,12 @@ export default function EmployeeExpenseTrackerScreen() {
           </>
         )}
       </View>
+
+      <ExpenseDetailsModal
+        visible={Boolean(selectedExpense)}
+        expense={selectedExpense ? { ...selectedExpense, employee: null } : null}
+        onClose={() => setSelectedExpense(null)}
+      />
     </Screen>
   );
 }

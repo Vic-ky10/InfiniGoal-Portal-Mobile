@@ -1,10 +1,11 @@
 import { supabase } from "@/lib/supabase/client";
+import { NotificationType } from "./notification.types";
 
 interface CreateNotificationParams {
   profileId: string;
   title: string;
   message: string;
-  notificationType: string;
+  notificationType: NotificationType;
   referenceId?: string;
   actionUrl?: string;
   createdBy?: string;
@@ -13,7 +14,7 @@ interface CreateNotificationParams {
 interface NotifyAdminsParams {
   title: string;
   message: string;
-  notificationType: string;
+  notificationType: NotificationType;
   referenceId?: string;
   actionUrl?: string;
   createdBy?: string;

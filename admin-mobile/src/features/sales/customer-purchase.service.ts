@@ -150,7 +150,7 @@ export async function createCustomerPurchase(
       await notifyAdmins({
         title: "Incentive Eligibility Review Required",
         message: `Employee ${employeeName} has become eligible for an incentive.\nPurchase: ${purchaseCode}\nCustomer: ${customerName}\nPurchase Amount: ₹${purchase.amount.toLocaleString("en-IN")}\nPlease review.`,
-        notificationType: "Incentive",
+        notificationType: "General",
         referenceId: newPurchase.id,
         actionUrl: `/sales?purchaseId=${newPurchase.id}`,
         createdBy: employeeId,
@@ -263,7 +263,7 @@ export async function updateCustomerPurchase(
       await notifyAdmins({
         title: "Incentive Eligibility Review Required",
         message: `Employee ${employeeName} has become eligible for an incentive.\nPurchase: ${existing.purchase_code}\nCustomer: ${customerName}\nPurchase Amount: ₹${purchase.amount.toLocaleString("en-IN")}\nPlease review.`,
-        notificationType: "Incentive",
+        notificationType: "General",
         referenceId: id,
         actionUrl: `/sales?purchaseId=${id}`,
         createdBy: employeeId,
@@ -288,7 +288,7 @@ export async function updateCustomerPurchase(
           profileId: employeeId,
           title: `Incentive Eligibility ${incentiveStatus}`,
           message: msg,
-          notificationType: "Incentive",
+          notificationType: "General",
           referenceId: id,
           actionUrl,
           createdBy: adminReviewedBy,

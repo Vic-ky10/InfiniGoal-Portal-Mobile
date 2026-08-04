@@ -17,6 +17,7 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   purchaseToEdit?: CustomerPurchase | null;
+  showAdminReview?: boolean;
 }
 
 function formatDateToString(d: Date) {
@@ -26,7 +27,7 @@ function formatDateToString(d: Date) {
   return `${year}-${month}-${day}`;
 }
 
-export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Props) {
+export default function PurchaseModal({ visible, onClose, purchaseToEdit, showAdminReview = true }: Props) {
   const { data: customers = [], isLoading: loadingCustomers } = useCustomers();
   const createMutation = useCreateCustomerPurchase();
   const updateMutation = useUpdateCustomerPurchase();
@@ -237,8 +238,8 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit }: Prop
               )}
             />
 
-            {/* Edit Mode Status Management */}
-            {purchaseToEdit && (
+            {/* Edit Mode Status Management (Admin Only) */}
+            {showAdminReview && purchaseToEdit && (
               <View style={styles.editStatusContainer}>
                 <AppText weight="700" style={{ fontSize: 13, marginBottom: spacing.sm, textTransform: "uppercase", letterSpacing: 0.5, color: adminColors.textSecondary }}>
                   Admin Status Review

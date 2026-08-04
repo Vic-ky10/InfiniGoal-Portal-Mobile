@@ -10,6 +10,7 @@ import {
   StatCard,
   QuickActionCard,
   SalesRevenueSection,
+  ExpenseOverviewSection,
 } from "@/features/dashboard/components";
 import { useEmployeeDashboard } from "@/features/dashboard/hooks/useEmployeeDashboard";
 import { useThemeColors, employeeColors, spacing } from "@/theme";
@@ -200,6 +201,15 @@ export default function EmployeeDashboard() {
       {/* Sales Revenue Chart */}
       <View style={{ marginTop: spacing.xxl }}>
         <SalesRevenueSection
+          mode="employee"
+          userId={userId}
+          theme="employee"
+        />
+      </View>
+
+      {/* Monthly Expense Overview */}
+      <View style={{ marginTop: spacing.xxl }}>
+        <ExpenseOverviewSection
           mode="employee"
           userId={userId}
           theme="employee"

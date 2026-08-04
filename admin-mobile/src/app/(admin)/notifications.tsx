@@ -315,7 +315,7 @@ export default function NotificationsScreen() {
                 <AppText
                   weight="700"
                   variant="caption"
-                  color={active ? "#fff" : colors.textSecondary}
+                  color={active ? "#0082f3ff" : colors.textSecondary}
                 >
                   {filter}
                 </AppText>

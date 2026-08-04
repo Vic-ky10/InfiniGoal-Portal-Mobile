@@ -6,7 +6,7 @@ import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
 import { adminColors, spacing, radius, shadows } from "@/theme";
 import { useAuthStore } from "@/store";
-import { useMyCustomerPurchases, useMyCustomers } from "@/features/sales/hooks/useEmployeeSales";
+import { useMyCustomerPurchases, useMyCustomers, useActiveSalesAreas } from "@/features/sales/hooks/useEmployeeSales";
 import { CustomerPurchase } from "@/features/sales/sales.types";
 import { PurchaseModal } from "@/features/sales/components";
 import { parsePurchaseRemarks } from "@/features/sales/sales.utils";
@@ -18,6 +18,7 @@ export default function EmployeePurchasesScreen() {
   const user = useAuthStore((state) => state.user);
   const { data: purchases = [], isLoading, isError, refetch, isRefetching } = useMyCustomerPurchases(user?.id || "");
   const { data: customers = [] } = useMyCustomers(user?.id || "");
+  const { data: salesAreas = [] } = useActiveSalesAreas();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
@@ -55,6 +56,7 @@ export default function EmployeePurchasesScreen() {
 
   const renderPurchaseItem = ({ item }: { item: CustomerPurchase }) => {
     const customer = customers.find((c) => c.id === item.customer_id);
+    const area = salesAreas.find((a) => a.id === customer?.sales_area_id);
     const meta = parsePurchaseRemarks(item.remarks, item.status);
 
     const purchaseBadgeColor =
@@ -128,6 +130,13 @@ export default function EmployeePurchasesScreen() {
               </AppText>
               <Badge label={meta.incentive_status} color={incentiveBadgeColor} variant="subtle" />
             </View>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 2 }}>
+            <Feather name="map-pin" size={12} color={adminColors.textSecondary} />
+            <AppText variant="caption" color={adminColors.textSecondary}>
+              Area: {area?.area_name || "No Area Assigned"}
+            </AppText>
           </View>
 
           {item.incentive_amount > 0 && (
@@ -250,6 +259,7 @@ export default function EmployeePurchasesScreen() {
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           purchaseToEdit={selectedPurchase}
+          showAdminReview={false}
         />
       </View>
     </Screen>

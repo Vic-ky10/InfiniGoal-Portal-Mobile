@@ -6,7 +6,7 @@ import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
 import { adminColors, spacing, radius, shadows } from "@/theme";
 import { useAuthStore } from "@/store";
-import { useMyCustomers, useMySalesAreas } from "@/features/sales/hooks/useEmployeeSales";
+import { useMyCustomers, useMySalesAreas, useActiveSalesAreas } from "@/features/sales/hooks/useEmployeeSales";
 import { Customer } from "@/features/sales/sales.types";
 import { EmployeeCustomerModal } from "@/features/sales/components";
 
@@ -26,9 +26,13 @@ export default function EmployeeCustomersScreen() {
   } = useMyCustomers(employeeId);
 
   const {
-    data: salesAreas = [],
-    isLoading: loadingAreas,
+    data: mySalesAreas = [],
   } = useMySalesAreas(employeeId);
+
+  const {
+    data: activeSalesAreas = [],
+    isLoading: loadingAreas,
+  } = useActiveSalesAreas();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
@@ -68,7 +72,7 @@ export default function EmployeeCustomersScreen() {
   };
 
   const renderCustomerItem = ({ item }: { item: Customer }) => {
-    const area = salesAreas.find((a) => a.id === item.sales_area_id);
+    const area = mySalesAreas.find((a) => a.id === item.sales_area_id) || activeSalesAreas.find((a) => a.id === item.sales_area_id);
     const badgeColor =
       item.status === "Active"
         ? EMPLOYEE_COLOR
@@ -254,7 +258,7 @@ export default function EmployeeCustomersScreen() {
           onClose={handleCloseModal}
           customerToEdit={selectedCustomer}
           employeeId={employeeId}
-          salesAreas={salesAreas}
+          salesAreas={activeSalesAreas}
           loadingAreas={loadingAreas}
         />
       </View>

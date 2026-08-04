@@ -23,7 +23,11 @@ export const expenseSchema = z.object({
 
   expense_date: z.string().min(1, "Expense date is required."),
 
-  receipt_url: z.string().optional(),
+  receipt_url: z.string().nullable().optional(),
+  receipt_name: z.string().nullable().optional(),
+  receipt_size: z.number().nullable().optional(),
+  receipt_type: z.string().nullable().optional(),
+  uploaded_at: z.string().nullable().optional(),
 });
 
 export const reviewExpenseSchema = z.object({

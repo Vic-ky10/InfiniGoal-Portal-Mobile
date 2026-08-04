@@ -5,6 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, NotificationBell } from "@/components/common";
 import {
+  ExpenseOverviewSection,
   QuickActionCard,
   SalesRevenueSection,
   StatCard,
@@ -177,9 +178,13 @@ export default function DashboardScreen() {
       </View>
 
      
- <View style={{ marginTop: spacing.xxl }}>
-  <SalesRevenueSection />
-</View>
+      <View style={{ marginTop: spacing.xxl }}>
+        <SalesRevenueSection />
+      </View>
+
+      <View style={{ marginTop: spacing.xxl }}>
+        <ExpenseOverviewSection mode="admin" theme="admin" />
+      </View>
 
    {/* quick Management */}
       <SectionHeader

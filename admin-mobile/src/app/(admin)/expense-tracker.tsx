@@ -1,6 +1,8 @@
+import React, { useState } from "react";
 import { View } from "react-native";
+import { useRouter } from "expo-router";
 
-import { Screen, AppText } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { spacing } from "@/theme";
 
@@ -10,9 +12,14 @@ import AdminExpenseMonthlyOverview from "@/features/expense/components/AdminExpe
 import TopEmployeesList from "@/features/expense/components/TopEmployeesList";
 import DepartmentSummaryList from "@/features/expense/components/DepartmentSummaryList";
 import RecentActivityList from "@/features/expense/components/RecentActivityList";
+import ExpenseEmptyState from "@/features/expense/components/ExpenseEmptyState";
+import ExpenseDetailsModal from "@/features/expense/components/ExpenseDetailsModal";
+import { ExpenseWithEmployee } from "@/features/expense/expense.types";
 
 export default function ExpenseTrackerScreen() {
+  const router = useRouter();
   const { data, isLoading, isError, error, refetch, isRefetching } = useAdminExpenseSummary();
+  const [selectedExpense, setSelectedExpense] = useState<ExpenseWithEmployee | null>(null);
 
   const isDataEmpty = !data || data.totalExpenseCount === 0;
 
@@ -33,14 +40,11 @@ export default function ExpenseTrackerScreen() {
         />
 
         {isDataEmpty ? (
-          <View style={{ flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: spacing.xxl }}>
-            <AppText variant="h3" weight="700">
-              No Expense Data
-            </AppText>
-            <AppText variant="body" color="#64748B" style={{ marginTop: spacing.sm, textAlign: "center" }}>
-              There are no expense records found in the organization.
-            </AppText>
-          </View>
+          <ExpenseEmptyState
+            onCreatePress={() => router.push("/(admin)/expenses")}
+            title="No Organization Expense Data"
+            message="There are no expense records found in the organization."
+          />
         ) : (
           <>
             {/* Summary cards (Total, Approved, Pending, Rejected) */}
@@ -60,6 +64,13 @@ export default function ExpenseTrackerScreen() {
           </>
         )}
       </View>
+
+      <ExpenseDetailsModal
+        visible={Boolean(selectedExpense)}
+        expense={selectedExpense}
+        onClose={() => setSelectedExpense(null)}
+        isAdmin={true}
+      />
     </Screen>
   );
 }

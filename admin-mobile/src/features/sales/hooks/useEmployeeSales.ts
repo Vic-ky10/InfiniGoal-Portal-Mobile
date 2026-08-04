@@ -5,6 +5,7 @@ import {
   getMySalesAreas,
   getEmployeeSalesDashboardData,
 } from "../employee-sales.service";
+export { useActiveSalesAreas } from "./useSales";
 
 export function useMyCustomers(profileId: string) {
   return useQuery({

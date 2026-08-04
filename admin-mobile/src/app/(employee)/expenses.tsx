@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   FlatList,
@@ -10,35 +10,49 @@ import {
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen, Input, Button, DatePickerField } from "@/components/ui";
-import { AppHeader, EmptyState } from "@/components/common";
+import { AppHeader } from "@/components/common";
 import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "@/store/toast.store";
 
-import { Expense, EXPENSE_CATEGORY } from "@/features/expense/expense.types";
+import { Expense, ExpenseFilters, EXPENSE_CATEGORY } from "@/features/expense/expense.types";
 import {
   getEmployeeExpenses,
   createExpense,
   updateExpense,
 } from "@/features/expense/expense.service";
 import ExpenseCard from "@/features/expense/components/ExpenseCard";
+import ReceiptUploader from "@/features/expense/components/ReceiptUploader";
+import ExpenseDetailsModal from "@/features/expense/components/ExpenseDetailsModal";
+import ExpenseFilterBar from "@/features/expense/components/ExpenseFilterBar";
+import ExpenseCardSkeleton from "@/features/expense/components/ExpenseCardSkeleton";
+import ExpenseEmptyState from "@/features/expense/components/ExpenseEmptyState";
 
 export default function EmployeeExpensesScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingExpense, setEditingExpense] = useState<Expense | null>(null);
+  const [detailsExpense, setDetailsExpense] = useState<Expense | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   const [profileId, setProfileId] = useState<string | null>(null);
   const [expenses, setExpenses] = useState<Expense[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
+
+  // Filters state
+  const [filters, setFilters] = useState<ExpenseFilters>({});
 
   // Form State
   const [expenseType, setExpenseType] = useState<string>(EXPENSE_CATEGORY.PETROL);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
+
+  // Receipt Metadata State
+  const [receiptUrl, setReceiptUrl] = useState<string | null>(null);
+  const [receiptName, setReceiptName] = useState<string | null>(null);
+  const [receiptSize, setReceiptSize] = useState<number | null>(null);
+  const [receiptType, setReceiptType] = useState<string | null>(null);
 
   const loadData = useCallback(async (isRefresh = false) => {
     await Promise.resolve();
@@ -54,6 +68,7 @@ export default function EmployeeExpensesScreen() {
       setExpenses(data);
     } catch (error) {
       console.error(error);
+      toast.error("Failed to load expenses.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -66,12 +81,20 @@ export default function EmployeeExpensesScreen() {
     });
   }, [loadData]);
 
-  const openCreateModal = () => {
+  const resetForm = () => {
     setEditingExpense(null);
     setExpenseType(EXPENSE_CATEGORY.PETROL);
     setAmount("");
     setDescription("");
     setExpenseDate(new Date().toISOString().split("T")[0]);
+    setReceiptUrl(null);
+    setReceiptName(null);
+    setReceiptSize(null);
+    setReceiptType(null);
+  };
+
+  const openCreateModal = () => {
+    resetForm();
     setModalVisible(true);
   };
 
@@ -81,16 +104,20 @@ export default function EmployeeExpensesScreen() {
     setAmount(expense.amount.toString());
     setDescription(expense.description || "");
     setExpenseDate(expense.expense_date);
+    setReceiptUrl(expense.receipt_url || null);
+    setReceiptName(expense.receipt_name || null);
+    setReceiptSize(expense.receipt_size || null);
+    setReceiptType(expense.receipt_type || null);
     setModalVisible(true);
   };
 
   const handleSaveExpense = async () => {
-    if (!amount.trim() || isNaN(Number(amount))) {
+    if (!amount.trim() || isNaN(Number(amount)) || Number(amount) <= 0) {
       toast.error("Please enter a valid amount.");
       return;
     }
     if (!expenseDate.trim()) {
-      toast.error("Please enter an expense date.");
+      toast.error("Please select an expense date.");
       return;
     }
 
@@ -102,6 +129,11 @@ export default function EmployeeExpensesScreen() {
           amount: Number(amount),
           expense_date: expenseDate,
           description: description.trim() || undefined,
+          receipt_url: receiptUrl ?? null,
+          receipt_name: receiptName ?? null,
+          receipt_size: receiptSize ?? null,
+          receipt_type: receiptType ?? null,
+          uploaded_at: receiptUrl ? new Date().toISOString() : null,
         });
         if (res.success) {
           toast.success(res.message || "Expense updated successfully.");
@@ -117,13 +149,18 @@ export default function EmployeeExpensesScreen() {
           amount: Number(amount),
           expense_date: expenseDate,
           description: description.trim(),
+          receipt_url: receiptUrl ?? null,
+          receipt_name: receiptName ?? null,
+          receipt_size: receiptSize ?? null,
+          receipt_type: receiptType ?? null,
+          uploaded_at: receiptUrl ? new Date().toISOString() : null,
         });
         if (res.success) {
-          toast.success(res.message || "Expense logged successfully.");
+          toast.success(res.message || "Expense claim submitted successfully.");
           setModalVisible(false);
           loadData(true);
         } else {
-          toast.error(res.error || "Failed to log expense.");
+          toast.error(res.error || "Failed to submit expense.");
         }
       }
     } finally {
@@ -131,10 +168,39 @@ export default function EmployeeExpensesScreen() {
     }
   };
 
-  const filteredExpenses = expenses.filter((e) => {
-    if (selectedStatus === "ALL") return true;
-    return e.status.toUpperCase() === selectedStatus;
-  });
+  // Filter & Search Logic
+  const filteredExpenses = useMemo(() => {
+    return expenses.filter((e) => {
+      // Status filter
+      if (filters.status && filters.status !== "All") {
+        if (e.status.toUpperCase() !== filters.status.toUpperCase()) return false;
+      }
+
+      // Category filter
+      if (filters.category && filters.category !== "All") {
+        if (e.expense_type !== filters.category) return false;
+      }
+
+      // Has receipt filter
+      if (filters.hasReceipt !== undefined && filters.hasReceipt !== null) {
+        const hasRec = Boolean(e.receipt_url);
+        if (hasRec !== filters.hasReceipt) return false;
+      }
+
+      // Search Query (title, category, description)
+      if (filters.searchQuery?.trim()) {
+        const q = filters.searchQuery.toLowerCase().trim();
+        const cat = e.expense_type.toLowerCase();
+        const desc = (e.description || "").toLowerCase();
+        const date = e.expense_date.toLowerCase();
+        if (!cat.includes(q) && !desc.includes(q) && !date.includes(q)) {
+          return false;
+        }
+      }
+
+      return true;
+    });
+  }, [expenses, filters]);
 
   const renderExpenseItem = ({ item }: { item: Expense }) => (
     <ExpenseCard
@@ -142,11 +208,12 @@ export default function EmployeeExpensesScreen() {
       showAvatar={false}
       showActions={false}
       onEdit={item.status === "Pending" ? () => openEditModal(item) : undefined}
+      onPressDetails={() => setDetailsExpense(item)}
     />
   );
 
   return (
-    <Screen isLoading={loading} scroll={false}>
+    <Screen scroll={false}>
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader
           title="Expense Claims"
@@ -168,47 +235,45 @@ export default function EmployeeExpensesScreen() {
           }
         />
 
-        {/* Filter Pills */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
-          {["ALL", "PENDING", "APPROVED", "REJECTED"].map((status) => (
-            <TouchableOpacity
-              key={status}
-              onPress={() => setSelectedStatus(status)}
-              style={{
-                paddingHorizontal: spacing.md,
-                paddingVertical: spacing.xs,
-                borderRadius: radius.full,
-                backgroundColor: selectedStatus === status ? employeeColors.primary : `${employeeColors.primary}10`,
-              }}
-            >
-              <AppText variant="caption" weight="600" color={selectedStatus === status ? "#FFFFFF" : employeeColors.primary}>
-                {status}
-              </AppText>
-            </TouchableOpacity>
-          ))}
-        </View>
+        {/* Enhanced Filter Bar */}
+        <ExpenseFilterBar filters={filters} onFiltersChange={setFilters} />
 
-        <FlatList
-          data={filteredExpenses}
-          keyExtractor={(item) => item.id}
-          renderItem={renderExpenseItem}
-          refreshing={refreshing}
-          onRefresh={() => loadData(true)}
-          showsVerticalScrollIndicator={false}
-          ListEmptyComponent={<EmptyState title="No Expense Claims Found" />}
-          contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-        />
+        {/* Expense List or Skeleton */}
+        {loading ? (
+          <View style={{ gap: spacing.sm }}>
+            <ExpenseCardSkeleton />
+            <ExpenseCardSkeleton />
+            <ExpenseCardSkeleton />
+          </View>
+        ) : (
+          <FlatList
+            data={filteredExpenses}
+            keyExtractor={(item) => item.id}
+            renderItem={renderExpenseItem}
+            refreshing={refreshing}
+            onRefresh={() => loadData(true)}
+            showsVerticalScrollIndicator={false}
+            ListEmptyComponent={
+              <ExpenseEmptyState
+                onCreatePress={openCreateModal}
+                title="No Expenses Found"
+                message="Submit your first expense claim to start tracking reimbursements."
+              />
+            }
+            contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+          />
+        )}
 
         {/* Create / Edit Expense Modal */}
-        <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
-            <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+        <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
+          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)", justifyContent: "flex-end" }}>
+            <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, maxHeight: "90%" }}>
+              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
                 <AppText variant="h2" weight="700">
                   {editingExpense ? "Edit Pending Expense" : "New Expense Claim"}
                 </AppText>
-                <TouchableOpacity onPress={() => setModalVisible(false)}>
-                  <Feather name="x" size={24} color={employeeColors.text} />
+                <TouchableOpacity onPress={() => setModalVisible(false)} style={{ padding: 4 }}>
+                  <Feather name="x" size={22} color={employeeColors.text} />
                 </TouchableOpacity>
               </View>
 
@@ -216,21 +281,14 @@ export default function EmployeeExpensesScreen() {
                 <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
                   Expense Category
                 </AppText>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.lg }}>
-                  {[
-                    EXPENSE_CATEGORY.PETROL,
-                    EXPENSE_CATEGORY.FOOD,
-                    EXPENSE_CATEGORY.ACCOMMODATION,
-                    EXPENSE_CATEGORY.OFFICE_SUPPLIES,
-                    EXPENSE_CATEGORY.PRODUCTS,
-                    EXPENSE_CATEGORY.OTHER,
-                  ].map((cat) => (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.md }}>
+                  {Object.values(EXPENSE_CATEGORY).map((cat) => (
                     <TouchableOpacity
                       key={cat}
                       onPress={() => setExpenseType(cat)}
                       style={{
                         paddingHorizontal: spacing.md,
-                        paddingVertical: spacing.sm,
+                        paddingVertical: spacing.xs,
                         borderRadius: radius.md,
                         borderWidth: 1.5,
                         borderColor: expenseType === cat ? employeeColors.primary : employeeColors.border,
@@ -263,21 +321,45 @@ export default function EmployeeExpensesScreen() {
                   label="Description"
                   value={description}
                   onChangeText={setDescription}
-                  placeholder="Expense details..."
+                  placeholder="Expense details / reason..."
                   multiline
                   numberOfLines={3}
-                  style={{ height: 80, textAlignVertical: "top" }}
+                  style={{ height: 75, textAlignVertical: "top" }}
                 />
 
-                <Button
-                  title={editingExpense ? "Update Expense" : "Submit Claim"}
-                  loading={submitting}
-                  onPress={handleSaveExpense}
+                {/* Receipt Uploader */}
+                <ReceiptUploader
+                  employeeId={profileId || ""}
+                  expenseId={editingExpense?.id}
+                  receiptUrl={receiptUrl}
+                  receiptName={receiptName}
+                  receiptType={receiptType}
+                  onReceiptChanged={(info) => {
+                    setReceiptUrl(info.url);
+                    setReceiptName(info.name);
+                    setReceiptSize(info.size);
+                    setReceiptType(info.type);
+                  }}
                 />
+
+                <View style={{ marginTop: spacing.md }}>
+                  <Button
+                    title={editingExpense ? "Update Expense" : "Submit Claim"}
+                    loading={submitting}
+                    onPress={handleSaveExpense}
+                  />
+                </View>
               </ScrollView>
             </View>
           </View>
         </Modal>
+
+        {/* Expense Details Screen / Modal */}
+        <ExpenseDetailsModal
+          visible={Boolean(detailsExpense)}
+          expense={detailsExpense ? { ...detailsExpense, employee: null } : null}
+          onClose={() => setDetailsExpense(null)}
+        />
       </View>
     </Screen>
   );

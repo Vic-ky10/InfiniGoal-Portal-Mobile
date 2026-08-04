@@ -21,6 +21,21 @@ export async function getSalesAreas(): Promise<SalesArea[]> {
   return data as SalesArea[];
 }
 
+export async function getActiveSalesAreas(): Promise<SalesArea[]> {
+  const { data, error } = await supabase
+    .from("sales_areas")
+    .select(SALES_AREA_SELECT)
+    .eq("status", "Active")
+    .order("area_name", { ascending: true });
+
+  if (error) {
+    console.error("Get Active Sales Areas Error:", error.message);
+    return [];
+  }
+
+  return data as SalesArea[];
+}
+
 export async function getSalesAreaById(id: string): Promise<SalesArea | null> {
   const { data, error } = await supabase
     .from("sales_areas")

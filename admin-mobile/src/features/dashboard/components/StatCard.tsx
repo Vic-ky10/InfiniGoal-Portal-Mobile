@@ -2,7 +2,13 @@ import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText } from "@/components/ui";
-import { adminColors, employeeColors, useThemeColors, spacing, shadows } from "@/theme";
+import {
+  adminColors,
+  employeeColors,
+  useThemeColors,
+  spacing,
+  shadows,
+} from "@/theme";
 
 interface StatCardProps {
   title: string;
@@ -22,7 +28,12 @@ export default function StatCard({
   theme,
 }: StatCardProps) {
   const fallbackColors = useThemeColors();
-  const colors = theme === "employee" ? employeeColors : theme === "admin" ? adminColors : fallbackColors;
+  const colors =
+    theme === "employee"
+      ? employeeColors
+      : theme === "admin"
+        ? adminColors
+        : fallbackColors;
   const activeColor = color || colors.primary;
 
   const Content = (
@@ -39,10 +50,7 @@ export default function StatCard({
       {/* Icon badge */}
       {icon && (
         <View
-          style={[
-            styles.iconBadge,
-            { backgroundColor: `${activeColor}15` },
-          ]}
+          style={[styles.iconBadge, { backgroundColor: `${activeColor}15` }]}
         >
           <Feather name={icon as any} size={16} color={activeColor} />
         </View>
@@ -90,14 +98,10 @@ export default function StatCard({
     <Pressable
       onPress={onPress}
       android_ripple={{ color: "transparent" }}
-      style={({ pressed }) => [
-        {
-          flex: 1,
-          transform: [{ scale: pressed ? 0.97 : 1 }],
-          opacity: pressed ? 0.96 : 1,
-          borderRadius: 24,
-        },
-      ]}
+      style={{
+        flex: 1,
+        borderRadius: 24,
+      }}
     >
       {Content}
     </Pressable>
