@@ -4,6 +4,8 @@ import {
   View,
   ScrollView,
   TouchableOpacity,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -125,39 +127,43 @@ export default function ProjectModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
         <View
           style={{
-            backgroundColor: adminColors.background,
-            borderTopLeftRadius: radius.xl,
-            borderTopRightRadius: radius.xl,
-            maxHeight: "85%",
-            padding: spacing.lg,
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "flex-end",
           }}
         >
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing.md,
+              backgroundColor: adminColors.background,
+              borderTopLeftRadius: radius.xl,
+              borderTopRightRadius: radius.xl,
+              maxHeight: "85%",
+              padding: spacing.lg,
             }}
           >
-            <AppText variant="h2" weight="700">
-              {projectToEdit ? "Edit Project" : "Create Project"}
-            </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: spacing.md,
+              }}
+            >
+              <AppText variant="h2" weight="700">
+                {projectToEdit ? "Edit Project" : "Create Project"}
+              </AppText>
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={24} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Input
               label="Project Code"
               value={projectCode}
@@ -291,6 +297,7 @@ export default function ProjectModal({
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }

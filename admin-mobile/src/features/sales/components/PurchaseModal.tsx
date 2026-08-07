@@ -1,5 +1,5 @@
 import React, { useEffect } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -127,18 +127,22 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit, showAd
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <AppText variant="h2" weight="700">
-              {purchaseToEdit ? "Edit Purchase Record" : "Log New Purchase"}
-            </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <AppText variant="h2" weight="700">
+                {purchaseToEdit ? "Edit Purchase" : "Log New Purchase"}
+              </AppText>
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={24} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
             {/* Customer Selection */}
             <AppText weight="600" style={styles.fieldLabel}>
               Customer
@@ -325,8 +329,9 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit, showAd
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }
 
 const styles = StyleSheet.create({

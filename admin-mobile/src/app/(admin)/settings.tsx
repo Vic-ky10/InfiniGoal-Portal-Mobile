@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { View, TouchableOpacity, Modal, ActivityIndicator } from "react-native";
+import { View, TouchableOpacity, Modal, ActivityIndicator, KeyboardAvoidingView, ScrollView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -491,69 +491,75 @@ export default function SettingsScreen() {
 
       {/* Edit Profile Bottom Sheet Modal */}
       <Modal visible={isEditModalOpen} animationType="slide" transparent>
-        <View
-          style={{
-            flex: 1,
-            backgroundColor: "rgba(15, 23, 42, 0.4)",
-            justifyContent: "flex-end",
-          }}
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={{ flex: 1 }}
         >
           <View
             style={{
-              backgroundColor: "#FFFFFF",
-              borderTopLeftRadius: 24,
-              borderTopRightRadius: 24,
-              padding: 24,
-              paddingBottom: 40,
-              gap: 20,
+              flex: 1,
+              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              justifyContent: "flex-end",
             }}
           >
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: 24,
+                borderTopRightRadius: 24,
+                padding: 24,
+                paddingBottom: 40,
               }}
             >
-              <AppText variant="h2" weight="700">
-                Edit Profile Details
-              </AppText>
-              <TouchableOpacity onPress={() => setIsEditModalOpen(false)}>
-                <Feather name="x" size={24} color={adminColors.textSecondary} />
-              </TouchableOpacity>
-            </View>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 20 }}>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <AppText variant="h2" weight="700">
+                    Edit Profile Details
+                  </AppText>
+                  <TouchableOpacity onPress={() => setIsEditModalOpen(false)}>
+                    <Feather name="x" size={24} color={adminColors.textSecondary} />
+                  </TouchableOpacity>
+                </View>
 
-            <Input
-              label="Full Name"
-              value={editName}
-              onChangeText={setEditName}
-              placeholder="Your full name"
-            />
+                <Input
+                  label="Full Name"
+                  value={editName}
+                  onChangeText={setEditName}
+                  placeholder="Your full name"
+                />
 
-            <Input
-              label="Phone Number"
-              value={editPhone}
-              onChangeText={setEditPhone}
-              placeholder="Your phone number"
-              keyboardType="phone-pad"
-            />
+                <Input
+                  label="Phone Number"
+                  value={editPhone}
+                  onChangeText={setEditPhone}
+                  placeholder="Your phone number"
+                  keyboardType="phone-pad"
+                />
 
-            <View
-              style={{
-                flexDirection: "row",
-                gap: spacing.md,
-                marginTop: spacing.sm,
-              }}
-            >
-              <View style={{ flex: 1 }}>
-                <Button title="Cancel" variant="outline" onPress={() => setIsEditModalOpen(false)} />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Button title="Save Changes" loading={saving} onPress={handleUpdateProfile} />
-              </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: spacing.md,
+                    marginTop: spacing.sm,
+                  }}
+                >
+                  <View style={{ flex: 1 }}>
+                    <Button title="Cancel" variant="outline" onPress={() => setIsEditModalOpen(false)} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button title="Save Changes" loading={saving} onPress={handleUpdateProfile} />
+                  </View>
+                </View>
+              </ScrollView>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     </Screen>
   );

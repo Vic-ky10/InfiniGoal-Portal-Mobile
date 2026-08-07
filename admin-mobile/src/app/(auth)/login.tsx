@@ -14,6 +14,8 @@ import Logo from "@/assets/images/Logo.png";
 import { loginAdmin, loginEmployee } from "@/features/auth/auth.service";
 import { toast } from "@/store/toast.store";
 
+import KeyboardScreen from "@/components/layouts/KeyboardScreen";
+
 export default function LoginScreen() {
   const router = useRouter();
   const { portal } = useLocalSearchParams<{ portal?: string }>();
@@ -42,12 +44,6 @@ export default function LoginScreen() {
         toast.error(error.message);
         return;
       }
-
-      // if (isEmployee) {
-      //   router.replace("/(employee)/dashboard");
-      // } else {
-      //   router.replace("/(admin)/dashboard");
-      // }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Something went wrong."
@@ -62,22 +58,20 @@ export default function LoginScreen() {
   const [passFocused, setPassFocused] = useState(false);
 
   return (
-    <View
-      style={{
-        flex: 1,
+    <KeyboardScreen
+      scroll
+      style={{ backgroundColor: "#F8FAFC" }}
+      contentContainerStyle={{
         justifyContent: "center",
         padding: 24,
-        backgroundColor: "#F8FAFC",
       }}
     >
       <TouchableOpacity
         onPress={() => router.replace("/")}
         style={{
-          position: "absolute",
-          top: 60,
-          left: 24,
           flexDirection: "row",
           alignItems: "center",
+          alignSelf: "flex-start",
           backgroundColor: "#FFFFFF",
           paddingVertical: 8,
           paddingHorizontal: 16,
@@ -89,6 +83,7 @@ export default function LoginScreen() {
           shadowOpacity: 0.03,
           shadowRadius: 4,
           elevation: 1,
+          marginBottom: 20,
         }}
       >
         <Feather name="arrow-left" size={18} color="#0F172A" />
@@ -294,6 +289,6 @@ export default function LoginScreen() {
           </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </KeyboardScreen>
   );
 }

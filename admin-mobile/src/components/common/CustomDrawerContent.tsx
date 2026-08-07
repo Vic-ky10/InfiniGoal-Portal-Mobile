@@ -109,7 +109,7 @@ function DrawerItem({
             isActive && styles.itemActive,
           ]}
         >
-          {/* Active left indicator bar */}
+          {/* active left indicator bar */}
           {isActive && (
             <View
               style={[styles.activeBar, { backgroundColor: primaryColor }]}
@@ -162,7 +162,7 @@ export default function CustomDrawerContent({
       scrollEnabled={false}
       contentContainerStyle={styles.container}
     >
-      {/* ─ Header ─ */}
+      {/*  Header  */}
       <View style={[styles.header, { borderBottomColor: `${primaryColor}20` }]}>
         <View style={[styles.logoCircle, { backgroundColor: primaryColor }]}>
                   <View
@@ -204,7 +204,7 @@ export default function CustomDrawerContent({
         </View>
       </View>
 
-      {/*  Nav Items  */}
+      {/*  nav Items  */}
       <ScrollView
         showsVerticalScrollIndicator={false}
         style={styles.navList}

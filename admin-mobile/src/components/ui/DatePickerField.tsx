@@ -116,7 +116,7 @@ export default function DatePickerField({
         }
       }
     } else {
-      // iOS
+      
       if (selectedDate) {
         onChange(formatDateString(selectedDate, mode));
       }

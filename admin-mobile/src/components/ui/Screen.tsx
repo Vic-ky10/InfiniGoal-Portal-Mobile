@@ -13,6 +13,7 @@ import {
 } from "@/theme";
 import Loader from "./Loader";
 import ErrorState from "../common/ErrorState";
+import KeyboardScreen from "../layouts/KeyboardScreen";
 
 interface ScreenProps {
   children: ReactNode;
@@ -25,6 +26,9 @@ interface ScreenProps {
   onRetry?: () => void;
   style?: StyleProp<ViewStyle>;
   contentContainerStyle?: StyleProp<ViewStyle>;
+  keyboardAware?: boolean;
+  keyboardVerticalOffset?: number;
+  keyboardShouldPersistTaps?: "always" | "never" | "handled";
 }
 
 export default function Screen({
@@ -38,6 +42,9 @@ export default function Screen({
   onRetry,
   style,
   contentContainerStyle,
+  keyboardAware = true,
+  keyboardVerticalOffset,
+  keyboardShouldPersistTaps = "handled",
 }: ScreenProps) {
   const colors = useThemeColors();
 
@@ -54,6 +61,22 @@ export default function Screen({
       <SafeAreaView style={[{ flex: 1, backgroundColor: colors.surface }, style]}>
         <ErrorState message={errorMessage} onRetry={onRetry} />
       </SafeAreaView>
+    );
+  }
+
+  if (keyboardAware) {
+    return (
+      <KeyboardScreen
+        scroll={scroll}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        style={style}
+        contentContainerStyle={contentContainerStyle}
+        keyboardVerticalOffset={keyboardVerticalOffset}
+        keyboardShouldPersistTaps={keyboardShouldPersistTaps}
+      >
+        {children}
+      </KeyboardScreen>
     );
   }
 
@@ -77,6 +100,7 @@ export default function Screen({
             contentContainerStyle,
           ]}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps={keyboardShouldPersistTaps}
           refreshControl={
             onRefresh ? (
               <RefreshControl

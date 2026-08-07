@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator } from "react-native";
+import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -148,18 +148,22 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <AppText variant="h2" weight="700">
-              {customerToEdit ? "Edit Customer" : "Add Customer"}
-            </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <AppText variant="h2" weight="700">
+                {customerToEdit ? "Edit Customer" : "Add Customer"}
+              </AppText>
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={24} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
             <Controller
               control={control}
               name="full_name"
@@ -395,8 +399,9 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }
 
 

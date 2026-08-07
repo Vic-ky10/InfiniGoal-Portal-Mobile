@@ -5,6 +5,8 @@ import {
   Switch,
   TouchableOpacity,
   View,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
@@ -234,42 +236,46 @@ export default function AnnouncementModal({
       transparent
       onRequestClose={closeModal}
     >
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.45)",
-          justifyContent: "flex-end",
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
         <View
           style={{
-            backgroundColor: adminColors.background,
-            borderTopLeftRadius: radius.xl,
-            borderTopRightRadius: radius.xl,
-            padding: spacing.lg,
-            maxHeight: "90%",
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.45)",
+            justifyContent: "flex-end",
           }}
         >
-          {/* Header */}
-
           <View
             style={{
-              flexDirection: "row",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: spacing.lg,
+              backgroundColor: adminColors.background,
+              borderTopLeftRadius: radius.xl,
+              borderTopRightRadius: radius.xl,
+              padding: spacing.lg,
+              maxHeight: "90%",
             }}
           >
-            <AppText variant="h2" weight="700">
-              {announcementToEdit ? "Edit Announcement" : "Create Announcement"}
-            </AppText>
+            {/* Header */}
 
-            <TouchableOpacity onPress={closeModal}>
-              <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+            <View
+              style={{
+                flexDirection: "row",
+                justifyContent: "space-between",
+                alignItems: "center",
+                marginBottom: spacing.lg,
+              }}
+            >
+              <AppText variant="h2" weight="700">
+                {announcementToEdit ? "Edit Announcement" : "Create Announcement"}
+              </AppText>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+              <TouchableOpacity onPress={closeModal}>
+                <Feather name="x" size={24} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Input
               label="Title"
               placeholder="Enter title"
@@ -502,8 +508,9 @@ export default function AnnouncementModal({
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }
 
 

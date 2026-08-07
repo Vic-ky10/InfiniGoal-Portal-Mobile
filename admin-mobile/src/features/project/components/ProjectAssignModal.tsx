@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { Modal, View, ScrollView, TouchableOpacity } from "react-native";
+import { Modal, View, ScrollView, TouchableOpacity, KeyboardAvoidingView, Platform } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Button, Card, Badge } from "@/components/ui";
@@ -100,13 +100,17 @@ export default function ProjectAssignModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View
-        style={{
-          flex: 1,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          justifyContent: "flex-end",
-        }}
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
       >
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: "rgba(0,0,0,0.5)",
+            justifyContent: "flex-end",
+          }}
+        >
         <View
           style={{
             backgroundColor: adminColors.background,
@@ -183,7 +187,7 @@ export default function ProjectAssignModal({
             </TouchableOpacity> */}
           </View>
 
-          <ScrollView showsVerticalScrollIndicator={false}>
+          <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <View
               style={{
                 flexDirection: "row",
@@ -369,6 +373,7 @@ export default function ProjectAssignModal({
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }

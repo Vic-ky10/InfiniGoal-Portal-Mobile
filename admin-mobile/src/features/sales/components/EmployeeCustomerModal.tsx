@@ -6,6 +6,8 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
@@ -136,18 +138,22 @@ export default function EmployeeCustomerModal({
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <View style={styles.backdrop}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <AppText variant="h2" weight="700">
-              {customerToEdit ? "Edit Customer" : "Add Customer"}
-            </AppText>
-            <TouchableOpacity onPress={onClose}>
-              <Feather name="x" size={24} color={adminColors.textSecondary} />
-            </TouchableOpacity>
-          </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={{ flex: 1 }}
+      >
+        <View style={styles.backdrop}>
+          <View style={styles.content}>
+            <View style={styles.header}>
+              <AppText variant="h2" weight="700">
+                {customerToEdit ? "Edit Customer" : "Add Customer"}
+              </AppText>
+              <TouchableOpacity onPress={onClose}>
+                <Feather name="x" size={24} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
 
-          <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.form}>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
 
             <Controller
               control={control}
@@ -357,8 +363,9 @@ export default function EmployeeCustomerModal({
           </ScrollView>
         </View>
       </View>
-    </Modal>
-  );
+    </KeyboardAvoidingView>
+  </Modal>
+);
 }
 
 const styles = StyleSheet.create({
