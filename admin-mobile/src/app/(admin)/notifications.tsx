@@ -72,11 +72,14 @@ import { adminColors, radius, spacing } from "@/theme";
 import { useNotifications } from "@/features/notification/hooks/useNotifications";
 import NotificationItem from "@/features/notification/components/NotificationItem";
 import { Feather } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
+import { getNotificationRoute } from "@/features/notification/notification.helper";
 
 const FILTERS = ["All", "Unread", "Read"] as const;
 
 export default function NotificationsScreen() {
   const colors = adminColors;
+  const router = useRouter();
 
   const [selectedFilter, setSelectedFilter] =
     useState<(typeof FILTERS)[number]>("All");
@@ -98,9 +101,13 @@ export default function NotificationsScreen() {
   const handleOpenNotification = (notification: Notification) => {
     handleMarkRead(notification.id);
 
-    setSelectedNotification(notification);
-
-    setModalVisible(true);
+    const route = getNotificationRoute(notification, true);
+    if (route) {
+      router.push(route as any);
+    } else {
+      setSelectedNotification(notification);
+      setModalVisible(true);
+    }
   };
 
   const filteredNotifications = useMemo(() => {

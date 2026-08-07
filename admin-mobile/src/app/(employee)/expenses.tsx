@@ -27,6 +27,7 @@ import ExpenseDetailsModal from "@/features/expense/components/ExpenseDetailsMod
 import ExpenseFilterBar from "@/features/expense/components/ExpenseFilterBar";
 import ExpenseCardSkeleton from "@/features/expense/components/ExpenseCardSkeleton";
 import ExpenseEmptyState from "@/features/expense/components/ExpenseEmptyState";
+import { useLocalSearchParams } from "expo-router";
 
 export default function EmployeeExpensesScreen() {
   const [loading, setLoading] = useState(true);
@@ -41,6 +42,19 @@ export default function EmployeeExpensesScreen() {
 
   // Filters state
   const [filters, setFilters] = useState<ExpenseFilters>({});
+
+  const { expenseId } = useLocalSearchParams<{ expenseId?: string }>();
+
+  useEffect(() => {
+    if (expenseId && expenses.length > 0) {
+      const expense = expenses.find((e) => e.id === expenseId);
+      if (expense) {
+        setDetailsExpense(expense);
+      } else {
+        toast.error("The requested expense claim could not be found.");
+      }
+    }
+  }, [expenseId, expenses]);
 
   // Form State
   const [expenseType, setExpenseType] = useState<string>(EXPENSE_CATEGORY.PETROL);
@@ -79,7 +93,30 @@ export default function EmployeeExpensesScreen() {
     Promise.resolve().then(() => {
       loadData();
     });
-  }, [loadData]);
+
+    if (!profileId) return;
+
+    const channel = supabase
+      .channel("employee-expenses-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expenses" },
+        (payload: { new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+          const affectedProfileId = (newRow?.profile_id || oldRow?.profile_id) as string | undefined;
+
+          if (affectedProfileId === profileId) {
+            loadData(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, profileId]);
 
   const resetForm = () => {
     setEditingExpense(null);

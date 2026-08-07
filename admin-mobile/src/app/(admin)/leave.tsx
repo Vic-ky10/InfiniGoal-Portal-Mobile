@@ -1,32 +1,48 @@
 import { useMemo, useState } from "react";
-import { View, FlatList, TouchableOpacity } from "react-native";
+import { View, FlatList } from "react-native";
 
-import { AppText, Screen } from "@/components/ui";
+import { Screen } from "@/components/ui";
 import { AppHeader, EmptyState } from "@/components/common";
-import { adminColors, radius, spacing } from "@/theme";
+import { spacing } from "@/theme";
 
 import { useLeave } from "@/features/leave/hooks/useLeave";
 import LeaveCard from "@/features/leave/components/LeaveCard";
-import { LeaveStatus } from "@/features/leave/leave.types";
-
-const STATUS_FILTERS: { label: string; value: LeaveStatus | "" }[] = [
-  { label: "All", value: "" },
-  { label: "Pending", value: "Pending" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
+import LeaveFilterBar from "@/features/leave/components/LeaveFilterBar";
+import { LeaveFilters } from "@/features/leave/leave.types";
 
 export default function LeaveScreen() {
-  const [statusFilter, setStatusFilter] = useState<LeaveStatus | "">("");
+  const [filters, setFilters] = useState<LeaveFilters>({});
 
   const { leaveRequests, loading, refreshing, refresh, handleReview } =
     useLeave();
 
   const filteredLeaveRequests = useMemo(() => {
     return leaveRequests.filter((leave) => {
-      return statusFilter === "" || leave.status === statusFilter;
+      // Status
+      if (filters.status && leave.status !== filters.status) return false;
+      
+      // Leave Type
+      if (filters.leaveType && leave.leave_type !== filters.leaveType) return false;
+      
+      // Month (YYYY-MM)
+      if (filters.month && !leave.start_date.startsWith(filters.month)) return false;
+      
+      // Search
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        const searchMatch =
+          leave.employee?.full_name.toLowerCase().includes(s) ||
+          leave.employee?.employee_id.toLowerCase().includes(s) ||
+          leave.employee?.email.toLowerCase().includes(s);
+        if (!searchMatch) return false;
+      }
+      
+      // Department
+      if (filters.department && leave.employee?.department !== filters.department) return false;
+
+      return true;
     });
-  }, [leaveRequests, statusFilter]);
+  }, [leaveRequests, filters]);
 
   return (
     <Screen
@@ -41,44 +57,8 @@ export default function LeaveScreen() {
           subtitle="Review employee leave applications"
         />
 
-        {/* Filter Tabs */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: spacing.xs,
-            marginBottom: spacing.xs,
-          }}
-        >
-          {STATUS_FILTERS.map((opt) => {
-            const isSelected = statusFilter === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setStatusFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Enhanced Filter Bar */}
+        <LeaveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* leave requests list data */}
 

@@ -40,6 +40,7 @@ export interface TaskWithProject extends Task {
   project: {
     project_code: string;
     project_name: string;
+    status: string;
   } | null;
 
   member: {
@@ -53,4 +54,10 @@ export interface TaskWithProject extends Task {
       department: string | null;
     } | null;
   } | null;
+}
+
+export interface TaskFilters {
+  search?: string;
+  status?: string;
+  priority?: string;
 }

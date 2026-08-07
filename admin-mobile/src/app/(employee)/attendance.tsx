@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { View, FlatList } from "react-native";
 
 import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
@@ -6,7 +6,7 @@ import { AppHeader, EmptyState } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
-import { Attendance } from "@/features/attendance/attendance.types";
+import { Attendance, AttendanceFilters } from "@/features/attendance/attendance.types";
 import {
   getTodayAttendance,
   getAttendanceHistory,
@@ -15,6 +15,7 @@ import {
 } from "@/features/attendance/attendance.service";
 import { toast } from "@/store/toast.store";
 import AttendanceCard from "@/features/attendance/components/AttendanceCard";
+import AttendanceFilterBar from "@/features/attendance/components/AttendanceFilterBar";
 
 export default function EmployeeAttendanceScreen() {
   const [loading, setLoading] = useState(true);
@@ -24,6 +25,15 @@ export default function EmployeeAttendanceScreen() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [todayRecord, setTodayRecord] = useState<Attendance | null>(null);
   const [history, setHistory] = useState<Attendance[]>([]);
+  const [filters, setFilters] = useState<AttendanceFilters>({});
+
+  const filteredHistory = useMemo(() => {
+    return history.filter((record) => {
+      if (filters.status && record.status !== filters.status) return false;
+      if (filters.month && !record.attendance_date.startsWith(filters.month)) return false;
+      return true;
+    });
+  }, [history, filters]);
 
   const loadData = useCallback(async (isRefresh = false) => {
     await Promise.resolve();
@@ -227,12 +237,14 @@ export default function EmployeeAttendanceScreen() {
           </View>
         </Card>
 
-        <AppText variant="h3" weight="700" style={{ marginTop: spacing.sm }}>
+        <AppText variant="h3" weight="700" style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
           Attendance History
         </AppText>
 
+        <AttendanceFilterBar filters={filters} onFiltersChange={setFilters} isAdmin={false} />
+
         <FlatList
-          data={history}
+          data={filteredHistory}
           keyExtractor={(item) => item.id}
           renderItem={renderHistoryItem}
           refreshing={refreshing}

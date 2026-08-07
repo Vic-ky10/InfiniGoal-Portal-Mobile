@@ -39,6 +39,22 @@ export function useNotifications() {
 
   useEffect(() => {
     fetchNotifications();
+
+    const channel = supabase
+      .channel("realtime-notifications")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications" },
+        () => {
+          // Silently fetch latest notifications on any change
+          fetchNotifications(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchNotifications]);
 
   const handleMarkRead = async (id: string) => {

@@ -34,8 +34,10 @@ export interface AttendanceWithEmployee extends Attendance {
 export interface AttendanceFilters {
   profileId?: string;
   date?: string;
+  month?: string; // e.g., "0" to "11" or "2023-01"
   status?: AttendanceStatus | "";
   search?: string;
+  department?: string;
 }
 export interface AttendanceSummary {
   total: number;

@@ -60,6 +60,10 @@ export interface LeaveRequestWithEmployee extends LeaveRequest {
 export interface LeaveFilters {
   profileId?: string;
   status?: LeaveStatus | "";
+  search?: string;
+  department?: string;
+  leaveType?: LeaveType | "";
+  month?: string; // YYYY-MM
 }
 
 /**

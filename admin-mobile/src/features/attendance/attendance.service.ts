@@ -313,7 +313,9 @@ if (attendance.login_time && attendance.logout_time) {
   return summary;
 }
 
-export async function getTodayAttendanceDashboard(): Promise<AttendanceDashboard> {
+export async function getTodayAttendanceDashboard(
+  filters: AttendanceFilters = {}
+): Promise<AttendanceDashboard> {
   // Get all employees
   const { data: employees, error: employeeError } = await supabase
     .from("profiles")
@@ -322,50 +324,73 @@ export async function getTodayAttendanceDashboard(): Promise<AttendanceDashboard
   if (employeeError) {
     console.error(employeeError);
 
-   return {
-  summary: {
-    total: 0,
-    present: 0,
-    shortHours: 0,
-    halfDay: 0,
-    incomplete: 0,
-    absent: 0,
-    totalWorkingHours: 0,
-  },
-  present: [],
-  shortHours: [],
-  halfDay: [],
-  incomplete: [],
-  absent: [],
-};
+    return {
+      summary: {
+        total: 0,
+        present: 0,
+        shortHours: 0,
+        halfDay: 0,
+        incomplete: 0,
+        absent: 0,
+        totalWorkingHours: 0,
+      },
+      present: [],
+      shortHours: [],
+      halfDay: [],
+      incomplete: [],
+      absent: [],
+    };
   }
 
-  // Get today's attendance
+  const targetDate = filters.date ?? getTodayDate();
+
+  // Get attendance for the target date
   const attendanceRecords = await getAttendanceRecords({
-    date: getTodayDate(),
+    date: targetDate,
   });
 
   const attendanceMap = new Map(
     attendanceRecords.map((record) => [record.profile_id, record]),
   );
 
-const present: AttendanceWithEmployee[] = [];
-const shortHours: AttendanceWithEmployee[] = [];
-const halfDay: AttendanceWithEmployee[] = [];
-const incomplete: AttendanceWithEmployee[] = [];
-const absent: AttendanceWithEmployee[] = [];
+  // Filter employees in memory based on filters
+  let filteredEmployees = employees as Employee[];
+  if (filters.profileId) {
+    filteredEmployees = filteredEmployees.filter(emp => emp.id === filters.profileId);
+  }
+  if (filters.department) {
+    filteredEmployees = filteredEmployees.filter(emp => emp.department === filters.department);
+  }
+  if (filters.search) {
+    const s = filters.search.toLowerCase();
+    filteredEmployees = filteredEmployees.filter(emp => 
+      emp.full_name.toLowerCase().includes(s) ||
+      emp.employee_id.toLowerCase().includes(s) ||
+      emp.email.toLowerCase().includes(s)
+    );
+  }
+
+  const present: AttendanceWithEmployee[] = [];
+  const shortHours: AttendanceWithEmployee[] = [];
+  const halfDay: AttendanceWithEmployee[] = [];
+  const incomplete: AttendanceWithEmployee[] = [];
+  const absent: AttendanceWithEmployee[] = [];
 
   let totalWorkingHours = 0;
 
-  for (const employee of employees as Employee[]) {
+  for (const employee of filteredEmployees) {
     const attendance = attendanceMap.get(employee.id);
 
     // No attendance => Absent
     if (!attendance) {
+      if (filters.status && filters.status !== ATTENDANCE_STATUS.ABSENT) {
+        continue;
+      }
+
       const absentRecord: AttendanceWithEmployee = {
         id: `absent-${employee.id}`,
         profile_id: employee.id,
-        attendance_date: getTodayDate(),
+        attendance_date: targetDate,
         login_time: null,
         logout_time: null,
         working_hours: 0,
@@ -382,39 +407,49 @@ const absent: AttendanceWithEmployee[] = [];
         },
       };
 
-      // console.log("Employee:", employee);
-      // console.log("Absent Record:", absentRecord);
-
       absent.push(absentRecord);
-
       continue;
     }
 
-    // Logged in only
+    // Logged in only => Incomplete
     if (attendance.login_time && !attendance.logout_time) {
+      if (filters.status && filters.status !== ATTENDANCE_STATUS.INCOMPLETE) {
+        continue;
+      }
       incomplete.push(attendance);
       continue;
     }
 
-    // Logged in + Logged out
-    present.push(attendance);
+    // Logged in + Logged out => Present / Short Hours / Half Day
+    if (filters.status && attendance.status !== filters.status) {
+      continue;
+    }
+
+    if (attendance.status === ATTENDANCE_STATUS.HALF_DAY) {
+      halfDay.push(attendance);
+    } else if (attendance.status === ATTENDANCE_STATUS.SHORT_HOURS) {
+      shortHours.push(attendance);
+    } else {
+      present.push(attendance);
+    }
+
     totalWorkingHours += attendance.working_hours ?? 0;
   }
 
   return {
- summary: {
-  total: employees.length,
-  present: present.length,
-  shortHours: shortHours.length,
-  halfDay: halfDay.length,
-  incomplete: incomplete.length,
-  absent: absent.length,
-  totalWorkingHours,
-},
-present,
-shortHours,
-halfDay,
-incomplete,
-absent,
+    summary: {
+      total: present.length + shortHours.length + halfDay.length + incomplete.length + absent.length,
+      present: present.length,
+      shortHours: shortHours.length,
+      halfDay: halfDay.length,
+      incomplete: incomplete.length,
+      absent: absent.length,
+      totalWorkingHours,
+    },
+    present,
+    shortHours,
+    halfDay,
+    incomplete,
+    absent,
   };
 }

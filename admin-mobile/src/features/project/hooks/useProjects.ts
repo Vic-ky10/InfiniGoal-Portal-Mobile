@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import {
   ProjectDashboardStats,
   ProjectFilters,
@@ -44,6 +45,21 @@ export function useProjects(initialFilters: ProjectFilters = {}) {
 
   useEffect(() => {
     fetchProjects();
+
+    const channel = supabase
+      .channel("realtime-projects")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "projects" },
+        () => {
+          fetchProjects(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchProjects]);
 
   return {

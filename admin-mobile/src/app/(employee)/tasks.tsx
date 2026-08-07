@@ -1,8 +1,22 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { View, FlatList, TouchableOpacity, Modal, ScrollView, Animated } from "react-native";
+import {
+  View,
+  FlatList,
+  TouchableOpacity,
+  Modal,
+  ScrollView,
+  Animated,
+} from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 import { AppText, Screen, Card, Badge, Button } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
+import {
+  AppHeader,
+  SearchBar,
+  EmptyState,
+  ActionSheet,
+  ActionSheetOption,
+} from "@/components/common";
 import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
@@ -10,18 +24,37 @@ import { TaskWithProject } from "@/features/task/task.types";
 import { getEmployeeTasks, updateTaskStatus } from "@/features/task/task.service";
 import { toast } from "@/store/toast.store";
 import TaskCard from "@/features/task/components/TaskCard";
+import KanbanBoard from "@/features/task/components/KanbanBoard";
+
+type ViewMode = "list" | "kanban";
 
 export default function EmployeeTasksScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
   // Detail Modal State
   const [selectedTask, setSelectedTask] = useState<TaskWithProject | null>(null);
   const [detailModalVisible, setDetailModalVisible] = useState(false);
+
+  const { taskId } = useLocalSearchParams<{ taskId?: string }>();
+
+  useEffect(() => {
+    if (taskId && tasks.length > 0) {
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) {
+        setSelectedTask(task);
+        setDetailModalVisible(true);
+      } else {
+        toast.error("The requested task could not be found.");
+      }
+    }
+  }, [taskId, tasks]);
   const [actionSheetConfig, setActionSheetConfig] = useState<{
     visible: boolean;
     title?: string;
@@ -60,9 +93,12 @@ export default function EmployeeTasksScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
+      setCurrentUserId(user.id);
       const data = await getEmployeeTasks(user.id);
       setTasks(data);
     } catch (error) {
@@ -77,15 +113,36 @@ export default function EmployeeTasksScreen() {
     Promise.resolve().then(() => {
       loadData();
     });
+
+    // Subscribe to realtime task updates
+    const channel = supabase
+      .channel("realtime-tasks-employee")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "tasks" },
+        () => {
+          loadData(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [loadData]);
 
   // Optimistic update helper
-  const applyOptimisticUpdate = (taskId: string, newStatus: string) => {
+  const applyOptimisticUpdate = (taskId: string, newStatus: string, actualHours?: number) => {
     const completedAt = newStatus === "Completed" ? new Date().toISOString() : undefined;
     setTasks((prev) => {
       const updated = prev.map((t) =>
         t.id === taskId
-          ? { ...t, status: newStatus as any, ...(completedAt ? { completed_at: completedAt } : {}) }
+          ? {
+              ...t,
+              status: newStatus as TaskWithProject["status"],
+              ...(completedAt ? { completed_at: completedAt } : {}),
+              ...(actualHours !== undefined ? { actual_hours: actualHours } : {}),
+            }
           : t
       );
       const found = updated.find((t) => t.id === taskId);
@@ -96,8 +153,29 @@ export default function EmployeeTasksScreen() {
     });
   };
 
+  // Kanban status change handler — same permission logic as list view
+  const handleKanbanStatusChange = useCallback(
+    async (taskId: string, newStatus: string, actualHours?: number) => {
+      applyOptimisticUpdate(taskId, newStatus, actualHours);
+      setUpdatingTaskId(taskId);
+      try {
+        const res = await updateTaskStatus(taskId, newStatus, actualHours);
+        if (!res.success) {
+          toast.error(res.error || "Failed to update task status.");
+          await loadData(true);
+          return { success: false, error: res.error };
+        }
+        return { success: true, message: res.message };
+      } finally {
+        setUpdatingTaskId(null);
+      }
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [loadData]
+  );
+
   const handleStatusChange = async (taskId: string, newStatus: string) => {
-    // If completing, show a simple confirmation action sheet to keep it safe
+    // If completing, show a simple confirmation action sheet
     if (newStatus === "Completed") {
       setActionSheetConfig({
         visible: true,
@@ -124,17 +202,14 @@ export default function EmployeeTasksScreen() {
         ],
       });
     } else {
-      
       applyOptimisticUpdate(taskId, newStatus);
       setUpdatingTaskId(taskId);
       try {
         const res = await updateTaskStatus(taskId, newStatus);
         if (!res.success) {
-     
           toast.error(res.error || "Failed to update task status.");
           await loadData(true);
         }
-      
       } finally {
         setUpdatingTaskId(null);
       }
@@ -160,7 +235,7 @@ export default function EmployeeTasksScreen() {
     const today = new Date(todayStr);
     const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
 
-    // Dynamic Filter 
+    // Dynamic filter
     switch (statusFilter) {
       case "PENDING":
         return result.filter((t) => t.status === "Todo");
@@ -176,7 +251,9 @@ export default function EmployeeTasksScreen() {
             t.due_date < todayStr
         );
       case "HIGH_PRIORITY":
-        return result.filter((t) => t.priority === "High" || t.priority === "Urgent");
+        return result.filter(
+          (t) => t.priority === "High" || t.priority === "Urgent"
+        );
       case "TODAY":
         return result.filter((t) => t.due_date === todayStr);
       case "THIS_WEEK":
@@ -247,17 +324,34 @@ export default function EmployeeTasksScreen() {
                       opacity: isUpdating ? 0.6 : 1,
                     }}
                   >
-                    <AppText variant="caption" weight="700" color={employeeColors.primary}>
+                    <AppText
+                      variant="caption"
+                      weight="700"
+                      color={employeeColors.primary}
+                    >
                       {isUpdating ? "Completing..." : "Mark Complete"}
                     </AppText>
                   </TouchableOpacity>
                 ) : null}
               </View>
             ) : (
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-                <Feather name="check-circle" size={13} color={employeeColors.success} />
-                <AppText variant="caption" weight="700" color={employeeColors.success}>
-                  Completed {item.completed_at ? `on: ${new Date(item.completed_at).toLocaleDateString()}` : ""}
+              <View
+                style={{ flexDirection: "row", alignItems: "center", gap: 4 }}
+              >
+                <Feather
+                  name="check-circle"
+                  size={13}
+                  color={employeeColors.success}
+                />
+                <AppText
+                  variant="caption"
+                  weight="700"
+                  color={employeeColors.success}
+                >
+                  Completed{" "}
+                  {item.completed_at
+                    ? `on: ${new Date(item.completed_at).toLocaleDateString()}`
+                    : ""}
                 </AppText>
               </View>
             )
@@ -280,157 +374,419 @@ export default function EmployeeTasksScreen() {
         }}
       >
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <View style={{ width: 80, height: 16, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
-          <View style={{ width: 60, height: 16, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
+          <View
+            style={{
+              width: 80,
+              height: 16,
+              backgroundColor: `${employeeColors.border}60`,
+              borderRadius: radius.sm,
+            }}
+          />
+          <View
+            style={{
+              width: 60,
+              height: 16,
+              backgroundColor: `${employeeColors.border}60`,
+              borderRadius: radius.sm,
+            }}
+          />
         </View>
-        <View style={{ width: "80%", height: 20, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
-        <View style={{ width: "100%", height: 14, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
+        <View
+          style={{
+            width: "80%",
+            height: 20,
+            backgroundColor: `${employeeColors.border}60`,
+            borderRadius: radius.sm,
+          }}
+        />
+        <View
+          style={{
+            width: "100%",
+            height: 14,
+            backgroundColor: `${employeeColors.border}60`,
+            borderRadius: radius.sm,
+          }}
+        />
         <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-          <View style={{ width: 120, height: 12, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
-          <View style={{ width: 40, height: 12, backgroundColor: `${employeeColors.border}60`, borderRadius: radius.sm }} />
+          <View
+            style={{
+              width: 120,
+              height: 12,
+              backgroundColor: `${employeeColors.border}60`,
+              borderRadius: radius.sm,
+            }}
+          />
+          <View
+            style={{
+              width: 40,
+              height: 12,
+              backgroundColor: `${employeeColors.border}60`,
+              borderRadius: radius.sm,
+            }}
+          />
         </View>
       </Card>
     </Animated.View>
   );
 
   return (
-    <Screen isLoading={false} scroll={false}>
+    <Screen isLoading={false} scroll={false} style={{ padding: spacing.sm }}>
       <View style={{ flex: 1, gap: spacing.md }}>
-        <AppHeader title="My Tasks" subtitle="Tasks assigned to you" />
-
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search by title, description, project code..."
+        {/* Header with view toggle */}
+        <AppHeader
+          title="My Tasks"
+          subtitle="Tasks assigned to you"
+          rightComponent={
+            <View style={{
+              flexDirection: "row",
+              backgroundColor: `${employeeColors.primary}10`,
+              borderRadius: radius.md,
+              borderWidth: 1,
+              borderColor: `${employeeColors.primary}30`,
+              overflow: "hidden",
+            }}>
+              <TouchableOpacity
+                onPress={() => setViewMode("kanban")}
+                style={{
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                  backgroundColor: viewMode === "kanban" ? employeeColors.primary : "transparent",
+                }}
+              >
+                <Feather
+                  name="columns"
+                  size={15}
+                  color={viewMode === "kanban" ? "#FFFFFF" : employeeColors.primary}
+                />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => setViewMode("list")}
+                style={{
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                  backgroundColor: viewMode === "list" ? employeeColors.primary : "transparent",
+                }}
+              >
+                <Feather
+                  name="list"
+                  size={15}
+                  color={viewMode === "list" ? "#FFFFFF" : employeeColors.primary}
+                />
+              </TouchableOpacity>
+            </View>
+          }
         />
 
-        {/* Filter Pills */}
-        <View style={{ height: 36 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs, paddingRight: spacing.xl }}>
-            {[
-              { id: "ALL", label: "All" },
-              { id: "PENDING", label: "Pending" },
-              { id: "IN_PROGRESS", label: "In Progress" },
-              { id: "COMPLETED", label: "Completed" },
-              { id: "OVERDUE", label: "Overdue" },
-              { id: "HIGH_PRIORITY", label: "High Priority" },
-                                 
-            ].map((filter) => {
-              const isSelected = statusFilter === filter.id;
-              return (
-                <TouchableOpacity
-                  key={filter.id}
-                  onPress={() => setStatusFilter(filter.id)}
-                  style={{
-                    paddingHorizontal: spacing.md,
-                    paddingVertical: spacing.xs,
-                    borderRadius: radius.full,
-                    backgroundColor: isSelected ? employeeColors.primary : `${employeeColors.primary}10`,
-                    justifyContent: "center",
-                  }}
-                >
-                  <AppText variant="caption" weight="600" color={isSelected ? "#FFFFFF" : employeeColors.primary}>
-                    {filter.label}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {loading ? (
-          <FlatList
-            data={[1, 2, 3, 4]}
-            keyExtractor={(i) => String(i)}
-            renderItem={renderSkeletonItem}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-          />
+        {/* Kanban View */}
+        {viewMode === "kanban" ? (
+          loading ? (
+            <FlatList
+              data={[1, 2, 3, 4]}
+              keyExtractor={(i) => String(i)}
+              renderItem={renderSkeletonItem}
+              showsVerticalScrollIndicator={false}
+              contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+            />
+          ) : (
+            <KanbanBoard
+              tasks={tasks}
+              isAdmin={false}
+              profileId={currentUserId}
+              onStatusChange={handleKanbanStatusChange}
+              onTaskDeleted={() => loadData(true)}
+              onCardPress={openDetails}
+            />
+          )
         ) : (
-          <FlatList
-            data={filteredTasks}
-            keyExtractor={(item) => item.id}
-            renderItem={renderTaskItem}
-            refreshing={refreshing}
-            onRefresh={() => loadData(true)}
-            showsVerticalScrollIndicator={false}
-            ListEmptyComponent={<EmptyState title="No Tasks Found" />}
-            contentContainerStyle={{ paddingBottom: spacing.xxxl }}
-          />
+          /* List View */
+          <>
+            <SearchBar
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search by title, description, project code..."
+            />
+
+            {/* Filter Pills */}
+            <View style={{ height: 36 }}>
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{
+                  gap: spacing.xs,
+                  paddingRight: spacing.xl,
+                }}
+              >
+                {[
+                  { id: "ALL", label: "All" },
+                  { id: "PENDING", label: "Pending" },
+                  { id: "IN_PROGRESS", label: "In Progress" },
+                  { id: "COMPLETED", label: "Completed" },
+                  { id: "OVERDUE", label: "Overdue" },
+                  { id: "HIGH_PRIORITY", label: "High Priority" },
+                ].map((filter) => {
+                  const isSelected = statusFilter === filter.id;
+                  return (
+                    <TouchableOpacity
+                      key={filter.id}
+                      onPress={() => setStatusFilter(filter.id)}
+                      style={{
+                        paddingHorizontal: spacing.md,
+                        paddingVertical: spacing.xs,
+                        borderRadius: radius.full,
+                        backgroundColor: isSelected
+                          ? employeeColors.primary
+                          : `${employeeColors.primary}10`,
+                        justifyContent: "center",
+                      }}
+                    >
+                      <AppText
+                        variant="caption"
+                        weight="600"
+                        color={
+                          isSelected ? "#FFFFFF" : employeeColors.primary
+                        }
+                      >
+                        {filter.label}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </ScrollView>
+            </View>
+
+            {loading ? (
+              <FlatList
+                data={[1, 2, 3, 4]}
+                keyExtractor={(i) => String(i)}
+                renderItem={renderSkeletonItem}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+              />
+            ) : (
+              <FlatList
+                data={filteredTasks}
+                keyExtractor={(item) => item.id}
+                renderItem={renderTaskItem}
+                refreshing={refreshing}
+                onRefresh={() => loadData(true)}
+                showsVerticalScrollIndicator={false}
+                ListEmptyComponent={<EmptyState title="No Tasks Found" />}
+                contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+              />
+            )}
+          </>
         )}
 
         {/* Task Details Sheet Modal */}
-
-        <Modal visible={detailModalVisible} animationType="slide" transparent>
-          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
-            <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+        <Modal
+          visible={detailModalVisible}
+          animationType="slide"
+          transparent
+        >
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              justifyContent: "flex-end",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: radius.xl,
+                borderTopRightRadius: radius.xl,
+                padding: spacing.xl,
+                maxHeight: "85%",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: spacing.lg,
+                }}
+              >
                 <AppText variant="h2" weight="700">
                   Task Details
                 </AppText>
-                <TouchableOpacity onPress={() => { setDetailModalVisible(false); setSelectedTask(null); }}>
+                <TouchableOpacity
+                  onPress={() => {
+                    setDetailModalVisible(false);
+                    setSelectedTask(null);
+                  }}
+                >
                   <Feather name="x" size={24} color={employeeColors.text} />
                 </TouchableOpacity>
               </View>
 
               {selectedTask && (
-                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.lg }}>
+                <ScrollView
+                  showsVerticalScrollIndicator={false}
+                  contentContainerStyle={{ gap: spacing.lg }}
+                >
                   <View style={{ gap: spacing.xs }}>
-                    <View style={{ flexDirection: "row", gap: spacing.xs, alignItems: "center", flexWrap: "wrap" }}>
-                      <Badge label={selectedTask.task_code} color={employeeColors.primary} variant="subtle" />
-                      <Badge label={selectedTask.status} color={selectedTask.status === "Completed" ? employeeColors.success : selectedTask.status === "In Progress" ? employeeColors.info : employeeColors.warning} />
-                      <Badge label={`${selectedTask.priority} Priority`} color={selectedTask.priority === "High" || selectedTask.priority === "Urgent" ? employeeColors.danger : employeeColors.textSecondary} variant="subtle" />
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: spacing.xs,
+                        alignItems: "center",
+                        flexWrap: "wrap",
+                      }}
+                    >
+                      <Badge
+                        label={selectedTask.task_code}
+                        color={employeeColors.primary}
+                        variant="subtle"
+                      />
+                      <Badge
+                        label={selectedTask.status}
+                        color={
+                          selectedTask.status === "Completed"
+                            ? employeeColors.success
+                            : selectedTask.status === "In Progress"
+                            ? employeeColors.info
+                            : employeeColors.warning
+                        }
+                      />
+                      <Badge
+                        label={`${selectedTask.priority} Priority`}
+                        color={
+                          selectedTask.priority === "High" ||
+                          selectedTask.priority === "Urgent"
+                            ? employeeColors.danger
+                            : employeeColors.textSecondary
+                        }
+                        variant="subtle"
+                      />
                     </View>
-                    <AppText variant="h2" weight="700" color={employeeColors.text} style={{ marginTop: spacing.xs }}>
+                    <AppText
+                      variant="h2"
+                      weight="700"
+                      color={employeeColors.text}
+                      style={{ marginTop: spacing.xs }}
+                    >
                       {selectedTask.title}
                     </AppText>
                   </View>
 
                   {/* Project Summary */}
                   {selectedTask.project && (
-                    <View style={{ gap: spacing.xs, paddingVertical: spacing.xs }}>
-                      <AppText variant="caption" weight="600" color={employeeColors.textSecondary}>PROJECT</AppText>
-                      <AppText weight="700">{selectedTask.project.project_name}</AppText>
-                      <AppText variant="caption" color={employeeColors.textSecondary}>Code: {selectedTask.project.project_code}</AppText>
+                    <View
+                      style={{ gap: spacing.xs, paddingVertical: spacing.xs }}
+                    >
+                      <AppText
+                        variant="caption"
+                        weight="600"
+                        color={employeeColors.textSecondary}
+                      >
+                        PROJECT
+                      </AppText>
+                      <AppText weight="700">
+                        {selectedTask.project.project_name}
+                      </AppText>
+                      <AppText
+                        variant="caption"
+                        color={employeeColors.textSecondary}
+                      >
+                        Code: {selectedTask.project.project_code}
+                      </AppText>
                     </View>
                   )}
 
                   {/* Task Details Stack */}
-                  
-                  <Card style={{ borderWidth: 1, borderColor: employeeColors.border, gap: spacing.md }}>
-                    <View style={{ flexDirection: "row", justifyContent: "space-between", borderBottomWidth: 1, borderBottomColor: `${employeeColors.border}50`, paddingBottom: spacing.sm }}>
+                  <Card
+                    style={{
+                      borderWidth: 1,
+                      borderColor: employeeColors.border,
+                      gap: spacing.md,
+                    }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        justifyContent: "space-between",
+                        borderBottomWidth: 1,
+                        borderBottomColor: `${employeeColors.border}50`,
+                        paddingBottom: spacing.sm,
+                      }}
+                    >
                       <View>
-                        <AppText variant="caption" color={employeeColors.textSecondary}>Assigned Date</AppText>
+                        <AppText
+                          variant="caption"
+                          color={employeeColors.textSecondary}
+                        >
+                          Assigned Date
+                        </AppText>
                         <AppText weight="600" style={{ marginTop: 2 }}>
-                          {selectedTask.created_at ? new Date(selectedTask.created_at).toLocaleDateString() : "--"}
+                          {selectedTask.created_at
+                            ? new Date(
+                                selectedTask.created_at
+                              ).toLocaleDateString()
+                            : "--"}
                         </AppText>
                       </View>
                       <View style={{ alignItems: "flex-end" }}>
-                        <AppText variant="caption" color={employeeColors.textSecondary}>Due Date</AppText>
-                        <AppText weight="600" color={employeeColors.danger} style={{ marginTop: 2 }}>
+                        <AppText
+                          variant="caption"
+                          color={employeeColors.textSecondary}
+                        >
+                          Due Date
+                        </AppText>
+                        <AppText
+                          weight="600"
+                          color={employeeColors.danger}
+                          style={{ marginTop: 2 }}
+                        >
                           {selectedTask.due_date || "--"}
                         </AppText>
                       </View>
                     </View>
 
-                    {/* Conditional Fields based on schema presence */}
                     <View style={{ gap: spacing.sm }}>
-                      {/* Completion Time */}
-                      {selectedTask.completed_at !== null && selectedTask.completed_at !== undefined && (
-                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                          <AppText variant="body" color={employeeColors.textSecondary}>Completed At</AppText>
-                          <AppText weight="600" color={employeeColors.success}>
-                            {new Date(selectedTask.completed_at).toLocaleString()}
-                          </AppText>
-                        </View>
-                      )}
+                      {selectedTask.completed_at !== null &&
+                        selectedTask.completed_at !== undefined && (
+                          <View
+                            style={{
+                              flexDirection: "row",
+                              justifyContent: "space-between",
+                            }}
+                          >
+                            <AppText
+                              variant="body"
+                              color={employeeColors.textSecondary}
+                            >
+                              Completed At
+                            </AppText>
+                            <AppText weight="600" color={employeeColors.success}>
+                              {new Date(
+                                selectedTask.completed_at
+                              ).toLocaleString()}
+                            </AppText>
+                          </View>
+                        )}
 
-                      {/* Created By / Assigned by */}
                       {selectedTask.created_by && (
-                        <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                          <AppText variant="body" color={employeeColors.textSecondary}>Assigned By</AppText>
-                          <AppText variant="caption" weight="600" color={employeeColors.textSecondary}>
-                            {selectedTask.member?.profile?.full_name ? "Administrator" : "Manager"}
+                        <View
+                          style={{
+                            flexDirection: "row",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <AppText
+                            variant="body"
+                            color={employeeColors.textSecondary}
+                          >
+                            Assigned By
+                          </AppText>
+                          <AppText
+                            variant="caption"
+                            weight="600"
+                            color={employeeColors.textSecondary}
+                          >
+                            {selectedTask.member?.profile?.full_name
+                              ? "Administrator"
+                              : "Manager"}
                           </AppText>
                         </View>
                       )}
@@ -440,9 +796,24 @@ export default function EmployeeTasksScreen() {
                   {/* Description */}
                   {selectedTask.description ? (
                     <View style={{ gap: spacing.xs }}>
-                      <AppText variant="caption" weight="600" color={employeeColors.textSecondary}>NOTES & DESCRIPTION</AppText>
-                      <Card style={{ borderWidth: 1, borderColor: employeeColors.border }}>
-                        <AppText variant="body" color={employeeColors.text} style={{ lineHeight: 22 }}>
+                      <AppText
+                        variant="caption"
+                        weight="600"
+                        color={employeeColors.textSecondary}
+                      >
+                        NOTES & DESCRIPTION
+                      </AppText>
+                      <Card
+                        style={{
+                          borderWidth: 1,
+                          borderColor: employeeColors.border,
+                        }}
+                      >
+                        <AppText
+                          variant="body"
+                          color={employeeColors.text}
+                          style={{ lineHeight: 22 }}
+                        >
                           {selectedTask.description}
                         </AppText>
                       </Card>
@@ -455,21 +826,38 @@ export default function EmployeeTasksScreen() {
                       {selectedTask.status === "Todo" ? (
                         <Button
                           title="Start Working on Task"
-                          onPress={() => handleStatusChange(selectedTask.id, "In Progress")}
+                          onPress={() =>
+                            handleStatusChange(selectedTask.id, "In Progress")
+                          }
                           loading={updatingTaskId === selectedTask.id}
                         />
                       ) : selectedTask.status === "In Progress" ? (
                         <Button
                           title="Mark Task Completed"
-                          onPress={() => handleStatusChange(selectedTask.id, "Completed")}
+                          onPress={() =>
+                            handleStatusChange(selectedTask.id, "Completed")
+                          }
                           loading={updatingTaskId === selectedTask.id}
                         />
                       ) : null}
                     </View>
                   ) : (
-                    <View style={{ backgroundColor: `${employeeColors.success}10`, alignItems: "center", paddingVertical: spacing.md, marginTop: spacing.md, borderRadius: 10 }}>
+                    <View
+                      style={{
+                        backgroundColor: `${employeeColors.success}10`,
+                        alignItems: "center",
+                        paddingVertical: spacing.md,
+                        marginTop: spacing.md,
+                        borderRadius: 10,
+                      }}
+                    >
                       <AppText weight="700" color={employeeColors.success}>
-                        ✔ Completed {selectedTask.completed_at ? `on: ${new Date(selectedTask.completed_at).toLocaleDateString()}` : ""}
+                        ✔ Completed{" "}
+                        {selectedTask.completed_at
+                          ? `on: ${new Date(
+                              selectedTask.completed_at
+                            ).toLocaleDateString()}`
+                          : ""}
                       </AppText>
                     </View>
                   )}
@@ -483,7 +871,9 @@ export default function EmployeeTasksScreen() {
 
       <ActionSheet
         visible={actionSheetConfig.visible}
-        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        onClose={() =>
+          setActionSheetConfig((prev) => ({ ...prev, visible: false }))
+        }
         title={actionSheetConfig.title}
         subtitle={actionSheetConfig.subtitle}
         options={actionSheetConfig.options}

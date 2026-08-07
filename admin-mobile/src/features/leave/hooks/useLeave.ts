@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import {
   LeaveRequestWithEmployee,
   LeaveStatus,
@@ -32,6 +33,21 @@ export function useLeave() {
 
   useEffect(() => {
     fetchLeaveRequests();
+
+    const channel = supabase
+      .channel("realtime-leave_requests")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leave_requests" },
+        () => {
+          fetchLeaveRequests(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchLeaveRequests]);
 
   const handleReview = async (

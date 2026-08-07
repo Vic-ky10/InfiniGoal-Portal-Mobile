@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { View, FlatList } from "react-native";
+import { useLocalSearchParams } from "expo-router";
 
 import { Screen } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { spacing } from "@/theme";
+import { toast } from "@/store/toast.store";
 
 import { useExpenses } from "@/features/expense/hooks/useExpenses";
 import ExpenseCard from "@/features/expense/components/ExpenseCard";
@@ -25,6 +27,19 @@ export default function ExpensesScreen() {
     handleReview,
     handleMarkPaid,
   } = useExpenses();
+
+  const { expenseId } = useLocalSearchParams<{ expenseId?: string }>();
+
+  useEffect(() => {
+    if (expenseId && expenses.length > 0) {
+      const expense = expenses.find((e) => e.id === expenseId);
+      if (expense) {
+        setSelectedExpense(expense);
+      } else {
+        toast.error("The requested expense claim could not be found.");
+      }
+    }
+  }, [expenseId, expenses]);
 
   const filteredExpenses = useMemo(() => {
     return expenses.filter((expense) => {

@@ -270,6 +270,44 @@ export async function updateCustomerPurchase(
       });
     }
 
+    const { data: existingIncentive } = await supabase
+      .from("incentives")
+      .select("id")
+      .eq("title", `Incentive for Purchase ${existing.purchase_code}`)
+      .maybeSingle();
+
+    if (incentiveStatus === "Approved" && !existingIncentive) {
+      const { generateIncentiveCode } = await import("../incentive/incentive.service");
+      const incentiveCode = await generateIncentiveCode();
+
+      await supabase.from("incentives").insert({
+        profile_id: employeeId,
+        incentive_code: incentiveCode,
+        incentive_type: "Customer Conversion",
+        title: `Incentive for Purchase ${existing.purchase_code}`,
+        description: `Incentive earned from purchase ${existing.purchase_code}`,
+        amount: incentiveAmount,
+        month: new Date(purchase.purchase_date).getMonth(),
+        year: new Date(purchase.purchase_date).getFullYear(),
+        status: "Approved",
+        payment_status: "Pending",
+        approved_by: adminReviewedBy || null,
+        approved_at: new Date().toISOString(),
+        created_by: adminReviewedBy || null,
+      });
+    } else if (existingIncentive) {
+      let newIncentiveStatus = "Pending";
+      if (incentiveStatus === "Approved") newIncentiveStatus = "Approved";
+      else if (incentiveStatus === "Rejected") newIncentiveStatus = "Rejected";
+      
+      await supabase.from("incentives").update({
+        amount: incentiveAmount,
+        status: newIncentiveStatus,
+        month: new Date(purchase.purchase_date).getMonth(),
+        year: new Date(purchase.purchase_date).getFullYear(),
+      }).eq("id", existingIncentive.id);
+    }
+
     const isStatusChanged = incentiveStatus !== existingMeta.incentive_status;
     if (isStatusChanged && (incentiveStatus === "Approved" || incentiveStatus === "Rejected")) {
       const msg = incentiveStatus === "Approved"

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, FlatList } from "react-native";
+import { useRouter } from "expo-router";
 
 import NotificationItem from "@/features/notification/components/NotificationItem";
 import NotificationDetailModal from "@/features/notification/components/NotificationDetailModal";
@@ -12,9 +13,11 @@ import {
   getNotifications,
   markNotificationRead,
 } from "@/features/notification/notification.service";
+import { getNotificationRoute } from "@/features/notification/notification.helper";
 
 export default function EmployeeNotificationsScreen() {
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
 
   const [selectedNotification, setSelectedNotification] =
     useState<Notification | null>(null);
@@ -64,9 +67,13 @@ export default function EmployeeNotificationsScreen() {
       }
     }
 
-    setSelectedNotification(notification);
-
-    setModalVisible(true);
+    const route = getNotificationRoute(notification, false);
+    if (route) {
+      router.push(route as any);
+    } else {
+      setSelectedNotification(notification);
+      setModalVisible(true);
+    }
   };
 
   return (

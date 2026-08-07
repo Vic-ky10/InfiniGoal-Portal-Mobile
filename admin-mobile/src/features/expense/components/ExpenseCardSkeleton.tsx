@@ -4,7 +4,7 @@ import { useThemeColors, radius, spacing, shadows } from "@/theme";
 
 export default function ExpenseCardSkeleton() {
   const colors = useThemeColors();
-  const animatedValue = React.useRef(new Animated.Value(0.3)).current;
+  const [animatedValue] = React.useState(() => new Animated.Value(0.3));
 
   React.useEffect(() => {
     Animated.loop(

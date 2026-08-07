@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import {
   IncentiveFilters,
   IncentiveWithEmployee,
@@ -35,6 +36,21 @@ export function useIncentives(initialFilters: IncentiveFilters = {}) {
 
   useEffect(() => {
     fetchIncentives();
+
+    const channel = supabase
+      .channel("realtime-incentives")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "incentives" },
+        () => {
+          fetchIncentives(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchIncentives]);
 
   const handleReview = async (incentiveId: string, status: IncentiveStatus) => {

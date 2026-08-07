@@ -35,7 +35,7 @@ export function getAdminColors(_colorScheme?: string | null) {
   try {
     const mode = useThemeStore.getState().mode;
     return mode === "employee" ? employeeColors : adminColors;
-  } catch (e) {
+  } catch {
     return adminColors;
   }
 }

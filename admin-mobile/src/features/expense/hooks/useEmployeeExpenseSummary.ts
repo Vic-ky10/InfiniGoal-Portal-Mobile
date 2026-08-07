@@ -4,6 +4,6 @@ import { getEmployeeExpenseSummary } from "../expense.service";
 export function useEmployeeExpenseSummary() {
   return useQuery({
     queryKey: ["employee-expense-summary"],
-    queryFn: getEmployeeExpenseSummary,
+    queryFn: () => getEmployeeExpenseSummary(),
   });
 }

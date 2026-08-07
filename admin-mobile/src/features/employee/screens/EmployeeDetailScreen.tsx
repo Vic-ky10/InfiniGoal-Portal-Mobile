@@ -94,53 +94,68 @@ export default function EmployeeDetailScreen() {
       </Card>
 
       {/* Details List */}
-      <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
-        <AppText variant="h3" weight="700">
-          Information & Contact
-        </AppText>
-
-        <View style={{ gap: spacing.md }}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: `${adminColors.primary}10`, justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
-              <Feather name="mail" size={18} color={adminColors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" color={adminColors.textSecondary}>Email Address</AppText>
-              <AppText weight="600">{employee.email}</AppText>
-            </View>
+      <View style={{ gap: spacing.md, paddingBottom: spacing.xxl }}>
+        {/* Employment */}
+        <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+          <AppText variant="h3" weight="700">Employment Details</AppText>
+          <View style={{ gap: spacing.md }}>
+            <DetailRow icon="briefcase" label="Department" value={employee.department} />
+            <DetailRow icon="award" label="Designation" value={employee.designation} />
+            <DetailRow icon="star" label="Role" value={employee.role} />
+            <DetailRow icon="calendar" label="Joined Date" value={employee.joined_date ? new Date(employee.joined_date).toLocaleDateString() : null} />
+            <DetailRow icon="clock" label="Experience (Years)" value={employee.experience_years?.toString()} />
           </View>
+        </Card>
 
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: `${adminColors.primary}10`, justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
-              <Feather name="phone" size={18} color={adminColors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" color={adminColors.textSecondary}>Phone Number</AppText>
-              <AppText weight="600">{employee.phone ?? "Not provided"}</AppText>
-            </View>
+        {/* Personal Info */}
+        <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+          <AppText variant="h3" weight="700">Personal Information</AppText>
+          <View style={{ gap: spacing.md }}>
+            <DetailRow icon="mail" label="Email Address" value={employee.email} />
+            <DetailRow icon="phone" label="Phone Number" value={employee.phone} />
+            <DetailRow icon="calendar" label="Date of Birth" value={employee.date_of_birth ? new Date(employee.date_of_birth).toLocaleDateString() : null} />
           </View>
+        </Card>
 
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: `${adminColors.primary}10`, justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
-              <Feather name="briefcase" size={18} color={adminColors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" color={adminColors.textSecondary}>Department</AppText>
-              <AppText weight="600">{employee.department ?? "Unassigned"}</AppText>
-            </View>
+        {/* Address */}
+        <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+          <AppText variant="h3" weight="700">Address</AppText>
+          <View style={{ gap: spacing.md }}>
+            <DetailRow icon="map-pin" label="Current Address" value={employee.current_address} />
           </View>
+        </Card>
 
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: `${adminColors.primary}10`, justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
-              <Feather name="calendar" size={18} color={adminColors.primary} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <AppText variant="caption" color={adminColors.textSecondary}>Joined Date</AppText>
-              <AppText weight="600">{employee.joined_date ? new Date(employee.joined_date).toLocaleDateString() : "Not available"}</AppText>
-            </View>
+        {/* Education */}
+        <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+          <AppText variant="h3" weight="700">Education</AppText>
+          <View style={{ gap: spacing.md }}>
+            <DetailRow icon="book-open" label="Qualification" value={employee.qualification} />
+            <DetailRow icon="award" label="Degree" value={employee.degree} />
           </View>
-        </View>
-      </Card>
+        </Card>
+
+        {/* Emergency Contact */}
+        <Card style={{ gap: spacing.lg, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
+          <AppText variant="h3" weight="700">Emergency Contact</AppText>
+          <View style={{ gap: spacing.md }}>
+            <DetailRow icon="phone-call" label="Contact Number" value={employee.emergency_contact} />
+          </View>
+        </Card>
+      </View>
     </Screen>
+  );
+}
+
+function DetailRow({ icon, label, value }: { icon: any; label: string; value: string | null | undefined }) {
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center" }}>
+      <View style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: `${adminColors.primary}10`, justifyContent: "center", alignItems: "center", marginRight: spacing.md }}>
+        <Feather name={icon} size={18} color={adminColors.primary} />
+      </View>
+      <View style={{ flex: 1 }}>
+        <AppText variant="caption" color={adminColors.textSecondary}>{label}</AppText>
+        <AppText weight="600">{value || "Not provided"}</AppText>
+      </View>
+    </View>
   );
 }

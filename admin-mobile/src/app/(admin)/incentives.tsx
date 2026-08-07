@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 
 import { AppText, Screen } from "@/components/ui";
 import { AppHeader, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
@@ -37,6 +38,20 @@ export default function IncentivesScreen() {
   const { incentives, loading, refreshing, refresh, handleReview, handleMarkPaid } = useIncentives({
     status: statusFilter || undefined,
   });
+
+  const { incentiveId } = useLocalSearchParams<{ incentiveId?: string }>();
+
+  useEffect(() => {
+    if (incentiveId && incentives.length > 0) {
+      const incentive = incentives.find((i) => i.id === incentiveId);
+      if (incentive) {
+        setSelectedIncentive(incentive);
+        setIncentiveModalVisible(true);
+      } else {
+        toast.error("The requested incentive could not be found.");
+      }
+    }
+  }, [incentiveId, incentives]);
 
   const handleCreateNew = () => {
     setSelectedIncentive(null);

@@ -25,6 +25,18 @@ export interface Employee {
 
   joined_date: string | null;
 
+  date_of_birth: string | null;
+
+  current_address: string | null;
+
+  qualification: string | null;
+
+  degree: string | null;
+
+  experience_years: number | null;
+
+  emergency_contact: string | null;
+
   created_at: string;
 
   updated_at: string | null;

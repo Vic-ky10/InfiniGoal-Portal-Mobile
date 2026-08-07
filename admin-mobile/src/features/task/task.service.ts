@@ -24,7 +24,8 @@ updated_at,
 
 project:projects!tasks_project_id_fkey(
   project_code,
-  project_name
+  project_name,
+  status
 ),
 
 member:project_members!tasks_project_member_id_fkey(
@@ -45,6 +46,7 @@ type MaybeArray<T> = T | T[] | null;
 type TaskProjectRelation = {
   project_code: string;
   project_name: string;
+  status: string;
 };
 
 type TaskProfileRelation = {

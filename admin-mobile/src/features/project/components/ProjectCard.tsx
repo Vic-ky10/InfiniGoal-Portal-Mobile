@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Pressable } from "react-native";
+import { View, Pressable, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
 import { Card, AppText, Badge } from "@/components/ui";
@@ -27,31 +27,32 @@ export default function ProjectCard({
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active":
-        return colors.primary;
-      case "Completed":
-        return colors.success;
-      case "On Hold":
-        return colors.warning;
-      case "Archived":
-        return colors.disabled;
-      default:
-        return colors.textSecondary;
+      case "Active":    return colors.primary;
+      case "Completed": return colors.success;
+      case "On Hold":   return colors.warning;
+      case "Archived":  return colors.disabled;
+      case "Cancelled": return colors.danger;
+      default:          return colors.textSecondary;
     }
   };
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {
-      case "High":
-        return colors.danger;
-      case "Medium":
-        return colors.warning;
-      case "Low":
-        return colors.success;
-      default:
-        return colors.textSecondary;
+      case "High":   return colors.danger;
+      case "Medium": return colors.warning;
+      case "Low":    return colors.success;
+      default:       return colors.textSecondary;
     }
   };
+
+  const progress = Math.min(Math.max(project.progress ?? 0, 0), 100);
+
+  const progressColor =
+    progress === 100
+      ? "#22C55E"
+      : progress >= 50
+      ? "#2563EB"
+      : "#F59E0B";
 
   const cardContent = (
     <Card
@@ -65,24 +66,13 @@ export default function ProjectCard({
       }}
     >
       {/* HEADER */}
-      <View
-        style={{
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: spacing.sm,
-        }}
-      >
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+      <View style={styles.header}>
+        <View style={styles.headerLeft}>
           <View
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: radius.md,
-              backgroundColor: `${colors.primary}10`,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
+            style={[
+              styles.iconBox,
+              { backgroundColor: `${colors.primary}10` },
+            ]}
           >
             <Feather name="briefcase" size={18} color={colors.primary} />
           </View>
@@ -90,76 +80,91 @@ export default function ProjectCard({
             <AppText weight="700" variant="body" color={colors.text}>
               {project.project_name}
             </AppText>
+            <AppText variant="caption" color={colors.textSecondary}>
+              {project.project_code}
+            </AppText>
           </View>
         </View>
         <Badge label={project.status} color={getStatusColor(project.status)} />
       </View>
 
-      {/* MIDDLE */}
-      <View style={{ gap: spacing.xs, marginBottom: spacing.sm }}>
-        {project.description ? (
-          <AppText
-            variant="caption"
-            color={colors.textSecondary}
-            numberOfLines={2}
-            style={{ lineHeight: 18 }}
-          >
-            {project.description}
+      {/* DESCRIPTION */}
+      {project.description ? (
+        <AppText
+          variant="caption"
+          color={colors.textSecondary}
+          numberOfLines={2}
+          style={{ lineHeight: 18, marginBottom: spacing.sm }}
+        >
+          {project.description}
+        </AppText>
+      ) : null}
+
+      {/* PROGRESS BAR */}
+      <View style={{ marginBottom: spacing.sm }}>
+        <View style={styles.progressHeader}>
+          <AppText variant="caption" color={colors.textSecondary}>
+            Progress
           </AppText>
-        ) : null}
-
-        {showMetadata && (project.start_date || project.end_date) && (
-          <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.xs, marginTop: 4 }}>
-            <Feather name="calendar" size={12} color={colors.textSecondary} />
-            <AppText variant="caption" color={colors.textSecondary} weight="600">
-              Timeline: {project.start_date || "--"} to {project.end_date || "--"}
-            </AppText>
-          </View>
-        )}
-
-        {showRoleInfo && (memberRole || assignedDate) && (
+          <AppText variant="caption" weight="700" color={progressColor}>
+            {progress}%
+          </AppText>
+        </View>
+        <View style={[styles.progressTrack, { backgroundColor: `${colors.border}80` }]}>
           <View
-            style={{
-              flexDirection: "row",
-              flexWrap: "wrap",
-              alignItems: "center",
-              gap: spacing.xs,
-              marginTop: 4,
-              backgroundColor: `${colors.primary}08`,
-              padding: spacing.xs,
-              borderRadius: radius.sm,
-            }}
-          >
-            {memberRole && (
-              <Badge label={`Role: ${memberRole}`} color={colors.primary} variant="subtle" />
-            )}
-            {assignedDate && (
-              <AppText variant="caption" color={colors.textSecondary}>
-                Assigned: {assignedDate.split("T")[0]}
-              </AppText>
-            )}
-          </View>
-        )}
+            style={[
+              styles.progressFill,
+              {
+                width: `${progress}%` as any,
+                backgroundColor: progressColor,
+              },
+            ]}
+          />
+        </View>
       </View>
 
+      {/* TIMELINE */}
+      {showMetadata && (project.start_date || project.end_date) && (
+        <View style={styles.metaRow}>
+          <Feather name="calendar" size={12} color={colors.textSecondary} />
+          <AppText variant="caption" color={colors.textSecondary} weight="600">
+            {project.start_date || "--"} → {project.end_date || "Ongoing"}
+          </AppText>
+        </View>
+      )}
+
+      {/* ROLE INFO (employee view) */}
+      {showRoleInfo && (memberRole || assignedDate) && (
+        <View
+          style={[
+            styles.roleRow,
+            { backgroundColor: `${colors.primary}08`, borderRadius: radius.sm },
+          ]}
+        >
+          {memberRole && (
+            <Badge
+              label={`Role: ${memberRole}`}
+              color={colors.primary}
+              variant="subtle"
+            />
+          )}
+          {assignedDate && (
+            <AppText variant="caption" color={colors.textSecondary}>
+              Assigned: {assignedDate.split("T")[0]}
+            </AppText>
+          )}
+        </View>
+      )}
+
       {/* FOOTER */}
-      <View
-        style={{
-          borderTopWidth: 1,
-          borderTopColor: `${colors.border}80`,
-          paddingTop: spacing.sm,
-          flexDirection: "row",
-          justifyContent: "space-between",
-          alignItems: "center",
-        }}
-      >
+      <View style={[styles.footer, { borderTopColor: `${colors.border}80` }]}>
         <Badge
           label={`${project.priority} Priority`}
           color={getPriorityColor(project.priority)}
           variant="subtle"
         />
 
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+        <View style={styles.memberCount}>
           <Feather name="users" size={12} color={colors.textSecondary} />
           <AppText variant="caption" color={colors.textSecondary}>
             {project.members?.length ?? 0} members
@@ -188,3 +193,67 @@ export default function ProjectCard({
 
   return cardContent;
 }
+
+const styles = StyleSheet.create({
+  header: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: spacing.sm,
+  },
+  headerLeft: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+  },
+  iconBox: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  progressHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  progressTrack: {
+    height: 6,
+    borderRadius: radius.full,
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: radius.full,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: 4,
+    marginBottom: spacing.sm,
+  },
+  roleRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    alignItems: "center",
+    gap: spacing.xs,
+    marginTop: 4,
+    padding: spacing.xs,
+    marginBottom: spacing.sm,
+  },
+  footer: {
+    borderTopWidth: 1,
+    paddingTop: spacing.sm,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  memberCount: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+});

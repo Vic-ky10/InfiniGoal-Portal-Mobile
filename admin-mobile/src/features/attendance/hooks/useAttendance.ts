@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import {
   AttendanceFilters,
   AttendanceSummary,
@@ -35,12 +36,14 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
     totalWorkingHours: 0,
   });
   const [loading, setLoading] = useState(true);
+  const [filters, setFilters] = useState<AttendanceFilters>(initialFilters);
   const [refreshing, setRefreshing] = useState(false);
-  // const [filters, setFilters] = useState<AttendanceFilters>(initialFilters);
 
-  // useEffect(() => {
-  //   setFilters(initialFilters);
-  // }, [initialFilters]);
+  const initialFiltersStr = JSON.stringify(initialFilters);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setFilters(JSON.parse(initialFiltersStr));
+  }, [initialFiltersStr]);
 
   const fetchAttendance = useCallback(async (showRefresh = false) => {
     try {
@@ -49,7 +52,7 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
       } else {
         setLoading(true);
       }
-      const dashboard = await getTodayAttendanceDashboard();
+      const dashboard = await getTodayAttendanceDashboard(filters);
 
       setSummary(dashboard.summary);
       setPresentRecords(dashboard.present);
@@ -59,16 +62,30 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
       setAbsentRecords(dashboard.absent);
 
       // default list = Present employees
-
       setRecords(dashboard.present);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
-  }, []);
+  }, [filters]);
 
   useEffect(() => {
     fetchAttendance();
+
+    const channel = supabase
+      .channel("realtime-attendance")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "attendance" },
+        () => {
+          fetchAttendance(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchAttendance]);
 
   return {
@@ -84,6 +101,8 @@ export function useAttendance(initialFilters: AttendanceFilters = {}) {
     summary,
     loading,
     refreshing,
+    filters,
+    setFilters,
     refresh: () => fetchAttendance(true),
   };
 }

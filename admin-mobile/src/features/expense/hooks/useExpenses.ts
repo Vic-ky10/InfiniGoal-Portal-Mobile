@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase/client";
 import {
   ExpenseFilters,
   ExpenseWithEmployee,
@@ -35,6 +36,21 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
 
   useEffect(() => {
     fetchExpenses();
+
+    const channel = supabase
+      .channel("realtime-expenses")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "expenses" },
+        () => {
+          fetchExpenses(false);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [fetchExpenses]);
 
   const handleReview = async (

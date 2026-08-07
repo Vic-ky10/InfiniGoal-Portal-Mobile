@@ -137,6 +137,7 @@ export default function ReceiptUploader({
       });
       if (!res.canceled && res.assets && res.assets[0]) {
         const asset = res.assets[0];
+        // eslint-disable-next-line react-hooks/purity
         const name = asset.fileName || `doc_${Date.now()}`;
         await handleFileProcess({
           uri: asset.uri,

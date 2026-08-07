@@ -1,18 +1,19 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { View, FlatList, Pressable } from "react-native";
 
 import { AppText, Screen, Card } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState } from "@/components/common";
+import { AppHeader, EmptyState } from "@/components/common";
 import { adminColors, spacing } from "@/theme";
 
 import { useAttendance } from "@/features/attendance/hooks/useAttendance";
 import AttendanceCard from "@/features/attendance/components/AttendanceCard";
+import AttendanceFilterBar from "@/features/attendance/components/AttendanceFilterBar";
 
 export default function AttendanceScreen() {
-  const [searchText, setSearchText] = useState("");
   const [selectedSummary, setSelectedSummary] = useState<
     "present" | "shortHours" | "halfDay" | "incomplete" | "absent"
   >("present");
+  
   const {
     records,
     setRecords,
@@ -24,25 +25,13 @@ export default function AttendanceScreen() {
     summary,
     loading,
     refreshing,
+    filters,
+    setFilters,
     refresh,
   } = useAttendance();
 
-  const filteredRecords = useMemo(() => {
-    const search = searchText.trim().toLowerCase();
-
-    return records.filter((record) => {
-      const employee = record.employee;
-
-      return (
-        search === "" ||
-        employee?.full_name?.toLowerCase().includes(search) ||
-        employee?.employee_id?.toLowerCase().includes(search) ||
-        employee?.email?.toLowerCase().includes(search) ||
-        employee?.department?.toLowerCase().includes(search) ||
-        employee?.designation?.toLowerCase().includes(search)
-      );
-    });
-  }, [records, searchText]);
+  // Notice: The manual search filter has been replaced by getTodayAttendanceDashboard's backend-like filtering
+  // which works seamlessly with the AttendanceFilterBar's filters state.
 
   useEffect(() => {
     switch (selectedSummary) {
@@ -167,22 +156,18 @@ export default function AttendanceScreen() {
           </Pressable>
         </View>
 
-        <SearchBar
-          value={searchText}
-          onChangeText={setSearchText}
-          placeholder="Search employee..."
-        />
+        <AttendanceFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* List of Records */}
         <FlatList
-          data={filteredRecords}
+          data={records}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: filteredRecords.length === 0 ? 1 : undefined,
+            flexGrow: records.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No attendance logs found." />}
           renderItem={({ item }) => <AttendanceCard record={item} />}

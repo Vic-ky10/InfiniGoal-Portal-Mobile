@@ -165,40 +165,49 @@ export default function CustomDrawerContent({
       {/*  Header  */}
       <View style={[styles.header, { borderBottomColor: `${primaryColor}20` }]}>
         <View style={[styles.logoCircle, { backgroundColor: primaryColor }]}>
-                  <View
-                          style={{
-                            width: 66,
-                            height: 68,
-                            borderRadius: 18,
-                            backgroundColor: "#FFFFFF",
-                            justifyContent: "center",
-                            alignItems: "center",
-                            marginBottom: 18,
-                            borderWidth: 1,
-                            borderColor: "#E2E8F0",
-                            shadowColor: "#000",
-                            shadowOffset: { width: 0, height: 4 },
-                            shadowOpacity: 0.05,
-                            shadowRadius: 10,
-                            elevation: 2,
-                            marginRight : 0
-                          }}
-                        >
-                          <Image
-                            source={Logo}
-                            style={{
-                              width: 52,
-                              height: 52,
-                              resizeMode: "contain",
-                            }}
-                          />
-                        </View>
+          <View
+            style={{
+              width: 66,
+              height: 68,
+              borderRadius: 18,
+              backgroundColor: "#FFFFFF",
+              justifyContent: "center",
+              alignItems: "center",
+              marginBottom: 18,
+              borderWidth: 1,
+              borderColor: "#E2E8F0",
+              shadowColor: "#000",
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.05,
+              shadowRadius: 10,
+              elevation: 2,
+              marginRight: 0,
+            }}
+          >
+            <Image
+              source={Logo}
+              style={{
+                width: 52,
+                height: 52,
+                resizeMode: "contain",
+              }}
+            />
+          </View>
         </View>
         <View style={{ flex: 1 }}>
-          <AppText weight="700" variant="h3" color="#0F172A" style={{ marginLeft : 10 }}>
+          <AppText
+            weight="700"
+            variant="h3"
+            color="#0F172A"
+            style={{ marginLeft: 10 }}
+          >
             {appName}
           </AppText>
-          <AppText variant="caption" color="#94A3B8" style={{ marginTop: 1  ,  marginLeft : 10 }}>
+          <AppText
+            variant="caption"
+            color="#94A3B8"
+            style={{ marginTop: 1, marginLeft: 10 }}
+          >
             {appSubtitle}
           </AppText>
         </View>
@@ -212,8 +221,7 @@ export default function CustomDrawerContent({
       >
         {routes.map((route) => {
           const isActive =
-            pathname === route.path ||
-            pathname.startsWith(route.path + "/");
+            pathname === route.path || pathname.startsWith(route.path + "/");
           return (
             <DrawerItem
               key={route.name}
@@ -229,9 +237,12 @@ export default function CustomDrawerContent({
         })}
       </ScrollView>
 
-
       <View style={[styles.footer, { borderTopColor: `${primaryColor}20` }]}>
-        <AppText variant="caption" color="#CBD5E1" style={{ textAlign: "center" }}>
+        <AppText
+          variant="caption"
+          color="#CBD5E1"
+          style={{ textAlign: "center" }}
+        >
           InfiniGoal Portal
         </AppText>
       </View>
@@ -276,9 +287,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     position: "relative",
   },
-  itemActive: {
- 
-  },
+  itemActive: {},
   activeBar: {
     position: "absolute",
     left: 0,

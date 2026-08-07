@@ -17,6 +17,12 @@ status,
 is_online,
 last_login,
 joined_date,
+date_of_birth,
+current_address,
+qualification,
+degree,
+experience_years,
+emergency_contact,
 created_at,
 updated_at
 `;
@@ -80,16 +86,30 @@ export async function searchEmployees(
 
 export async function updateSelfProfile(
   profileId: string,
-  fullName: string,
-  phone: string | null,
-  avatarUrl: string | null
+  values: {
+    full_name: string;
+    phone: string | null;
+    avatar_url: string | null;
+    date_of_birth?: string | null;
+    current_address?: string | null;
+    qualification?: string | null;
+    degree?: string | null;
+    experience_years?: number | null;
+    emergency_contact?: string | null;
+  }
 ) {
   const { data, error } = await supabase
     .from("profiles")
     .update({
-      full_name: fullName,
-      phone: phone,
-      avatar_url: avatarUrl,
+      full_name: values.full_name,
+      phone: values.phone,
+      avatar_url: values.avatar_url,
+      date_of_birth: values.date_of_birth,
+      current_address: values.current_address,
+      qualification: values.qualification,
+      degree: values.degree,
+      experience_years: values.experience_years,
+      emergency_contact: values.emergency_contact,
       updated_at: new Date().toISOString(),
     })
     .eq("id", profileId)

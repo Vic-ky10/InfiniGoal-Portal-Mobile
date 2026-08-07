@@ -80,6 +80,10 @@ export default function DatePickerField({
       return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
     }
 
+    if (targetMode === "month") {
+      return `${year}-${month}`;
+    }
+
     return `${year}-${month}-${day}`;
   };
 

@@ -21,6 +21,7 @@ import {
   Badge,
   Button,
   Input,
+  DatePickerField,
 } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { employeeColors, radius, spacing, shadows } from "@/theme";
@@ -40,6 +41,12 @@ interface ProfileData {
   designation: string | null;
   joined_date: string | null;
   avatar_url: string | null;
+  date_of_birth: string | null;
+  current_address: string | null;
+  qualification: string | null;
+  degree: string | null;
+  experience_years: number | null;
+  emergency_contact: string | null;
 }
 
 export default function EmployeeProfileScreen() {
@@ -50,10 +57,15 @@ export default function EmployeeProfileScreen() {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<ProfileData | null>(null);
 
-  // Editing state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editName, setEditName] = useState("");
   const [editPhone, setEditPhone] = useState("");
+  const [editDob, setEditDob] = useState("");
+  const [editAddress, setEditAddress] = useState("");
+  const [editQualification, setEditQualification] = useState("");
+  const [editDegree, setEditDegree] = useState("");
+  const [editExperience, setEditExperience] = useState("");
+  const [editEmergencyContact, setEditEmergencyContact] = useState("");
 
   const loadProfile = useCallback(async () => {
     await Promise.resolve();
@@ -67,7 +79,7 @@ export default function EmployeeProfileScreen() {
       const { data } = await supabase
         .from("profiles")
         .select(
-          "id, employee_id, full_name, email, phone, department, designation, joined_date, avatar_url",
+          "id, employee_id, full_name, email, phone, department, designation, joined_date, avatar_url, date_of_birth, current_address, qualification, degree, experience_years, emergency_contact",
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -77,6 +89,12 @@ export default function EmployeeProfileScreen() {
         setProfile(profileData);
         setEditName(profileData.full_name || "");
         setEditPhone(profileData.phone || "");
+        setEditDob(profileData.date_of_birth || "");
+        setEditAddress(profileData.current_address || "");
+        setEditQualification(profileData.qualification || "");
+        setEditDegree(profileData.degree || "");
+        setEditExperience(profileData.experience_years ? profileData.experience_years.toString() : "");
+        setEditEmergencyContact(profileData.emergency_contact || "");
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -112,12 +130,17 @@ export default function EmployeeProfileScreen() {
 
     setSaving(true);
     try {
-      const res = await updateSelfProfile(
-        profile.id,
-        editName.trim(),
-        editPhone.trim() || null,
-        profile.avatar_url,
-      );
+      const res = await updateSelfProfile(profile.id, {
+        full_name: editName.trim(),
+        phone: editPhone.trim() || null,
+        avatar_url: profile.avatar_url,
+        date_of_birth: editDob || null,
+        current_address: editAddress.trim() || null,
+        qualification: editQualification.trim() || null,
+        degree: editDegree.trim() || null,
+        experience_years: editExperience ? Number(editExperience) : null,
+        emergency_contact: editEmergencyContact.trim() || null,
+      });
 
       if (!res.success) {
         throw new Error(res.error || "Update failed.");
@@ -129,6 +152,12 @@ export default function EmployeeProfileScreen() {
               ...prev,
               full_name: editName.trim(),
               phone: editPhone.trim() || null,
+              date_of_birth: editDob || null,
+              current_address: editAddress.trim() || null,
+              qualification: editQualification.trim() || null,
+              degree: editDegree.trim() || null,
+              experience_years: editExperience ? Number(editExperience) : null,
+              emergency_contact: editEmergencyContact.trim() || null,
             }
           : null,
       );
@@ -179,12 +208,17 @@ const handleSelectAvatar = async () => {
     });
 
     // Update profile table
-    const dbRes = await updateSelfProfile(
-      profile.id,
-      profile.full_name,
-      profile.phone,
-      publicUrl,
-    );
+    const dbRes = await updateSelfProfile(profile.id, {
+      full_name: profile.full_name,
+      phone: profile.phone,
+      avatar_url: publicUrl,
+      date_of_birth: profile.date_of_birth,
+      current_address: profile.current_address,
+      qualification: profile.qualification,
+      degree: profile.degree,
+      experience_years: profile.experience_years,
+      emergency_contact: profile.emergency_contact
+    });
 
     if (!dbRes.success) {
       throw new Error(dbRes.error ?? "Failed to update profile.");
@@ -414,98 +448,96 @@ const handleSelectAvatar = async () => {
             </TouchableOpacity>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather
-                name="mail"
-                size={16}
-                color={employeeColors.primary}
-                style={{ marginRight: spacing.md }}
-              />
-              <AppText weight="600" color={employeeColors.textSecondary}>
-                Email
-              </AppText>
+              <Feather name="mail" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Email</AppText>
             </View>
-            <AppText variant="body" weight="500">
-              {profile?.email ?? "--"}
-            </AppText>
+            <AppText variant="body" weight="500">{profile?.email ?? "--"}</AppText>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather
-                name="phone"
-                size={16}
-                color={employeeColors.primary}
-                style={{ marginRight: spacing.md }}
-              />
-              <AppText weight="600" color={employeeColors.textSecondary}>
-                Phone
-              </AppText>
+              <Feather name="phone" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Phone</AppText>
             </View>
-            <AppText variant="body" weight="500">
-              {profile?.phone ?? "--"}
-            </AppText>
+            <AppText variant="body" weight="500">{profile?.phone ?? "--"}</AppText>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather
-                name="briefcase"
-                size={16}
-                color={employeeColors.primary}
-                style={{ marginRight: spacing.md }}
-              />
-              <AppText weight="600" color={employeeColors.textSecondary}>
-                Department
-              </AppText>
+              <Feather name="calendar" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Date of Birth</AppText>
             </View>
-            <AppText variant="body" weight="500">
-              {profile?.department ?? "--"}
-            </AppText>
+            <AppText variant="body" weight="500">{profile?.date_of_birth ? new Date(profile.date_of_birth).toLocaleDateString() : "--"}</AppText>
           </View>
 
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
-              <Feather
-                name="calendar"
-                size={16}
-                color={employeeColors.primary}
-                style={{ marginRight: spacing.md }}
-              />
-              <AppText weight="600" color={employeeColors.textSecondary}>
-                Joined Date
-              </AppText>
+              <Feather name="map-pin" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Address</AppText>
             </View>
-            <AppText variant="body" weight="500">
-              {profile?.joined_date
-                ? new Date(profile.joined_date).toLocaleDateString()
-                : "--"}
-            </AppText>
+            <AppText variant="body" weight="500" style={{ maxWidth: '50%', textAlign: 'right' }}>{profile?.current_address ?? "--"}</AppText>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: employeeColors.border, marginVertical: spacing.xs }} />
+
+          <AppText variant="h3" weight="700">Employment Details</AppText>
+          
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="briefcase" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Department</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.department ?? "--"}</AppText>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="calendar" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Joined Date</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.joined_date ? new Date(profile.joined_date).toLocaleDateString() : "--"}</AppText>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="clock" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Experience</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.experience_years ? `${profile.experience_years} Years` : "--"}</AppText>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: employeeColors.border, marginVertical: spacing.xs }} />
+
+          <AppText variant="h3" weight="700">Education</AppText>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="book-open" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Qualification</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.qualification ?? "--"}</AppText>
+          </View>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="award" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Degree</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.degree ?? "--"}</AppText>
+          </View>
+
+          <View style={{ height: 1, backgroundColor: employeeColors.border, marginVertical: spacing.xs }} />
+
+          <AppText variant="h3" weight="700">Emergency Contact</AppText>
+
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Feather name="phone-call" size={16} color={employeeColors.primary} style={{ marginRight: spacing.md }} />
+              <AppText weight="600" color={employeeColors.textSecondary}>Contact No.</AppText>
+            </View>
+            <AppText variant="body" weight="500">{profile?.emergency_contact ?? "--"}</AppText>
           </View>
         </Card>
 
@@ -558,9 +590,10 @@ const handleSelectAvatar = async () => {
                 borderTopRightRadius: 24,
                 padding: 24,
                 paddingBottom: 40,
+                marginTop:60, 
               }}
             >
-              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 20 }}>
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap:1 }}>
                 <View
                   style={{
                     flexDirection: "row",
@@ -580,6 +613,7 @@ const handleSelectAvatar = async () => {
                   </TouchableOpacity>
                 </View>
 
+                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Personal Information</AppText>
                 <Input
                   label="Full Name"
                   value={editName}
@@ -592,6 +626,54 @@ const handleSelectAvatar = async () => {
                   value={editPhone}
                   onChangeText={setEditPhone}
                   placeholder="Your phone number"
+                  keyboardType="phone-pad"
+                />
+
+                <DatePickerField
+                  label="Date of Birth"
+                  value={editDob}
+                  onChange={setEditDob}
+                  mode="date"
+                />
+
+                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Address</AppText>
+                <Input
+                  label="Current Address"
+                  value={editAddress}
+                  onChangeText={setEditAddress}
+                  placeholder="Your full address"
+                />
+
+                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Education</AppText>
+                <Input
+                  label="Qualification"
+                  value={editQualification}
+                  onChangeText={setEditQualification}
+                  placeholder="e.g. B.Tech, MBA"
+                />
+                
+                <Input
+                  label="Degree"
+                  value={editDegree}
+                  onChangeText={setEditDegree}
+                  placeholder="e.g. Computer Science"
+                />
+
+                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Employment</AppText>
+                <Input
+                  label="Experience (Years)"
+                  value={editExperience}
+                  onChangeText={setEditExperience}
+                  placeholder="Enter Experience..."
+                  keyboardType="numeric"
+                />
+
+                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Emergency Contact</AppText>
+                <Input
+                  label="Emergency Contact Number"
+                  value={editEmergencyContact}
+                  onChangeText={setEditEmergencyContact}
+                  placeholder="10-digit number"
                   keyboardType="phone-pad"
                 />
 

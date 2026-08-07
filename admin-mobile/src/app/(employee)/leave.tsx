@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
   FlatList,
@@ -15,13 +15,14 @@ import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "@/store/toast.store";
 
-import { LeaveRequest, LEAVE_TYPE, LEAVE_DURATION } from "@/features/leave/leave.types";
+import { LeaveRequest, LEAVE_TYPE, LEAVE_DURATION, LeaveFilters } from "@/features/leave/leave.types";
 import {
   getEmployeeLeaveRequests,
   createLeaveRequest,
   cancelPendingLeaveRequest,
 } from "@/features/leave/leave.service";
 import LeaveCard from "@/features/leave/components/LeaveCard";
+import LeaveFilterBar from "@/features/leave/components/LeaveFilterBar";
 
 export default function EmployeeLeaveScreen() {
   const [loading, setLoading] = useState(true);
@@ -30,6 +31,8 @@ export default function EmployeeLeaveScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [profileId, setProfileId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
+  const [filters, setFilters] = useState<LeaveFilters>({});
+  
   const [actionSheetConfig, setActionSheetConfig] = useState<{
     visible: boolean;
     title?: string;
@@ -40,6 +43,14 @@ export default function EmployeeLeaveScreen() {
     options: [],
   });
 
+  const filteredLeaveRequests = useMemo(() => {
+    return leaveRequests.filter((leave) => {
+      if (filters.status && leave.status !== filters.status) return false;
+      if (filters.leaveType && leave.leave_type !== filters.leaveType) return false;
+      if (filters.month && !leave.start_date.startsWith(filters.month)) return false;
+      return true;
+    });
+  }, [leaveRequests, filters]);
 
   const [leaveType, setLeaveType] = useState<string>(LEAVE_TYPE.CASUAL);
   const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
@@ -70,7 +81,30 @@ export default function EmployeeLeaveScreen() {
     Promise.resolve().then(() => {
       loadData();
     });
-  }, [loadData]);
+
+    if (!profileId) return;
+
+    const channel = supabase
+      .channel("employee-leave-changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leave_requests" },
+        (payload: { new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
+          const newRow = payload.new;
+          const oldRow = payload.old;
+          const affectedProfileId = (newRow?.profile_id || oldRow?.profile_id) as string | undefined;
+
+          if (affectedProfileId === profileId) {
+            loadData(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData, profileId]);
 
   const handleApplyLeave = async () => {
     if (!startDate.trim() || !endDate.trim()) {
@@ -166,8 +200,10 @@ export default function EmployeeLeaveScreen() {
           }
         />
 
+        <LeaveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin={false} />
+
         <FlatList
-          data={leaveRequests}
+          data={filteredLeaveRequests}
           keyExtractor={(item) => item.id}
           renderItem={renderLeaveItem}
           refreshing={refreshing}

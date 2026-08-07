@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState, ConfirmModal } from "@/components/common";
@@ -28,6 +29,20 @@ export default function PurchasesScreen() {
   // Delete confirm state
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [purchaseToDelete, setPurchaseToDelete] = useState<CustomerPurchase | null>(null);
+
+  const { purchaseId } = useLocalSearchParams<{ purchaseId?: string }>();
+
+  useEffect(() => {
+    if (purchaseId && purchases.length > 0) {
+      const purchase = purchases.find((p) => p.id === purchaseId);
+      if (purchase) {
+        setSelectedPurchase(purchase);
+        setModalVisible(true);
+      } else {
+        toast.error("The requested purchase record could not be found.");
+      }
+    }
+  }, [purchaseId, purchases]);
 
   // Filtered List
   const filteredPurchases = useMemo(() => {
