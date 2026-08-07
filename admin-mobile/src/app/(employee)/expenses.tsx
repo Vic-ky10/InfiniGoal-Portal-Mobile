@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
@@ -223,6 +224,15 @@ export default function EmployeeExpensesScreen() {
         const hasRec = Boolean(e.receipt_url);
         if (hasRec !== filters.hasReceipt) return false;
       }
+
+      // Date filter
+      if (filters.date && e.expense_date !== filters.date) return false;
+
+      // Month filter
+      if (filters.month && !e.expense_date.startsWith(filters.month)) return false;
+
+      // Year filter
+      if (filters.year && !e.expense_date.startsWith(filters.year)) return false;
 
       // Search Query (title, category, description)
       if (filters.searchQuery?.trim()) {

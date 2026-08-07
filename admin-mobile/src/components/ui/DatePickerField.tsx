@@ -1,5 +1,6 @@
-import React, { useState, useMemo } from "react";
-import { View, TouchableOpacity, StyleSheet, Platform } from "react-native";
+/* eslint-disable react-hooks/set-state-in-effect */
+import React, { useState, useMemo, useEffect } from "react";
+import { View, TouchableOpacity, StyleSheet, Platform, Modal, FlatList } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import DateTimePicker, { DateTimePickerEvent } from "@react-native-community/datetimepicker";
 
@@ -8,15 +9,19 @@ import AppText from "./AppText";
 
 interface DatePickerFieldProps {
   label?: string;
-  value?: string; // Format: YYYY-MM-DD or YYYY-MM-DD HH:mm:ss
+  value?: string; // Format: YYYY-MM-DD, YYYY-MM, YYYY or YYYY-MM-DD HH:mm:ss
   onChange: (val: string) => void;
   placeholder?: string;
   minimumDate?: Date;
   maximumDate?: Date;
   disabled?: boolean;
   error?: string;
-  mode?: "date" | "datetime" | "time" | "month" | "range";
+  mode?: "date" | "datetime" | "time" | "month" | "range" | "year";
   onClear?: () => void;
+  isDob?: boolean;
+  autoOpen?: boolean;
+  onPress?: () => void;
+  style?: any;
 }
 
 export default function DatePickerField({
@@ -30,13 +35,17 @@ export default function DatePickerField({
   error,
   mode = "date",
   onClear,
+  isDob = false,
+  autoOpen = false,
+  onPress,
+  style,
 }: DatePickerFieldProps) {
   const colors = useThemeColors();
   const [showPicker, setShowPicker] = useState(false);
   const [androidPickerMode, setAndroidPickerMode] = useState<"date" | "time">("date");
   const [tempDate, setTempDate] = useState<Date | null>(null);
 
-  // Parse string value (YYYY-MM-DD or YYYY-MM-DD HH:mm:ss) into Date object
+  // Parse string value (YYYY-MM-DD, YYYY-MM, YYYY or YYYY-MM-DD HH:mm:ss) into Date object
   const parsedDate = useMemo(() => {
     if (!value) return new Date();
     
@@ -63,6 +72,23 @@ export default function DatePickerField({
       if (!isNaN(d.getTime())) return d;
     }
 
+    // Parse YYYY-MM
+    const monthMatch = value.match(/^(\d{4})-(\d{2})$/);
+    if (monthMatch) {
+      const year = parseInt(monthMatch[1], 10);
+      const month = parseInt(monthMatch[2], 10) - 1;
+      const d = new Date(year, month, 1);
+      if (!isNaN(d.getTime())) return d;
+    }
+
+    // Parse YYYY
+    const yearMatch = value.match(/^(\d{4})$/);
+    if (yearMatch) {
+      const year = parseInt(yearMatch[1], 10);
+      const d = new Date(year, 0, 1);
+      if (!isNaN(d.getTime())) return d;
+    }
+
     const fallback = new Date(value);
     return isNaN(fallback.getTime()) ? new Date() : fallback;
   }, [value]);
@@ -82,6 +108,10 @@ export default function DatePickerField({
 
     if (targetMode === "month") {
       return `${year}-${month}`;
+    }
+
+    if (targetMode === "year") {
+      return `${year}`;
     }
 
     return `${year}-${month}-${day}`;
@@ -120,7 +150,6 @@ export default function DatePickerField({
         }
       }
     } else {
-      
       if (selectedDate) {
         onChange(formatDateString(selectedDate, mode));
       }
@@ -133,8 +162,52 @@ export default function DatePickerField({
     setShowPicker(true);
   };
 
+  // DOB Custom Modal Picker State & Calculations
+  const years = useMemo(() => Array.from({ length: 107 }, (_, i) => String(2026 - i)), []);
+  const months = useMemo(() => ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"], []);
+
+  const [dobYear, setDobYear] = useState(() => parsedDate.getFullYear());
+  const [dobMonth, setDobMonth] = useState(() => parsedDate.getMonth() + 1);
+  const [dobDay, setDobDay] = useState(() => parsedDate.getDate());
+
+  // Re-sync DOB values when value prop changes or showPicker becomes true
+  const handleOpenDobModal = () => {
+    setDobYear(parsedDate.getFullYear());
+    setDobMonth(parsedDate.getMonth() + 1);
+    setDobDay(parsedDate.getDate());
+    setAndroidPickerMode("date");
+    setShowPicker(true);
+  };
+
+  const daysInMonth = useMemo(() => {
+    return new Date(dobYear, dobMonth, 0).getDate();
+  }, [dobYear, dobMonth]);
+
+  const days = useMemo(() => {
+    return Array.from({ length: daysInMonth }, (_, i) => String(i + 1).padStart(2, "0"));
+  }, [daysInMonth]);
+
+  const handleConfirmDob = () => {
+    // Keep day safe within the dynamic maximum days in month
+    const safeDay = Math.min(dobDay, daysInMonth);
+    const d = new Date(dobYear, dobMonth - 1, safeDay);
+    onChange(formatDateString(d, "date"));
+    setShowPicker(false);
+  };
+
+  useEffect(() => {
+    if (autoOpen && !disabled) {
+      if (isDob) {
+        handleOpenDobModal();
+      } else {
+        handlePress();
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoOpen, disabled]);
+
   return (
-    <View style={{ marginBottom: spacing.lg }}>
+    <View style={StyleSheet.flatten([{ marginBottom: spacing.lg }, style])}>
       {label && (
         <AppText
           weight="600"
@@ -146,7 +219,7 @@ export default function DatePickerField({
       )}
 
       <TouchableOpacity
-        onPress={handlePress}
+        onPress={onPress || (isDob ? handleOpenDobModal : handlePress)}
         disabled={disabled}
         activeOpacity={0.75}
         style={[
@@ -187,7 +260,7 @@ export default function DatePickerField({
             </TouchableOpacity>
           )}
           <Feather
-            name="calendar"
+            name="chevron-down"
             size={16}
             color={disabled ? colors.disabled : colors.textSecondary}
           />
@@ -206,7 +279,113 @@ export default function DatePickerField({
 
       {showPicker && (
         <>
-          {Platform.OS === "ios" ? (
+          {isDob ? (
+            <Modal
+              visible={showPicker}
+              transparent
+              animationType="slide"
+              onRequestClose={() => setShowPicker(false)}
+            >
+              <TouchableOpacity
+                style={styles.backdrop}
+                activeOpacity={1}
+                onPress={() => setShowPicker(false)}
+              >
+                <TouchableOpacity
+                  activeOpacity={1}
+                  style={[styles.dobSheet, { backgroundColor: colors.background }]}
+                >
+                  <View style={[styles.iosHeader, { borderBottomColor: colors.border }]}>
+                    <TouchableOpacity onPress={() => setShowPicker(false)} style={{ marginRight: spacing.md }}>
+                      <AppText weight="600" color={colors.textSecondary}>Cancel</AppText>
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={handleConfirmDob}>
+                      <AppText weight="700" color={colors.primary}>Confirm</AppText>
+                    </TouchableOpacity>
+                  </View>
+                  
+                  <View style={styles.dobColumns}>
+                    {/* Year selection list */}
+                    <View style={{ flex: 1.2 }}>
+                      <AppText weight="700" variant="caption" style={{ alignSelf: "center", marginBottom: spacing.xs }} color={colors.textSecondary}>Year</AppText>
+                      <FlatList
+                        data={years}
+                        keyExtractor={(item) => item}
+                        initialScrollIndex={years.indexOf(String(dobYear)) !== -1 ? Math.max(0, years.indexOf(String(dobYear)) - 2) : 0}
+                        getItemLayout={(data, index) => ({ length: 40, offset: 40 * index, index })}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => {
+                          const isSel = String(dobYear) === item;
+                          return (
+                            <TouchableOpacity
+                              onPress={() => setDobYear(parseInt(item, 10))}
+                              style={[styles.dobItem, isSel && { backgroundColor: colors.primary }]}
+                            >
+                              <AppText weight={isSel ? "700" : "500"} color={isSel ? "#FFF" : colors.text}>
+                                {item}
+                              </AppText>
+                            </TouchableOpacity>
+                          );
+                        }}
+                      />
+                    </View>
+
+                    {/* Month selection list */}
+                    <View style={{ flex: 1 }}>
+                      <AppText weight="700" variant="caption" style={{ alignSelf: "center", marginBottom: spacing.xs }} color={colors.textSecondary}>Month</AppText>
+                      <FlatList
+                        data={months}
+                        keyExtractor={(item) => item}
+                        initialScrollIndex={Math.max(0, dobMonth - 3)}
+                        getItemLayout={(data, index) => ({ length: 40, offset: 40 * index, index })}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item, index }) => {
+                          const monthNum = index + 1;
+                          const isSel = dobMonth === monthNum;
+                          return (
+                            <TouchableOpacity
+                              onPress={() => setDobMonth(monthNum)}
+                              style={[styles.dobItem, isSel && { backgroundColor: colors.primary }]}
+                            >
+                              <AppText weight={isSel ? "700" : "500"} color={isSel ? "#FFF" : colors.text}>
+                                {item}
+                              </AppText>
+                            </TouchableOpacity>
+                          );
+                        }}
+                      />
+                    </View>
+
+                    {/* Day selection list */}
+                    <View style={{ flex: 1 }}>
+                      <AppText weight="700" variant="caption" style={{ alignSelf: "center", marginBottom: spacing.xs }} color={colors.textSecondary}>Day</AppText>
+                      <FlatList
+                        data={days}
+                        keyExtractor={(item) => item}
+                        initialScrollIndex={days.indexOf(String(dobDay).padStart(2, "0")) !== -1 ? Math.max(0, days.indexOf(String(dobDay).padStart(2, "0")) - 2) : 0}
+                        getItemLayout={(data, index) => ({ length: 40, offset: 40 * index, index })}
+                        showsVerticalScrollIndicator={false}
+                        renderItem={({ item }) => {
+                          const dayNum = parseInt(item, 10);
+                          const isSel = dobDay === dayNum;
+                          return (
+                            <TouchableOpacity
+                              onPress={() => setDobDay(dayNum)}
+                              style={[styles.dobItem, isSel && { backgroundColor: colors.primary }]}
+                            >
+                              <AppText weight={isSel ? "700" : "500"} color={isSel ? "#FFF" : colors.text}>
+                                {item}
+                              </AppText>
+                            </TouchableOpacity>
+                          );
+                        }}
+                      />
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              </TouchableOpacity>
+            </Modal>
+          ) : Platform.OS === "ios" ? (
             <View style={styles.iosContainer}>
               <View style={[styles.iosHeader, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity onPress={() => setShowPicker(false)}>
@@ -248,7 +427,31 @@ const styles = StyleSheet.create({
   iosHeader: {
     flexDirection: "row",
     justifyContent: "flex-end",
-    padding: spacing.sm,
+    padding: spacing.md,
     borderBottomWidth: 1,
+  },
+  backdrop: {
+    flex: 1,
+    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    justifyContent: "flex-end",
+  },
+  dobSheet: {
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xl,
+  },
+  dobColumns: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    height: 250,
+    paddingHorizontal: spacing.md,
+  },
+  dobItem: {
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderRadius: radius.md,
+    height: 40,
+    justifyContent: "center",
   },
 });

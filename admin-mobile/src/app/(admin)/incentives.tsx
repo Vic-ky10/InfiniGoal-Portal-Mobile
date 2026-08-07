@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+/* eslint-disable react-hooks/set-state-in-effect */
+import { useState, useEffect, useMemo } from "react";
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
@@ -10,19 +11,13 @@ import { adminColors, radius, spacing } from "@/theme";
 import { useIncentives } from "@/features/incentive/hooks/useIncentives";
 import IncentiveCard from "@/features/incentive/components/IncentiveCard";
 import IncentiveModal from "@/features/incentive/components/IncentiveModal";
+import IncentiveFilterBar, { IncentiveUiFilters } from "@/features/incentive/components/IncentiveFilterBar";
 import { IncentiveStatus, IncentiveWithEmployee } from "@/features/incentive/incentive.types";
 import { deleteIncentive } from "@/features/incentive/incentive.service";
 import { toast } from "@/store/toast.store";
 
-const STATUS_FILTERS: { label: string; value: IncentiveStatus | "" }[] = [
-  { label: "All", value: "" },
-  { label: "Pending", value: "Pending" },
-  { label: "Approved", value: "Approved" },
-  { label: "Rejected", value: "Rejected" },
-];
-
 export default function IncentivesScreen() {
-  const [statusFilter, setStatusFilter] = useState<IncentiveStatus | "">("");
+  const [filters, setFilters] = useState<IncentiveUiFilters>({});
   const [incentiveModalVisible, setIncentiveModalVisible] = useState(false);
   const [selectedIncentive, setSelectedIncentive] = useState<IncentiveWithEmployee | null>(null);
   const [actionSheetConfig, setActionSheetConfig] = useState<{
@@ -35,9 +30,7 @@ export default function IncentivesScreen() {
     options: [],
   });
 
-  const { incentives, loading, refreshing, refresh, handleReview, handleMarkPaid } = useIncentives({
-    status: statusFilter || undefined,
-  });
+  const { incentives, loading, refreshing, refresh, handleReview, handleMarkPaid } = useIncentives({});
 
   const { incentiveId } = useLocalSearchParams<{ incentiveId?: string }>();
 
@@ -52,6 +45,45 @@ export default function IncentivesScreen() {
       }
     }
   }, [incentiveId, incentives]);
+
+  const filteredIncentives = useMemo(() => {
+    return incentives.filter((inc) => {
+      // Search matches Title, Code, Employee Name
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        const matchesSearch =
+          inc.title.toLowerCase().includes(s) ||
+          inc.incentive_code.toLowerCase().includes(s) ||
+          (inc.employee?.full_name || "").toLowerCase().includes(s);
+        if (!matchesSearch) return false;
+      }
+
+      // Type
+      if (filters.type && inc.incentive_type !== filters.type) return false;
+
+      // Status
+      if (filters.status && inc.status !== filters.status) return false;
+
+      // Payment Status
+      if (filters.paymentStatus && inc.payment_status !== filters.paymentStatus) return false;
+
+      // Date / Month / Year
+      if (filters.date) {
+        const [y, m] = filters.date.split("-").map(Number);
+        if (inc.year !== y || inc.month !== m) return false;
+      }
+      if (filters.month) {
+        const [y, m] = filters.month.split("-").map(Number);
+        if (inc.year !== y || inc.month !== m) return false;
+      }
+      if (filters.year) {
+        const y = Number(filters.year);
+        if (inc.year !== y) return false;
+      }
+
+      return true;
+    });
+  }, [incentives, filters]);
 
   const handleCreateNew = () => {
     setSelectedIncentive(null);
@@ -119,44 +151,19 @@ export default function IncentivesScreen() {
           }
         />
 
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
-          {STATUS_FILTERS.map((opt) => {
-            const isSelected = statusFilter === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setStatusFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Enhanced Incentive Filter Bar */}
+        <IncentiveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* Incentives List */}
         <FlatList
-          data={incentives}
+          data={filteredIncentives}
           keyExtractor={(item) => item.id}
           refreshing={refreshing}
           onRefresh={refresh}
           contentContainerStyle={{
             gap: spacing.md,
             paddingBottom: spacing.xl,
-            flexGrow: incentives.length === 0 ? 1 : undefined,
+            flexGrow: filteredIncentives.length === 0 ? 1 : undefined,
           }}
           ListEmptyComponent={<EmptyState title="No incentive records found." />}
           renderItem={({ item }) => (

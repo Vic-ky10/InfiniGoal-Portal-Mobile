@@ -182,7 +182,7 @@ export default function ExpenseDetailsModal({
                   </View>
                 )}
 
-                <View style={styles.metaRow}>
+                {/* <View style={styles.metaRow}>
                   <View style={styles.metaCol}>
                     <AppText variant="caption" color={colors.textSecondary}>
                       Submitted By
@@ -203,7 +203,7 @@ export default function ExpenseDetailsModal({
                       {expense.expense_date}
                     </AppText>
                   </View>
-                </View>
+                </View> */}
 
                 {expense.description ? (
                   <View style={{ marginTop: spacing.sm }}>

@@ -1,12 +1,12 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useMemo, useState, useEffect } from "react";
-import { View, FlatList, TouchableOpacity, ScrollView } from "react-native";
+import { View, FlatList, TouchableOpacity } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useLocalSearchParams } from "expo-router";
 
 import { AppText, Screen, Card } from "@/components/ui";
 import {
   AppHeader,
-  SearchBar,
   EmptyState,
   ActionSheet,
   ActionSheetOption,
@@ -17,29 +17,13 @@ import { useProjects } from "@/features/project/hooks/useProjects";
 import ProjectCard from "@/features/project/components/ProjectCard";
 import ProjectModal from "@/features/project/components/ProjectModal";
 import ProjectAssignModal from "@/features/project/components/ProjectAssignModal";
+import ProjectFilterBar from "@/features/project/components/ProjectFilterBar";
 import {
-  ProjectPriority,
-  ProjectStatus,
   ProjectWithMembers,
+  ProjectFilters,
 } from "@/features/project/project.types";
 import { deleteProject } from "@/features/project/project.service";
 import { toast } from "@/store/toast.store";
-
-const STATUS_FILTERS: { label: string; value: ProjectStatus | "" }[] = [
-  { label: "All", value: "" },
-  { label: "Planning", value: "Planning" },
-  { label: "Active", value: "Active" },
-  { label: "On Hold", value: "On Hold" },
-  { label: "Completed", value: "Completed" },
-  { label: "Archived", value: "Archived" },
-];
-
-const PRIORITY_FILTERS: { label: string; value: ProjectPriority | "" }[] = [
-  { label: "All Priority", value: "" },
-  { label: "High", value: "High" },
-  { label: "Medium", value: "Medium" },
-  { label: "Low", value: "Low" },
-];
 
 type SortKey = "newest" | "oldest" | "az" | "za" | "progress_desc" | "progress_asc";
 
@@ -53,9 +37,7 @@ const SORT_OPTIONS: { label: string; value: SortKey }[] = [
 ];
 
 export default function ProjectsScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "">("");
-  const [priorityFilter, setPriorityFilter] = useState<ProjectPriority | "">("");
+  const [filters, setFilters] = useState<ProjectFilters>({});
   const [sortKey, setSortKey] = useState<SortKey>("newest");
   const [sortSheetVisible, setSortSheetVisible] = useState(false);
 
@@ -76,19 +58,9 @@ export default function ProjectsScreen() {
   const { projects, stats, loading, refreshing, refresh } = useProjects();
   const { projectId } = useLocalSearchParams<{ projectId?: string }>();
 
-  useEffect(() => {
-    if (projectId && projects.length > 0) {
-      const project = projects.find((p) => p.id === projectId);
-      if (project) {
-        handleProjectCardPress(project);
-      } else {
-        toast.error("The requested project could not be found.");
-      }
-    }
-  }, [projectId, projects]);
 
   const filteredProjects = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
+    const search = (filters.search || "").trim().toLowerCase();
 
     return projects.filter((project) => {
       const matchesSearch =
@@ -98,14 +70,23 @@ export default function ProjectsScreen() {
         project.description?.toLowerCase().includes(search);
 
       const matchesStatus =
-        statusFilter === "" || project.status === statusFilter;
+        !filters.status || project.status === filters.status;
 
       const matchesPriority =
-        priorityFilter === "" || project.priority === priorityFilter;
+        !filters.priority || project.priority === filters.priority;
 
-      return matchesSearch && matchesStatus && matchesPriority;
+      const matchesDate =
+        !filters.date || project.created_at?.startsWith(filters.date);
+
+      const matchesMonth =
+        !filters.month || project.created_at?.startsWith(filters.month);
+
+      const matchesYear =
+        !filters.year || project.created_at?.startsWith(filters.year);
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesDate && matchesMonth && matchesYear;
     });
-  }, [projects, searchQuery, statusFilter, priorityFilter]);
+  }, [projects, filters]);
 
   const sortedProjects = useMemo(() => {
     return [...filteredProjects].sort((a, b) => {
@@ -194,6 +175,18 @@ export default function ProjectsScreen() {
     });
   };
 
+  useEffect(() => {
+    if (projectId && projects.length > 0) {
+      const project = projects.find((p) => p.id === projectId);
+      if (project) {
+        handleProjectCardPress(project);
+      } else {
+        toast.error("The requested project could not be found.");
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [projectId, projects]);
+
   const currentSortLabel =
     SORT_OPTIONS.find((o) => o.value === sortKey)?.label ?? "Newest First";
 
@@ -210,23 +203,44 @@ export default function ProjectsScreen() {
           title="Projects"
           subtitle="Organization projects & progress"
           rightComponent={
-            <TouchableOpacity
-              onPress={handleCreateNew}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                backgroundColor: adminColors.primary,
-                paddingHorizontal: spacing.md,
-                paddingVertical: spacing.xs,
-                borderRadius: radius.md,
-                gap: 4,
-              }}
-            >
-              <Feather name="plus" size={16} color="#FFFFFF" />
-              <AppText variant="caption" weight="700" color="#FFFFFF">
-                New
-              </AppText>
-            </TouchableOpacity>
+            <View style={{ flexDirection: "row", gap: spacing.xs, alignItems: "center" }}>
+              <TouchableOpacity
+                onPress={() => setSortSheetVisible(true)}
+                style={{
+                  backgroundColor: adminColors.surface,
+                  paddingHorizontal: spacing.sm,
+                  paddingVertical: spacing.xs,
+                  borderRadius: radius.md,
+                  borderWidth: 1,
+                  borderColor: adminColors.border,
+                  height: 32,
+                  justifyContent: "center",
+                }}
+              >
+                <AppText variant="caption" weight="700" color={adminColors.textSecondary}>
+                  Sort
+                </AppText>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={handleCreateNew}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: adminColors.primary,
+                  paddingHorizontal: spacing.md,
+                  paddingVertical: spacing.xs,
+                  borderRadius: radius.md,
+                  gap: 4,
+                  height: 32,
+                  justifyContent: "center",
+                }}
+              >
+                <Feather name="plus" size={14} color="#FFFFFF" />
+                <AppText variant="caption" weight="700" color="#FFFFFF">
+                  New
+                </AppText>
+              </TouchableOpacity>
+            </View>
           }
         />
 
@@ -258,100 +272,8 @@ export default function ProjectsScreen() {
           </Card>
         </View>
 
-        {/* Search + Sort */}
-        <View style={{ flexDirection: "row", gap: spacing.sm, alignItems: "center" }}>
-          <View style={{ flex: 1 }}>
-            <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
-          </View>
-          <TouchableOpacity
-            onPress={() => setSortSheetVisible(true)}
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              gap: 4,
-              paddingHorizontal: spacing.md,
-              paddingVertical: spacing.sm,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: adminColors.border,
-              backgroundColor: adminColors.surface,
-            }}
-          >
-            <Feather name="sliders" size={13} color={adminColors.textSecondary} />
-            <AppText variant="caption" weight="600" color={adminColors.textSecondary}>
-              Sort
-            </AppText>
-          </TouchableOpacity>
-        </View>
-
-        {/* Status Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0 }}
-          contentContainerStyle={{ flexDirection: "row", gap: spacing.xs, paddingRight: spacing.xl }}
-        >
-          {STATUS_FILTERS.map((opt) => {
-            const isSelected = statusFilter === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setStatusFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? adminColors.primary : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
-
-        {/* Priority Filters */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0 }}
-          contentContainerStyle={{ flexDirection: "row", gap: spacing.xs, paddingRight: spacing.xl }}
-        >
-          {PRIORITY_FILTERS.map((opt) => {
-            const isSelected = priorityFilter === opt.value;
-            const pillColor = opt.value === "High" ? "#EF4444" : opt.value === "Medium" ? "#F59E0B" : opt.value === "Low" ? "#22C55E" : adminColors.primary;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setPriorityFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.md,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected ? pillColor : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected ? pillColor : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* Standardized Project Filter Bar */}
+        <ProjectFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* Results count */}
         <AppText variant="caption" color={adminColors.textSecondary}>

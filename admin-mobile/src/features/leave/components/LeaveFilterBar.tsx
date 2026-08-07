@@ -1,9 +1,9 @@
-import React, { useState } from "react";
-import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
-import { Feather } from "@expo/vector-icons";
+import React, { useState, useMemo } from "react";
+import { View } from "react-native";
 
-import { Input, AppText, DatePickerField } from "@/components/ui";
-import { useThemeColors, radius, spacing } from "@/theme";
+import { DatePickerField } from "@/components/ui";
+import { BaseFilterBar, FilterChip, DropdownField, ActionSheet, ActionSheetOption } from "@/components/common";
+import { useThemeColors, spacing } from "@/theme";
 import { LeaveFilters, LEAVE_STATUS, LEAVE_TYPE } from "../leave.types";
 import { DEPARTMENTS } from "@/features/employee/employee.constants";
 
@@ -11,241 +11,232 @@ interface Props {
   filters: LeaveFilters;
   onFiltersChange: (newFilters: LeaveFilters) => void;
   isAdmin?: boolean;
+  leaves?: any[];
 }
 
 export default function LeaveFilterBar({
   filters,
   onFiltersChange,
   isAdmin = false,
+  leaves = [],
 }: Props) {
   const colors = useThemeColors();
-  const [expanded, setExpanded] = useState(false);
+  const [sheetConfig, setSheetConfig] = useState<{
+    visible: boolean;
+    title: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    title: "",
+    options: [],
+  });
 
-  const statuses = ["All", ...Object.values(LEAVE_STATUS)] as const;
-  const leaveTypes = ["All", ...Object.values(LEAVE_TYPE)] as const;
-  const departments = ["All", ...DEPARTMENTS] as const;
+  const statuses = Object.values(LEAVE_STATUS);
+  const leaveTypes = Object.values(LEAVE_TYPE);
+  const departments = DEPARTMENTS;
+
+  const employeesList = useMemo(() => {
+    const list: { id: string; name: string }[] = [];
+    leaves.forEach((l) => {
+      if (l.employee && !list.some((x) => x.id === l.profile_id)) {
+        list.push({ id: l.profile_id, name: l.employee.full_name });
+      }
+    });
+    return list;
+  }, [leaves]);
 
   const handleSearchChange = (text: string) => {
     onFiltersChange({ ...filters, search: text });
   };
 
-  const handleMonthChange = (text: string) => {
-    onFiltersChange({ ...filters, month: text });
-  };
-
-  const handleStatusSelect = (status: (typeof statuses)[number]) => {
+  const handleStatusSelect = (status: string) => {
     onFiltersChange({
       ...filters,
-      status: status === "All" ? undefined : (status as any),
+      status: status as any,
     });
   };
 
-  const handleLeaveTypeSelect = (type: (typeof leaveTypes)[number]) => {
+  const handleLeaveTypeSelect = (type: string) => {
     onFiltersChange({
       ...filters,
-      leaveType: type === "All" ? undefined : (type as any),
+      leaveType: type as any,
     });
   };
 
-  const handleDepartmentSelect = (dept: (typeof departments)[number]) => {
+  const handleDepartmentSelect = (dept: string) => {
     onFiltersChange({
       ...filters,
-      department: dept === "All" ? undefined : dept,
+      department: dept,
     });
   };
+
+  const handleEmployeeSelect = (profileId: string) => {
+    onFiltersChange({
+      ...filters,
+      profileId: profileId || undefined,
+    });
+  };
+
+  const handleReset = () => {
+    onFiltersChange({});
+  };
+
+  const openLeaveTypeSheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Leave Types", onPress: () => handleLeaveTypeSelect("") },
+      ...leaveTypes.map((type) => ({
+        label: type,
+        onPress: () => handleLeaveTypeSelect(type),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Leave Type", options });
+  };
+
+  const openDepartmentSheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Departments", onPress: () => handleDepartmentSelect("") },
+      ...departments.map((dept) => ({
+        label: dept,
+        onPress: () => handleDepartmentSelect(dept),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Department", options });
+  };
+
+  const openEmployeeSheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Employees", onPress: () => handleEmployeeSelect("") },
+      ...employeesList.map((emp) => ({
+        label: emp.name,
+        onPress: () => handleEmployeeSelect(emp.id),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Employee", options });
+  };
+
+  const selectedEmployeeName = useMemo(() => {
+    if (!filters.profileId) return "";
+    return employeesList.find((e) => e.id === filters.profileId)?.name || "";
+  }, [filters.profileId, employeesList]);
+
+
 
   const activeFilterCount = [
     filters.status,
     filters.leaveType,
-    Boolean(filters.month?.trim()),
-    isAdmin && filters.department && filters.department !== "All",
-    isAdmin && Boolean(filters.search?.trim()),
+    filters.date,
+    filters.month,
+    filters.year,
+    isAdmin && filters.department,
+    isAdmin && filters.profileId,
+    isAdmin && filters.search,
   ].filter(Boolean).length;
 
-  return (
-    <View style={styles.container}>
-      {/* SEARCH INPUT & FILTER TOGGLE */}
-      <View style={styles.searchRow}>
-        {isAdmin ? (
-          <View style={{ flex: 1 }}>
-            <Input
-              placeholder="Search by employee name or ID..."
-              value={filters.search || ""}
-              onChangeText={handleSearchChange}
+  const quickChips = (
+    <>
+      <FilterChip
+        label="All Status"
+        isSelected={!filters.status}
+        onPress={() => handleStatusSelect("")}
+      />
+      {statuses.map((st) => {
+        const isSelected = filters.status === st;
+        return (
+          <FilterChip
+            key={st}
+            label={st}
+            isSelected={isSelected}
+            onPress={() => handleStatusSelect(st)}
+          />
+        );
+      })}
+    </>
+  );
+
+  const expandedContent = (
+    <View style={{ gap: spacing.sm }}>
+      {isAdmin ? (
+        <>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <DropdownField
+              label="Employee"
+              placeholder="All Employees"
+              value={selectedEmployeeName}
+              onPress={openEmployeeSheet}
+              onClear={() => handleEmployeeSelect("")}
+              style={{ flex: 1 }}
+            />
+            <DropdownField
+              label="Department"
+              placeholder="All Departments"
+              value={filters.department}
+              onPress={openDepartmentSheet}
+              onClear={() => handleDepartmentSelect("")}
+              style={{ flex: 1 }}
             />
           </View>
-        ) : (
-          <View style={{ flex: 1 }}>
-            <AppText variant="body" color={colors.textSecondary}>
-              Filter your leave requests
-            </AppText>
+          <View style={{ flexDirection: "row", gap: spacing.md }}>
+            <DropdownField
+              label="Leave Type"
+              placeholder="All Leave Types"
+              value={filters.leaveType || ""}
+              onPress={openLeaveTypeSheet}
+              onClear={() => handleLeaveTypeSelect("")}
+              style={{ flex: 1 }}
+            />
+            <DatePickerField
+              label="Date Filter"
+              placeholder="Select Date"
+              value={filters.date}
+              mode="date"
+              onChange={(val) => onFiltersChange({ ...filters, date: val })}
+              onClear={() => onFiltersChange({ ...filters, date: undefined })}
+              style={{ flex: 1 }}
+            />
           </View>
-        )}
-        <TouchableOpacity
-          onPress={() => setExpanded(!expanded)}
-          style={[
-            styles.filterBtn,
-            {
-              backgroundColor: activeFilterCount > 0 ? `${colors.primary}15` : colors.surface,
-              borderColor: activeFilterCount > 0 ? colors.primary : colors.border,
-            },
-          ]}
-        >
-          <Feather name="sliders" size={18} color={activeFilterCount > 0 ? colors.primary : colors.textSecondary} />
-          {activeFilterCount > 0 && (
-            <View style={[styles.badgeCount, { backgroundColor: colors.primary }]}>
-              <AppText variant="caption" weight="700" color="#fff" style={{ fontSize: 10 }}>
-                {activeFilterCount}
-              </AppText>
-            </View>
-          )}
-        </TouchableOpacity>
-      </View>
-
-      {/* QUICK STATUS CHIPS */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
-        {statuses.map((st) => {
-          const isSelected = (!filters.status && st === "All") || filters.status === st;
-          return (
-            <TouchableOpacity
-              key={st}
-              onPress={() => handleStatusSelect(st)}
-              style={[
-                styles.chip,
-                {
-                  backgroundColor: isSelected ? colors.primary : colors.surface,
-                  borderColor: isSelected ? colors.primary : colors.border,
-                },
-              ]}
-            >
-              <AppText variant="caption" weight="600" color={isSelected ? "#FFF" : colors.text}>
-                {st}
-              </AppText>
-            </TouchableOpacity>
-          );
-        })}
-      </ScrollView>
-
-      {/* EXPANDED EXTRA FILTERS */}
-      {expanded && (
-        <View style={[styles.expandedBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          {isAdmin && (
-            <>
-              {/* DEPARTMENTS */}
-              <AppText weight="700" variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.xs }}>
-                Filter by Department
-              </AppText>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
-                {departments.map((dept) => {
-                  const isSelected = (!filters.department && dept === "All") || filters.department === dept;
-                  return (
-                    <TouchableOpacity
-                      key={dept}
-                      onPress={() => handleDepartmentSelect(dept)}
-                      style={[
-                        styles.chip,
-                        {
-                          backgroundColor: isSelected ? `${colors.primary}18` : colors.background,
-                          borderColor: isSelected ? colors.primary : colors.border,
-                        },
-                      ]}
-                    >
-                      <AppText variant="caption" weight="600" color={isSelected ? colors.primary : colors.text}>
-                        {dept}
-                      </AppText>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </>
-          )}
-
-          {/* LEAVE TYPES */}
-          <AppText weight="700" variant="caption" color={colors.textSecondary} style={{ marginTop: isAdmin ? spacing.sm : 0, marginBottom: spacing.xs }}>
-            Leave Type
-          </AppText>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipsScroll}>
-            {leaveTypes.map((type) => {
-              const isSelected = (!filters.leaveType && type === "All") || filters.leaveType === type;
-              return (
-                <TouchableOpacity
-                  key={type}
-                  onPress={() => handleLeaveTypeSelect(type)}
-                  style={[
-                    styles.chip,
-                    {
-                      backgroundColor: isSelected ? `${colors.primary}18` : colors.background,
-                      borderColor: isSelected ? colors.primary : colors.border,
-                    },
-                  ]}
-                >
-                  <AppText variant="caption" weight="600" color={isSelected ? colors.primary : colors.text}>
-                    {type}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-
-          {/* MONTH */}
-          <AppText weight="700" variant="caption" color={colors.textSecondary} style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
-            Month (YYYY-MM)
-          </AppText>
+        </>
+      ) : (
+        <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <DropdownField
+            label="Leave Type"
+            placeholder="All Leave Types"
+            value={filters.leaveType || ""}
+            onPress={openLeaveTypeSheet}
+            onClear={() => handleLeaveTypeSelect("")}
+            style={{ flex: 1 }}
+          />
           <DatePickerField
-            placeholder="e.g. 2024-01"
-            value={filters.month || ""}
-            onChange={handleMonthChange}
-            mode="month"
-            onClear={() => handleMonthChange("")}
+            label="Date Filter"
+            placeholder="Select Date"
+            value={filters.date}
+            mode="date"
+            onChange={(val) => onFiltersChange({ ...filters, date: val })}
+            onClear={() => onFiltersChange({ ...filters, date: undefined })}
+            style={{ flex: 1 }}
           />
         </View>
       )}
     </View>
   );
-}
 
-const styles = StyleSheet.create({
-  container: {
-    marginBottom: spacing.md,
-    gap: spacing.xs,
-  },
-  searchRow: {
-    flexDirection: "row",
-    gap: spacing.xs,
-    alignItems: "center",
-  },
-  filterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  badgeCount: {
-    position: "absolute",
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  chipsScroll: {
-    gap: spacing.xs,
-    paddingVertical: 2,
-  },
-  chip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radius.full,
-    borderWidth: 1,
-  },
-  expandedBox: {
-    borderWidth: 1,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginTop: spacing.xs,
-  },
-});
+  return (
+    <>
+      <BaseFilterBar
+        searchQuery={isAdmin ? filters.search : undefined}
+        onSearchChange={isAdmin ? handleSearchChange : undefined}
+        searchPlaceholder="Search employee name or ID..."
+        activeFilterCount={activeFilterCount}
+        quickChips={quickChips}
+        expandedContent={expandedContent}
+        onReset={handleReset}
+      />
+
+      <ActionSheet
+        visible={sheetConfig.visible}
+        onClose={() => setSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={sheetConfig.title}
+        options={sheetConfig.options}
+      />
+    </>
+  );
+}

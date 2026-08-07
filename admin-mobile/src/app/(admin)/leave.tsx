@@ -24,9 +24,21 @@ export default function LeaveScreen() {
       // Leave Type
       if (filters.leaveType && leave.leave_type !== filters.leaveType) return false;
       
+      // Date
+      if (filters.date) {
+        const d = filters.date;
+        if (leave.start_date !== d && (leave.start_date > d || leave.end_date < d)) return false;
+      }
+
       // Month (YYYY-MM)
       if (filters.month && !leave.start_date.startsWith(filters.month)) return false;
       
+      // Year (YYYY)
+      if (filters.year && !leave.start_date.startsWith(filters.year)) return false;
+
+      // Employee (profileId)
+      if (filters.profileId && leave.profile_id !== filters.profileId) return false;
+
       // Search
       if (filters.search) {
         const s = filters.search.toLowerCase();
@@ -58,7 +70,7 @@ export default function LeaveScreen() {
         />
 
         {/* Enhanced Filter Bar */}
-        <LeaveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
+        <LeaveFilterBar filters={filters} onFiltersChange={setFilters} leaves={leaveRequests} isAdmin />
 
         {/* leave requests list data */}
 

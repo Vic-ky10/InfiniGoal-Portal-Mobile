@@ -87,6 +87,7 @@ export interface ExpenseFilters {
   category?: ExpenseCategory | "All";
   month?: string;
   year?: string;
+  date?: string;
   employeeId?: string;
   amountMin?: number;
   amountMax?: number;

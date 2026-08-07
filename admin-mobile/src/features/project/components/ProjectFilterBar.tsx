@@ -1,7 +1,8 @@
-import React from "react";
-import { View, StyleSheet } from "react-native";
-import { AppText } from "@/components/ui";
-import { BaseFilterBar, FilterChip } from "@/components/common";
+import React, { useState } from "react";
+import { View } from "react-native";
+
+import { DatePickerField } from "@/components/ui";
+import { BaseFilterBar, FilterChip, DropdownField, ActionSheet, ActionSheetOption } from "@/components/common";
 import { useThemeColors, spacing } from "@/theme";
 import { ProjectFilters, PROJECT_STATUS, PROJECT_PRIORITY } from "../project.types";
 
@@ -17,85 +18,126 @@ export default function ProjectFilterBar({
   isAdmin = false,
 }: Props) {
   const colors = useThemeColors();
+  const [sheetConfig, setSheetConfig] = useState<{
+    visible: boolean;
+    title: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    title: "",
+    options: [],
+  });
 
-  const statuses = ["All", ...Object.values(PROJECT_STATUS)] as const;
-  const priorities = ["All", ...Object.values(PROJECT_PRIORITY)] as const;
+  const statuses = Object.values(PROJECT_STATUS);
+  const priorities = Object.values(PROJECT_PRIORITY);
 
   const handleSearchChange = (text: string) => {
     onFiltersChange({ ...filters, search: text });
   };
 
-  const handleStatusSelect = (status: (typeof statuses)[number]) => {
+  const handleStatusSelect = (status: string) => {
     onFiltersChange({
       ...filters,
-      status: status === "All" ? undefined : (status as any),
+      status: status ? (status as any) : undefined,
     });
   };
 
-  const handlePrioritySelect = (priority: (typeof priorities)[number]) => {
+  const handlePrioritySelect = (priority: string) => {
     onFiltersChange({
       ...filters,
-      priority: priority === "All" ? undefined : (priority as any),
+      priority: priority ? (priority as any) : undefined,
     });
   };
+
+  const handleReset = () => {
+    onFiltersChange({});
+  };
+
+  const openPrioritySheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Priorities", onPress: () => handlePrioritySelect("") },
+      ...priorities.map((pr) => ({
+        label: pr,
+        onPress: () => handlePrioritySelect(pr),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Priority", options });
+  };
+
+
 
   const activeFilterCount = [
     filters.status,
     filters.priority,
+    filters.date,
+    filters.month,
+    filters.year,
     Boolean(filters.search?.trim()),
   ].filter(Boolean).length;
 
+  const quickChips = (
+    <>
+      <FilterChip
+        label="All Status"
+        isSelected={!filters.status}
+        onPress={() => handleStatusSelect("")}
+      />
+      {statuses.map((st) => {
+        const isSelected = filters.status === st;
+        return (
+          <FilterChip
+            key={st}
+            label={st}
+            isSelected={isSelected}
+            onPress={() => handleStatusSelect(st)}
+          />
+        );
+      })}
+    </>
+  );
+
+  const expandedContent = (
+    <View style={{ gap: spacing.sm }}>
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <DropdownField
+          label="Priority"
+          placeholder="All Priorities"
+          value={filters.priority || ""}
+          onPress={openPrioritySheet}
+          onClear={() => handlePrioritySelect("")}
+          style={{ flex: 1 }}
+        />
+        <DatePickerField
+          label="Date Filter"
+          placeholder="Select Date"
+          value={filters.date}
+          mode="date"
+          onChange={(val) => onFiltersChange({ ...filters, date: val })}
+          onClear={() => onFiltersChange({ ...filters, date: undefined })}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </View>
+  );
+
   return (
-    <BaseFilterBar
-      searchQuery={filters.search}
-      onSearchChange={handleSearchChange}
-      searchPlaceholder={isAdmin ? "Search projects..." : "Search your projects..."}
-      activeFilterCount={activeFilterCount}
-      quickChips={
-        <>
-          {statuses.map((st) => {
-            const isSelected = (!filters.status && st === "All") || filters.status === st;
-            return (
-              <FilterChip
-                key={st}
-                label={st}
-                isSelected={isSelected}
-                onPress={() => handleStatusSelect(st)}
-              />
-            );
-          })}
-        </>
-      }
-      expandedContent={
-        <>
-          {/* PRIORITIES */}
-          <AppText weight="700" variant="caption" color={colors.textSecondary} style={{ marginBottom: spacing.xs }}>
-            Filter by Priority
-          </AppText>
-          <View style={styles.expandedChipsRow}>
-            {priorities.map((priority) => {
-              const isSelected = (!filters.priority && priority === "All") || filters.priority === priority;
-              return (
-                <FilterChip
-                  key={priority}
-                  label={priority}
-                  isSelected={isSelected}
-                  onPress={() => handlePrioritySelect(priority)}
-                  isExpandedChip
-                />
-              );
-            })}
-          </View>
-        </>
-      }
-    />
+    <>
+      <BaseFilterBar
+        searchQuery={filters.search}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder={isAdmin ? "Search projects..." : "Search your projects..."}
+        activeFilterCount={activeFilterCount}
+        quickChips={quickChips}
+        expandedContent={expandedContent}
+        onReset={handleReset}
+      />
+
+      <ActionSheet
+        visible={sheetConfig.visible}
+        onClose={() => setSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={sheetConfig.title}
+        options={sheetConfig.options}
+      />
+    </>
   );
 }
-
-const styles = StyleSheet.create({
-  expandedChipsRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.xs,
-  },
-});

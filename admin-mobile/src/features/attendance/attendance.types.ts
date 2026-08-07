@@ -35,6 +35,7 @@ export interface AttendanceFilters {
   profileId?: string;
   date?: string;
   month?: string; // e.g., "0" to "11" or "2023-01"
+  year?: string;
   status?: AttendanceStatus | "";
   search?: string;
   department?: string;

@@ -47,7 +47,12 @@ export default function EmployeeLeaveScreen() {
     return leaveRequests.filter((leave) => {
       if (filters.status && leave.status !== filters.status) return false;
       if (filters.leaveType && leave.leave_type !== filters.leaveType) return false;
+      if (filters.date) {
+        const d = filters.date;
+        if (leave.start_date !== d && (leave.start_date > d || leave.end_date < d)) return false;
+      }
       if (filters.month && !leave.start_date.startsWith(filters.month)) return false;
+      if (filters.year && !leave.start_date.startsWith(filters.year)) return false;
       return true;
     });
   }, [leaveRequests, filters]);

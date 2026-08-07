@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import React, { useMemo, useState, useEffect } from "react";
 import { View, FlatList } from "react-native";
 import { useLocalSearchParams } from "expo-router";
@@ -59,6 +60,15 @@ export default function ExpensesScreen() {
         if (hasRec !== filters.hasReceipt) return false;
       }
 
+      // Date filter
+      if (filters.date && expense.expense_date !== filters.date) return false;
+
+      // Month filter
+      if (filters.month && !expense.expense_date.startsWith(filters.month)) return false;
+
+      // Year filter
+      if (filters.year && !expense.expense_date.startsWith(filters.year)) return false;
+
       // Search Query (matches Title, Employee Name, Category, Description)
       if (filters.searchQuery?.trim()) {
         const q = filters.searchQuery.toLowerCase().trim();
@@ -84,7 +94,7 @@ export default function ExpensesScreen() {
         <AppHeader title="Expense Claims" subtitle="Review & approve employee reimbursements" />
 
         {/* Enhanced Filter Bar */}
-        <ExpenseFilterBar filters={filters} onFiltersChange={setFilters} showEmployeeFilter />
+        <ExpenseFilterBar filters={filters} onFiltersChange={setFilters} />
 
         {/* Expenses List or Skeleton */}
         {loading ? (

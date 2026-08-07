@@ -60,4 +60,9 @@ export interface TaskFilters {
   search?: string;
   status?: string;
   priority?: string;
+  date?: string;
+  month?: string;
+  year?: string;
+  projectId?: string;
+  profileId?: string;
 }

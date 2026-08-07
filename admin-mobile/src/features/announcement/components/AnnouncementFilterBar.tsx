@@ -4,16 +4,24 @@ import { View } from "react-native";
 import { DatePickerField } from "@/components/ui";
 import { BaseFilterBar, FilterChip, DropdownField, ActionSheet, ActionSheetOption } from "@/components/common";
 import { useThemeColors, spacing } from "@/theme";
-import { AttendanceFilters, ATTENDANCE_STATUS } from "../attendance.types";
-import { DEPARTMENTS } from "@/features/employee/employee.constants";
+import { ANNOUNCEMENT_TYPE, ANNOUNCEMENT_STATUS } from "../announcement.types";
+
+export interface AnnouncementUiFilters {
+  search?: string;
+  category?: string;
+  status?: string;
+  date?: string;
+  month?: string;
+  year?: string;
+}
 
 interface Props {
-  filters: AttendanceFilters;
-  onFiltersChange: (newFilters: AttendanceFilters) => void;
+  filters: AnnouncementUiFilters;
+  onFiltersChange: (newFilters: AnnouncementUiFilters) => void;
   isAdmin?: boolean;
 }
 
-export default function AttendanceFilterBar({
+export default function AnnouncementFilterBar({
   filters,
   onFiltersChange,
   isAdmin = false,
@@ -29,65 +37,51 @@ export default function AttendanceFilterBar({
     options: [],
   });
 
-  const statuses = Object.values(ATTENDANCE_STATUS);
-  const departments = DEPARTMENTS;
+  const categories = Object.values(ANNOUNCEMENT_TYPE);
+  const statuses = Object.values(ANNOUNCEMENT_STATUS);
 
   const handleSearchChange = (text: string) => {
     onFiltersChange({ ...filters, search: text });
   };
 
-  const handleStatusSelect = (status: string) => {
-    onFiltersChange({
-      ...filters,
-      status: status as any,
-    });
+  const handleCategorySelect = (cat: string) => {
+    onFiltersChange({ ...filters, category: cat || undefined });
   };
 
-  const handleDepartmentSelect = (dept: string) => {
-    onFiltersChange({
-      ...filters,
-      department: dept,
-    });
+  const handleStatusSelect = (status: string) => {
+    onFiltersChange({ ...filters, status: status || undefined });
   };
 
   const handleReset = () => {
     onFiltersChange({});
   };
 
-
-  const openDepartmentSheet = () => {
+  const openCategorySheet = () => {
     const options: ActionSheetOption[] = [
-      {
-        label: "All Departments",
-        onPress: () => handleDepartmentSelect(""),
-      },
-      ...departments.map((dept) => ({
-        label: dept,
-        onPress: () => handleDepartmentSelect(dept),
+      { label: "All Categories", onPress: () => handleCategorySelect("") },
+      ...categories.map((c) => ({
+        label: c,
+        onPress: () => handleCategorySelect(c),
       })),
     ];
-    setSheetConfig({
-      visible: true,
-      title: "Select Department",
-      options,
-    });
+    setSheetConfig({ visible: true, title: "Select Category", options });
   };
 
 
 
   const activeFilterCount = [
-    filters.status,
-    isAdmin && filters.department,
+    filters.category,
+    isAdmin && filters.status,
     filters.date,
     filters.month,
     filters.year,
-    isAdmin && filters.search,
+    Boolean(filters.search?.trim()),
   ].filter(Boolean).length;
 
-  const quickChips = (
+  const quickChips = isAdmin ? (
     <>
       <FilterChip
-        label="All"
+        label="All Status"
         isSelected={!filters.status}
         onPress={() => handleStatusSelect("")}
       />
@@ -103,6 +97,25 @@ export default function AttendanceFilterBar({
         );
       })}
     </>
+  ) : (
+    <>
+      <FilterChip
+        label="All Categories"
+        isSelected={!filters.category}
+        onPress={() => handleCategorySelect("")}
+      />
+      {categories.map((c) => {
+        const isSelected = filters.category === c;
+        return (
+          <FilterChip
+            key={c}
+            label={c}
+            isSelected={isSelected}
+            onPress={() => handleCategorySelect(c)}
+          />
+        );
+      })}
+    </>
   );
 
   const expandedContent = (
@@ -110,15 +123,15 @@ export default function AttendanceFilterBar({
       {isAdmin ? (
         <View style={{ flexDirection: "row", gap: spacing.md }}>
           <DropdownField
-            label="Department"
-            placeholder="All Departments"
-            value={filters.department}
-            onPress={openDepartmentSheet}
-            onClear={() => handleDepartmentSelect("")}
+            label="Category"
+            placeholder="All Categories"
+            value={filters.category || ""}
+            onPress={openCategorySheet}
+            onClear={() => handleCategorySelect("")}
             style={{ flex: 1 }}
           />
           <DatePickerField
-            label="Date Filter"
+            label="Publish Date Filter"
             placeholder="Select Date"
             value={filters.date}
             mode="date"
@@ -129,8 +142,16 @@ export default function AttendanceFilterBar({
         </View>
       ) : (
         <View style={{ flexDirection: "row", gap: spacing.md }}>
+          <DropdownField
+            label="Category"
+            placeholder="All Categories"
+            value={filters.category || ""}
+            onPress={openCategorySheet}
+            onClear={() => handleCategorySelect("")}
+            style={{ flex: 1 }}
+          />
           <DatePickerField
-            label="Date Filter"
+            label="Publish Date Filter"
             placeholder="Select Date"
             value={filters.date}
             mode="date"
@@ -138,7 +159,6 @@ export default function AttendanceFilterBar({
             onClear={() => onFiltersChange({ ...filters, date: undefined })}
             style={{ flex: 1 }}
           />
-          <View style={{ flex: 1 }} />
         </View>
       )}
     </View>
@@ -147,9 +167,9 @@ export default function AttendanceFilterBar({
   return (
     <>
       <BaseFilterBar
-        searchQuery={isAdmin ? filters.search : undefined}
-        onSearchChange={isAdmin ? handleSearchChange : undefined}
-        searchPlaceholder="Search employee..."
+        searchQuery={filters.search}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder="Search title, message..."
         activeFilterCount={activeFilterCount}
         quickChips={quickChips}
         expandedContent={expandedContent}

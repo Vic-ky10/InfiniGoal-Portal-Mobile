@@ -30,7 +30,9 @@ export default function EmployeeAttendanceScreen() {
   const filteredHistory = useMemo(() => {
     return history.filter((record) => {
       if (filters.status && record.status !== filters.status) return false;
+      if (filters.date && record.attendance_date !== filters.date) return false;
       if (filters.month && !record.attendance_date.startsWith(filters.month)) return false;
+      if (filters.year && !record.attendance_date.startsWith(filters.year)) return false;
       return true;
     });
   }, [history, filters]);

@@ -87,6 +87,9 @@ export interface ProjectFilters {
   search?: string;
   status?: ProjectStatus | "";
   priority?: ProjectPriority | "";
+  date?: string;
+  month?: string;
+  year?: string;
 }
 
 export interface ProjectDashboardStats {

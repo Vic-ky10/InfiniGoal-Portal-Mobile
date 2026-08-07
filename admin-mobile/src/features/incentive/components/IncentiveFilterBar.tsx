@@ -4,16 +4,28 @@ import { View } from "react-native";
 import { DatePickerField } from "@/components/ui";
 import { BaseFilterBar, FilterChip, DropdownField, ActionSheet, ActionSheetOption } from "@/components/common";
 import { useThemeColors, spacing } from "@/theme";
-import { ExpenseFilters, EXPENSE_CATEGORY } from "../expense.types";
+import { INCENTIVE_TYPE, INCENTIVE_STATUS, INCENTIVE_PAYMENT_STATUS } from "../incentive.types";
 
-interface Props {
-  filters: ExpenseFilters;
-  onFiltersChange: (newFilters: ExpenseFilters) => void;
+export interface IncentiveUiFilters {
+  search?: string;
+  type?: string;
+  status?: string;
+  paymentStatus?: string;
+  date?: string;
+  month?: string;
+  year?: string;
 }
 
-export default function ExpenseFilterBar({
+interface Props {
+  filters: IncentiveUiFilters;
+  onFiltersChange: (newFilters: IncentiveUiFilters) => void;
+  isAdmin?: boolean;
+}
+
+export default function IncentiveFilterBar({
   filters,
   onFiltersChange,
+  isAdmin = false,
 }: Props) {
   const colors = useThemeColors();
   const [sheetConfig, setSheetConfig] = useState<{
@@ -26,75 +38,69 @@ export default function ExpenseFilterBar({
     options: [],
   });
 
-  const statuses = ["Pending", "Approved", "Rejected"];
-  const categories = Object.values(EXPENSE_CATEGORY);
+  const types = Object.values(INCENTIVE_TYPE);
+  const statuses = Object.values(INCENTIVE_STATUS);
+  const paymentStatuses = Object.values(INCENTIVE_PAYMENT_STATUS);
 
   const handleSearchChange = (text: string) => {
-    onFiltersChange({ ...filters, searchQuery: text });
+    onFiltersChange({ ...filters, search: text });
+  };
+
+  const handleTypeSelect = (type: string) => {
+    onFiltersChange({ ...filters, type: type || undefined });
   };
 
   const handleStatusSelect = (status: string) => {
-    onFiltersChange({
-      ...filters,
-      status: status ? (status as any) : undefined,
-    });
+    onFiltersChange({ ...filters, status: status || undefined });
   };
 
-  const handleCategorySelect = (cat: string) => {
-    onFiltersChange({
-      ...filters,
-      category: cat ? (cat as any) : undefined,
-    });
-  };
-
-  const handleReceiptSelect = (val: boolean | null) => {
-    onFiltersChange({
-      ...filters,
-      hasReceipt: val,
-    });
+  const handlePaymentSelect = (payStatus: string) => {
+    onFiltersChange({ ...filters, paymentStatus: payStatus || undefined });
   };
 
   const handleReset = () => {
     onFiltersChange({});
   };
 
-  const openCategorySheet = () => {
+  const openTypeSheet = () => {
     const options: ActionSheetOption[] = [
-      { label: "All Expense Types", onPress: () => handleCategorySelect("") },
-      ...categories.map((cat) => ({
-        label: cat,
-        onPress: () => handleCategorySelect(cat),
+      { label: "All Types", onPress: () => handleTypeSelect("") },
+      ...types.map((t) => ({
+        label: t,
+        onPress: () => handleTypeSelect(t),
       })),
     ];
-    setSheetConfig({ visible: true, title: "Select Expense Type", options });
+    setSheetConfig({ visible: true, title: "Select Incentive Type", options });
   };
 
-  const openReceiptSheet = () => {
+  const openPaymentSheet = () => {
     const options: ActionSheetOption[] = [
-      { label: "All Receipts", onPress: () => handleReceiptSelect(null) },
-      { label: "📎 Has Receipt", onPress: () => handleReceiptSelect(true) },
-      { label: "No Receipt", onPress: () => handleReceiptSelect(false) },
+      { label: "All Payment Statuses", onPress: () => handlePaymentSelect("") },
+      ...paymentStatuses.map((ps) => ({
+        label: ps,
+        onPress: () => handlePaymentSelect(ps),
+      })),
     ];
-    setSheetConfig({ visible: true, title: "Select Receipt Attachment", options });
+    setSheetConfig({ visible: true, title: "Select Payment Status", options });
   };
 
 
 
   const activeFilterCount = [
-    filters.status && filters.status !== "All",
-    filters.category && filters.category !== "All",
-    filters.hasReceipt !== undefined && filters.hasReceipt !== null,
+    filters.type,
+    filters.status,
+    filters.paymentStatus,
     filters.date,
     filters.month,
     filters.year,
-    Boolean(filters.searchQuery?.trim()),
+    Boolean(filters.search?.trim()),
   ].filter(Boolean).length;
 
   const quickChips = (
     <>
       <FilterChip
         label="All Status"
-        isSelected={!filters.status || filters.status === "All"}
+        isSelected={!filters.status}
         onPress={() => handleStatusSelect("")}
       />
       {statuses.map((st) => {
@@ -111,29 +117,23 @@ export default function ExpenseFilterBar({
     </>
   );
 
-  const selectedReceiptLabel = () => {
-    if (filters.hasReceipt === true) return "📎 Has Receipt";
-    if (filters.hasReceipt === false) return "No Receipt";
-    return "";
-  };
-
   const expandedContent = (
     <View style={{ gap: spacing.sm }}>
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <DropdownField
-          label="Expense Type"
-          placeholder="All Expense Types"
-          value={(filters.category && filters.category !== "All" ? filters.category : "") as string}
-          onPress={openCategorySheet}
-          onClear={() => handleCategorySelect("")}
+          label="Incentive Type"
+          placeholder="All Incentive Types"
+          value={filters.type || ""}
+          onPress={openTypeSheet}
+          onClear={() => handleTypeSelect("")}
           style={{ flex: 1 }}
         />
         <DropdownField
-          label="Receipt Attachment"
-          placeholder="All Receipts"
-          value={selectedReceiptLabel()}
-          onPress={openReceiptSheet}
-          onClear={() => handleReceiptSelect(null)}
+          label="Payment Status"
+          placeholder="All Payment Statuses"
+          value={filters.paymentStatus || ""}
+          onPress={openPaymentSheet}
+          onClear={() => handlePaymentSelect("")}
           style={{ flex: 1 }}
         />
       </View>
@@ -155,9 +155,9 @@ export default function ExpenseFilterBar({
   return (
     <>
       <BaseFilterBar
-        searchQuery={filters.searchQuery}
+        searchQuery={filters.search}
         onSearchChange={handleSearchChange}
-        searchPlaceholder="Search expense title, category, employee..."
+        searchPlaceholder={isAdmin ? "Search incentive title, employee..." : "Search incentive title..."}
         activeFilterCount={activeFilterCount}
         quickChips={quickChips}
         expandedContent={expandedContent}

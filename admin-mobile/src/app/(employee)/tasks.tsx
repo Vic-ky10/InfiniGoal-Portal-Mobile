@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect */
 import { useState, useEffect, useCallback, useMemo } from "react";
 import {
   View,
@@ -20,11 +21,12 @@ import {
 import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
-import { TaskWithProject } from "@/features/task/task.types";
+import { TaskWithProject, TaskFilters } from "@/features/task/task.types";
 import { getEmployeeTasks, updateTaskStatus } from "@/features/task/task.service";
 import { toast } from "@/store/toast.store";
 import TaskCard from "@/features/task/components/TaskCard";
 import KanbanBoard from "@/features/task/components/KanbanBoard";
+import TaskFilterBar from "@/features/task/components/TaskFilterBar";
 
 type ViewMode = "list" | "kanban";
 
@@ -33,8 +35,7 @@ export default function EmployeeTasksScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [tasks, setTasks] = useState<TaskWithProject[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [filters, setFilters] = useState<TaskFilters>({});
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
 
@@ -216,56 +217,37 @@ export default function EmployeeTasksScreen() {
     }
   };
 
+  const projectsOptions = useMemo(() => {
+    const list: { id: string; name: string }[] = [];
+    tasks.forEach((t) => {
+      if (t.project && !list.some((x) => x.id === t.project_id)) {
+        list.push({ id: t.project_id, name: t.project.project_name });
+      }
+    });
+    return list;
+  }, [tasks]);
+
   const filteredTasks = useMemo(() => {
-    let result = tasks;
+    return tasks.filter((t) => {
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        const matchesSearch =
+          t.title.toLowerCase().includes(s) ||
+          t.task_code.toLowerCase().includes(s) ||
+          (t.project?.project_name ?? "").toLowerCase().includes(s);
+        if (!matchesSearch) return false;
+      }
 
-    // Search filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase();
-      result = result.filter(
-        (t) =>
-          t.title.toLowerCase().includes(q) ||
-          (t.description ?? "").toLowerCase().includes(q) ||
-          t.task_code.toLowerCase().includes(q) ||
-          (t.project?.project_name ?? "").toLowerCase().includes(q)
-      );
-    }
+      if (filters.status && t.status !== filters.status) return false;
+      if (filters.priority && t.priority !== filters.priority) return false;
+      if (filters.projectId && t.project_id !== filters.projectId) return false;
+      if (filters.date && t.due_date !== filters.date) return false;
+      if (filters.month && !t.due_date?.startsWith(filters.month)) return false;
+      if (filters.year && !t.due_date?.startsWith(filters.year)) return false;
 
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const today = new Date(todayStr);
-    const nextWeek = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000);
-
-    // Dynamic filter
-    switch (statusFilter) {
-      case "PENDING":
-        return result.filter((t) => t.status === "Todo");
-      case "IN_PROGRESS":
-        return result.filter((t) => t.status === "In Progress");
-      case "COMPLETED":
-        return result.filter((t) => t.status === "Completed");
-      case "OVERDUE":
-        return result.filter(
-          (t) =>
-            t.status !== "Completed" &&
-            t.due_date &&
-            t.due_date < todayStr
-        );
-      case "HIGH_PRIORITY":
-        return result.filter(
-          (t) => t.priority === "High" || t.priority === "Urgent"
-        );
-      case "TODAY":
-        return result.filter((t) => t.due_date === todayStr);
-      case "THIS_WEEK":
-        return result.filter((t) => {
-          if (!t.due_date) return false;
-          const due = new Date(t.due_date);
-          return due >= today && due <= nextWeek;
-        });
-      default:
-        return result;
-    }
-  }, [tasks, searchQuery, statusFilter]);
+      return true;
+    });
+  }, [tasks, filters]);
 
   const openDetails = (task: TaskWithProject) => {
     setSelectedTask(task);
@@ -477,6 +459,13 @@ export default function EmployeeTasksScreen() {
           }
         />
 
+        {/* Enhanced Task Filter Bar */}
+        <TaskFilterBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          projects={projectsOptions}
+        />
+
         {/* Kanban View */}
         {viewMode === "kanban" ? (
           loading ? (
@@ -489,7 +478,7 @@ export default function EmployeeTasksScreen() {
             />
           ) : (
             <KanbanBoard
-              tasks={tasks}
+              tasks={filteredTasks}
               isAdmin={false}
               profileId={currentUserId}
               onStatusChange={handleKanbanStatusChange}
@@ -500,59 +489,7 @@ export default function EmployeeTasksScreen() {
         ) : (
           /* List View */
           <>
-            <SearchBar
-              value={searchQuery}
-              onChangeText={setSearchQuery}
-              placeholder="Search by title, description, project code..."
-            />
 
-            {/* Filter Pills */}
-            <View style={{ height: 36 }}>
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={{
-                  gap: spacing.xs,
-                  paddingRight: spacing.xl,
-                }}
-              >
-                {[
-                  { id: "ALL", label: "All" },
-                  { id: "PENDING", label: "Pending" },
-                  { id: "IN_PROGRESS", label: "In Progress" },
-                  { id: "COMPLETED", label: "Completed" },
-                  { id: "OVERDUE", label: "Overdue" },
-                  { id: "HIGH_PRIORITY", label: "High Priority" },
-                ].map((filter) => {
-                  const isSelected = statusFilter === filter.id;
-                  return (
-                    <TouchableOpacity
-                      key={filter.id}
-                      onPress={() => setStatusFilter(filter.id)}
-                      style={{
-                        paddingHorizontal: spacing.md,
-                        paddingVertical: spacing.xs,
-                        borderRadius: radius.full,
-                        backgroundColor: isSelected
-                          ? employeeColors.primary
-                          : `${employeeColors.primary}10`,
-                        justifyContent: "center",
-                      }}
-                    >
-                      <AppText
-                        variant="caption"
-                        weight="600"
-                        color={
-                          isSelected ? "#FFFFFF" : employeeColors.primary
-                        }
-                      >
-                        {filter.label}
-                      </AppText>
-                    </TouchableOpacity>
-                  );
-                })}
-              </ScrollView>
-            </View>
 
             {loading ? (
               <FlatList

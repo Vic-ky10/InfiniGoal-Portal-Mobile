@@ -1,21 +1,18 @@
-
 import { View, FlatList, TouchableOpacity } from "react-native";
 import { useState, useMemo } from "react";
 import { Feather } from "@expo/vector-icons";
 import AnnouncementModal from "@/features/announcement/components/AnnouncementModal";
 import { AnnouncementWithCreator } from "@/features/announcement/announcement.types";
 import { AppText, Screen } from "@/components/ui";
-import { AppHeader, SearchBar, EmptyState } from "@/components/common";
+import { AppHeader, EmptyState } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 
 import { useAnnouncements } from "@/features/announcement/hooks/useAnnouncements";
 import AnnouncementCard from "@/features/announcement/components/AnnouncementCard";
-
-const STATUS_FILTERS = ["All", "Published", "Draft"];
+import AnnouncementFilterBar, { AnnouncementUiFilters } from "@/features/announcement/components/AnnouncementFilterBar";
 
 export default function AnnouncementsScreen() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState("All");
+  const [filters, setFilters] = useState<AnnouncementUiFilters>({});
   const [modalVisible, setModalVisible] = useState(false);
 
   const [selectedAnnouncement, setSelectedAnnouncement] =
@@ -29,21 +26,42 @@ export default function AnnouncementsScreen() {
     handlePublish,
     handleDelete,
   } = useAnnouncements();
+
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((item) => {
-      const matchesSearch =
-        item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.message.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        item.announcement_type
-          .toLowerCase()
-          .includes(searchQuery.toLowerCase());
+      // Search matches Title, Message, Category
+      if (filters.search) {
+        const s = filters.search.toLowerCase();
+        const matchesSearch =
+          item.title.toLowerCase().includes(s) ||
+          item.message.toLowerCase().includes(s) ||
+          item.announcement_type.toLowerCase().includes(s);
+        if (!matchesSearch) return false;
+      }
 
-      const matchesStatus =
-        statusFilter === "All" || item.status === statusFilter;
+      // Category
+      if (filters.category && item.announcement_type !== filters.category) return false;
 
-      return matchesSearch && matchesStatus;
+      // Status
+      if (filters.status && item.status !== filters.status) return false;
+
+      // Date / Month / Year
+      if (filters.date) {
+        // e.g. YYYY-MM-DD
+        if (!item.publish_at?.startsWith(filters.date)) return false;
+      }
+      if (filters.month) {
+        // e.g. YYYY-MM
+        if (!item.publish_at?.startsWith(filters.month)) return false;
+      }
+      if (filters.year) {
+        // e.g. YYYY
+        if (!item.publish_at?.startsWith(filters.year)) return false;
+      }
+
+      return true;
     });
-  }, [announcements, searchQuery, statusFilter]);
+  }, [announcements, filters]);
 
   return (
     <Screen
@@ -80,46 +98,8 @@ export default function AnnouncementsScreen() {
           }
         />
 
-        <SearchBar value={searchQuery} onChangeText={setSearchQuery} />
-
-        {/* Status Filters */}
-        <View
-          style={{
-            flexDirection: "row",
-            gap: spacing.xs,
-            marginBottom: spacing.xs,
-          }}
-        >
-          {STATUS_FILTERS.map((status) => {
-            const isSelected = statusFilter === status;
-            return (
-              <TouchableOpacity
-                key={status}
-                onPress={() => setStatusFilter(status)}
-                style={{
-                  paddingHorizontal: spacing.lg,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.surface,
-                  borderWidth: 1,
-                  borderColor: isSelected
-                    ? adminColors.primary
-                    : adminColors.border,
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                >
-                  {status}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+        {/* Enhanced Announcement Filter Bar */}
+        <AnnouncementFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* Announcements List */}
         <FlatList
@@ -138,24 +118,21 @@ export default function AnnouncementsScreen() {
               announcement={item}
               onPublish={handlePublish}
               onDelete={handleDelete}
-              onEdit={(announcement) => {
-                setSelectedAnnouncement(announcement);
+              onEdit={(ann) => {
+                setSelectedAnnouncement(ann);
                 setModalVisible(true);
               }}
             />
           )}
         />
-
-        <AnnouncementModal
-          visible={modalVisible}
-          onClose={() => {
-            setModalVisible(false);
-            setSelectedAnnouncement(null);
-          }}
-          onSuccess={refresh}
-          announcementToEdit={selectedAnnouncement}
-        />
       </View>
+
+      <AnnouncementModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        onSuccess={refresh}
+        announcementToEdit={selectedAnnouncement}
+      />
     </Screen>
   );
 }

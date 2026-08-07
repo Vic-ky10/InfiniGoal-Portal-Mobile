@@ -64,6 +64,8 @@ export interface LeaveFilters {
   department?: string;
   leaveType?: LeaveType | "";
   month?: string; // YYYY-MM
+  date?: string; // YYYY-MM-DD
+  year?: string; // YYYY
 }
 
 /**

@@ -1,33 +1,25 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
-import { View, FlatList, ScrollView, TouchableOpacity } from "react-native";
+import { View, FlatList } from "react-native";
 
-import { Screen, AppText } from "@/components/ui";
-import { AppHeader, EmptyState, SearchBar } from "@/components/common";
-import { employeeColors, radius, spacing } from "@/theme";
+import { Screen } from "@/components/ui";
+import { AppHeader, EmptyState } from "@/components/common";
+import { spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 
 import {
   EmployeeProject,
-  ProjectStatus,
   ProjectWithMembers,
+  ProjectFilters,
 } from "@/features/project/project.types";
 import { getEmployeeProjects } from "@/features/project/project.service";
 import ProjectCard from "@/features/project/components/ProjectCard";
-
-const STATUS_FILTERS: { label: string; value: ProjectStatus | "" }[] = [
-  { label: "All", value: "" },
-  { label: "Planning", value: "Planning" },
-  { label: "Active", value: "Active" },
-  { label: "On Hold", value: "On Hold" },
-  { label: "Completed", value: "Completed" },
-];
+import ProjectFilterBar from "@/features/project/components/ProjectFilterBar";
 
 export default function EmployeeProjectsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [projects, setProjects] = useState<EmployeeProject[]>([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<ProjectStatus | "">("");
+  const [filters, setFilters] = useState<ProjectFilters>({});
 
   const loadData = useCallback(async (isRefresh = false) => {
     await Promise.resolve();
@@ -73,7 +65,7 @@ export default function EmployeeProjectsScreen() {
   }, [loadData]);
 
   const filteredProjects = useMemo(() => {
-    const search = searchQuery.trim().toLowerCase();
+    const search = (filters.search || "").trim().toLowerCase();
     return projects.filter((item) => {
       const proj = item.project;
       if (!proj) return false;
@@ -85,11 +77,23 @@ export default function EmployeeProjectsScreen() {
         proj.description?.toLowerCase().includes(search);
 
       const matchesStatus =
-        statusFilter === "" || proj.status === statusFilter;
+        !filters.status || proj.status === filters.status;
 
-      return matchesSearch && matchesStatus;
+      const matchesPriority =
+        !filters.priority || proj.priority === filters.priority;
+
+      const matchesDate =
+        !filters.date || proj.created_at?.startsWith(filters.date);
+
+      const matchesMonth =
+        !filters.month || proj.created_at?.startsWith(filters.month);
+
+      const matchesYear =
+        !filters.year || proj.created_at?.startsWith(filters.year);
+
+      return matchesSearch && matchesStatus && matchesPriority && matchesDate && matchesMonth && matchesYear;
     });
-  }, [projects, searchQuery, statusFilter]);
+  }, [projects, filters]);
 
   const renderProjectItem = ({ item }: { item: EmployeeProject }) => {
     const proj = item.project;
@@ -120,51 +124,8 @@ export default function EmployeeProjectsScreen() {
           subtitle={`${filteredProjects.length} project${filteredProjects.length !== 1 ? "s" : ""} assigned to you`}
         />
 
-        {/* Search */}
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
-          placeholder="Search projects..."
-        />
-
-        {/* Status Filter Pills */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={{ flexGrow: 0 }}
-          contentContainerStyle={{
-            flexDirection: "row",
-            gap: spacing.xs,
-            paddingRight: spacing.xl,
-          }}
-        >
-          {STATUS_FILTERS.map((opt) => {
-            const isSelected = statusFilter === opt.value;
-            return (
-              <TouchableOpacity
-                key={opt.label}
-                onPress={() => setStatusFilter(opt.value)}
-                style={{
-                  paddingHorizontal: spacing.md,
-                  paddingVertical: spacing.xs,
-                  borderRadius: radius.full,
-                  backgroundColor: isSelected
-                    ? employeeColors.primary
-                    : `${employeeColors.primary}10`,
-                  justifyContent: "center",
-                }}
-              >
-                <AppText
-                  variant="caption"
-                  weight="600"
-                  color={isSelected ? "#FFFFFF" : employeeColors.primary}
-                >
-                  {opt.label}
-                </AppText>
-              </TouchableOpacity>
-            );
-          })}
-        </ScrollView>
+        {/* Enhanced Project Filter Bar */}
+        <ProjectFilterBar filters={filters} onFiltersChange={setFilters} />
 
         {/* Projects List */}
         <FlatList
@@ -174,15 +135,15 @@ export default function EmployeeProjectsScreen() {
           refreshing={refreshing}
           onRefresh={() => loadData(true)}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <EmptyState
-              title={
-                searchQuery || statusFilter
-                  ? "No projects match your filter."
-                  : "No Projects Assigned"
-              }
-            />
-          }
+            ListEmptyComponent={
+              <EmptyState
+                title={
+                  filters.search || filters.status || filters.priority
+                    ? "No projects match your filter."
+                    : "No Projects Assigned"
+                }
+              />
+            }
           contentContainerStyle={{ paddingBottom: spacing.xxxl }}
         />
       </View>

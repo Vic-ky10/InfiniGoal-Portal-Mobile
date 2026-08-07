@@ -1,44 +1,148 @@
 import { useState, useMemo } from "react";
 import { useRouter } from "expo-router";
-import { View, ScrollView, TouchableOpacity } from "react-native";
+import { View } from "react-native";
 
-import { AppText, Badge, Screen } from "@/components/ui";
-import { AppHeader, SearchBar } from "@/components/common";
+import { Screen } from "@/components/ui";
+import { AppHeader, BaseFilterBar, FilterChip, DropdownField, ActionSheet, ActionSheetOption } from "@/components/common";
 import { adminColors, radius, spacing } from "@/theme";
 import { EmployeeList } from "../components";
 import { useEmployees } from "../hooks/useEmployees";
-
-const STATUS_FILTERS = ["All", "Active", "Inactive"];
+import { EMPLOYEE_STATUS, EMPLOYEE_ROLE, DEPARTMENTS } from "../employee.constants";
 
 export default function EmployeeListScreen() {
   const router = useRouter();
   const { employees, loading, refreshing, refresh } = useEmployees();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStatus, setSelectedStatus] = useState("All");
-  const [selectedDepartment, setSelectedDepartment] = useState("All");
+  
+  const [filters, setFilters] = useState<{
+    search: string;
+    status: string;
+    department: string;
+    role: string;
+  }>({
+    search: "",
+    status: "",
+    department: "",
+    role: "",
+  });
+
+  const [sheetConfig, setSheetConfig] = useState<{
+    visible: boolean;
+    title: string;
+    options: ActionSheetOption[];
+  }>({
+    visible: false,
+    title: "",
+    options: [],
+  });
 
   const departments = useMemo(() => {
     const depts = Array.from(new Set(employees.map((e) => e.department).filter(Boolean))) as string[];
-    return ["All", ...depts];
+    return depts.length > 0 ? depts : Array.from(DEPARTMENTS);
   }, [employees]);
 
   const filteredEmployees = useMemo(() => {
     return employees.filter((emp) => {
       const matchesSearch =
-        emp.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.employee_id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        emp.department?.toLowerCase().includes(searchQuery.toLowerCase());
+        !filters.search ||
+        emp.full_name?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        emp.email?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        emp.employee_id?.toLowerCase().includes(filters.search.toLowerCase()) ||
+        emp.department?.toLowerCase().includes(filters.search.toLowerCase());
 
       const matchesStatus =
-        selectedStatus === "All" || emp.status === selectedStatus;
+        !filters.status || emp.status === filters.status;
 
       const matchesDepartment = 
-        selectedDepartment === "All" || emp.department === selectedDepartment;
+        !filters.department || emp.department === filters.department;
 
-      return matchesSearch && matchesStatus && matchesDepartment;
+      const matchesRole =
+        !filters.role || emp.role === filters.role;
+
+      return matchesSearch && matchesStatus && matchesDepartment && matchesRole;
     });
-  }, [employees, searchQuery, selectedStatus, selectedDepartment]);
+  }, [employees, filters]);
+
+  const handleReset = () => {
+    setFilters({
+      search: "",
+      status: "",
+      department: "",
+      role: "",
+    });
+  };
+
+  const openDepartmentSheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Departments", onPress: () => setFilters(prev => ({ ...prev, department: "" })) },
+      ...departments.map((dept) => ({
+        label: dept,
+        onPress: () => setFilters(prev => ({ ...prev, department: dept })),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Department", options });
+  };
+
+  const openRoleSheet = () => {
+    const options: ActionSheetOption[] = [
+      { label: "All Roles", onPress: () => setFilters(prev => ({ ...prev, role: "" })) },
+      ...Object.values(EMPLOYEE_ROLE).map((role) => ({
+        label: role,
+        onPress: () => setFilters(prev => ({ ...prev, role: role })),
+      })),
+    ];
+    setSheetConfig({ visible: true, title: "Select Role", options });
+  };
+
+  const activeFilterCount = [
+    filters.status,
+    filters.department,
+    filters.role,
+    filters.search,
+  ].filter(Boolean).length;
+
+  const quickChips = (
+    <>
+      <FilterChip
+        label="All Status"
+        isSelected={!filters.status}
+        onPress={() => setFilters(prev => ({ ...prev, status: "" }))}
+      />
+      {Object.values(EMPLOYEE_STATUS).map((st) => {
+        const isSelected = filters.status === st;
+        return (
+          <FilterChip
+            key={st}
+            label={st}
+            isSelected={isSelected}
+            onPress={() => setFilters(prev => ({ ...prev, status: st }))}
+          />
+        );
+      })}
+    </>
+  );
+
+  const expandedContent = (
+    <View style={{ gap: spacing.sm }}>
+      <View style={{ flexDirection: "row", gap: spacing.md }}>
+        <DropdownField
+          label="Department"
+          placeholder="All Departments"
+          value={filters.department}
+          onPress={openDepartmentSheet}
+          onClear={() => setFilters(prev => ({ ...prev, department: "" }))}
+          style={{ flex: 1 }}
+        />
+        <DropdownField
+          label="Role"
+          placeholder="All Roles"
+          value={filters.role}
+          onPress={openRoleSheet}
+          onClear={() => setFilters(prev => ({ ...prev, role: "" }))}
+          style={{ flex: 1 }}
+        />
+      </View>
+    </View>
+  );
 
   return (
     <Screen
@@ -50,74 +154,15 @@ export default function EmployeeListScreen() {
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader title="Employees" subtitle={`${employees.length} total staff members`} />
 
-        <SearchBar
-          value={searchQuery}
-          onChangeText={setSearchQuery}
+        <BaseFilterBar
+          searchQuery={filters.search}
+          onSearchChange={(text) => setFilters(prev => ({ ...prev, search: text }))}
+          searchPlaceholder="Search employees..."
+          activeFilterCount={activeFilterCount}
+          quickChips={quickChips}
+          expandedContent={expandedContent}
+          onReset={handleReset}
         />
-
-        {/* Status Filter Tabs */}
-        <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs, paddingHorizontal: 2 }}>
-            {STATUS_FILTERS.map((status) => {
-              const isSelected = selectedStatus === status;
-              return (
-                <TouchableOpacity
-                  key={status}
-                  onPress={() => setSelectedStatus(status)}
-                  style={{
-                    paddingHorizontal: spacing.lg,
-                    paddingVertical: spacing.xs,
-                    borderRadius: radius.full,
-                    backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
-                    borderWidth: 1,
-                    borderColor: isSelected ? adminColors.primary : adminColors.border,
-                  }}
-                >
-                  <AppText
-                    variant="caption"
-                    weight="600"
-                    color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                  >
-                    {status}
-                  </AppText>
-                </TouchableOpacity>
-              );
-            })}
-          </ScrollView>
-        </View>
-
-        {/* Department Filter Tabs */}
-        {departments.length > 1 && (
-          <View style={{ flexDirection: "row", gap: spacing.xs, marginBottom: spacing.xs }}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: spacing.xs, paddingHorizontal: 2 }}>
-              {departments.map((dept) => {
-                const isSelected = selectedDepartment === dept;
-                return (
-                  <TouchableOpacity
-                    key={dept}
-                    onPress={() => setSelectedDepartment(dept)}
-                    style={{
-                      paddingHorizontal: spacing.lg,
-                      paddingVertical: spacing.xs,
-                      borderRadius: radius.full,
-                      backgroundColor: isSelected ? adminColors.primary : adminColors.surface,
-                      borderWidth: 1,
-                      borderColor: isSelected ? adminColors.primary : adminColors.border,
-                    }}
-                  >
-                    <AppText
-                      variant="caption"
-                      weight="600"
-                      color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                    >
-                      {dept}
-                    </AppText>
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-          </View>
-        )}
 
         <EmployeeList
           employees={filteredEmployees}
@@ -131,6 +176,13 @@ export default function EmployeeListScreen() {
           }
         />
       </View>
+
+      <ActionSheet
+        visible={sheetConfig.visible}
+        onClose={() => setSheetConfig((prev) => ({ ...prev, visible: false }))}
+        title={sheetConfig.title}
+        options={sheetConfig.options}
+      />
     </Screen>
   );
 }
