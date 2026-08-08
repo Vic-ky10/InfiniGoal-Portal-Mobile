@@ -1,18 +1,3 @@
-/**
- * KanbanBoard.tsx — Mobile Kanban Board
- *
- * Ports the web KanbanBoard.tsx logic exactly to React Native.
- * Uses existing:
- *  - react-native-gesture-handler (LongPressGestureHandler + PanGestureHandler)
- *  - react-native-reanimated (animated ghost card)
- *  - task.service.ts (updateTaskStatus, deleteTask)
- *  - task.types.ts (TASK_STATUS, TASK_PRIORITY, TaskWithProject)
- *
- * Layout: horizontal ScrollView with 3 column lanes (same status set as web).
- * DnD: long-press activates a floating ghost card; drag to another column and release.
- * All permission rules match the web implementation exactly.
- */
-
 import React, { useState, useMemo, useRef, useCallback } from "react";
 import {
   View,
@@ -47,11 +32,11 @@ import { TaskWithProject, TASK_STATUS, TASK_PRIORITY } from "../task.types";
 import { deleteTask } from "../task.service";
 import TaskModal from "./TaskModal";
 
-// ─── Constants ───────────────────────────────────────────────────────────────
+//  Constants
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const COLUMN_WIDTH = Math.min(SCREEN_WIDTH * 0.78, 300);
-const COLUMN_GAP = spacing.md;
+const COLUMN_GAP = spacing.lg;
 
 const COLUMNS = [
   {
@@ -82,8 +67,6 @@ const COLUMNS = [
 
 type QuickFilter = "All" | "Mine" | "High" | "Overdue" | "Completed";
 
-// ─── Props ────────────────────────────────────────────────────────────────────
-
 interface KanbanBoardProps {
   tasks: TaskWithProject[];
   isAdmin: boolean;
@@ -91,46 +74,61 @@ interface KanbanBoardProps {
   onStatusChange: (
     taskId: string,
     newStatus: string,
-    actualHours?: number
+    actualHours?: number,
   ) => Promise<{ success: boolean; message?: string; error?: string }>;
   onTaskDeleted?: () => void;
   onTaskSaved?: () => void;
   onCardPress?: (task: TaskWithProject) => void;
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+//  helpers
 
 function isTaskOverdue(task: TaskWithProject): boolean {
   if (task.status === TASK_STATUS.COMPLETED || !task.due_date) return false;
   return new Date(task.due_date) < new Date();
 }
 
-function getPriorityColor(priority: string, danger: string, warning: string, success: string, secondary: string) {
+function getPriorityColor(
+  priority: string,
+  danger: string,
+  warning: string,
+  success: string,
+  secondary: string,
+) {
   switch (priority) {
-    case TASK_PRIORITY.URGENT: return danger;
-    case TASK_PRIORITY.HIGH:   return "#F97316";
-    case TASK_PRIORITY.MEDIUM: return warning;
-    case TASK_PRIORITY.LOW:    return success;
-    default:                   return secondary;
+    case TASK_PRIORITY.URGENT:
+      return danger;
+    case TASK_PRIORITY.HIGH:
+      return "#F97316";
+    case TASK_PRIORITY.MEDIUM:
+      return warning;
+    case TASK_PRIORITY.LOW:
+      return success;
+    default:
+      return secondary;
   }
 }
 
 function getPriorityIcon(priority: string) {
   switch (priority) {
-    case TASK_PRIORITY.URGENT: return "🔴";
-    case TASK_PRIORITY.HIGH:   return "🟠";
-    case TASK_PRIORITY.MEDIUM: return "🟡";
-    default:                   return "🟢";
+    case TASK_PRIORITY.URGENT:
+      return "🔴";
+    case TASK_PRIORITY.HIGH:
+      return "🟠";
+    case TASK_PRIORITY.MEDIUM:
+      return "🟡";
+    default:
+      return "🟢";
   }
 }
 
 function getProgressPct(status: string): number {
-  if (status === TASK_STATUS.COMPLETED)  return 100;
+  if (status === TASK_STATUS.COMPLETED) return 100;
   if (status === TASK_STATUS.IN_PROGRESS) return 50;
   return 0;
 }
 
-// ─── Draggable Task Card ──────────────────────────────────────────────────────
+//  Draggable Task Card
 
 interface DraggableCardProps {
   task: TaskWithProject;
@@ -154,8 +152,8 @@ function DraggableCard({
 
   const translateX = useSharedValue(0);
   const translateY = useSharedValue(0);
-  const scale     = useSharedValue(1);
-  const opacity   = useSharedValue(1);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
   const isDragging = useSharedValue(false);
 
   const canDrag = useCallback(() => {
@@ -163,7 +161,8 @@ function DraggableCard({
     if (
       task.project?.status === "Completed" ||
       task.project?.status === "Cancelled"
-    ) return false;
+    )
+      return false;
     if (!profileId || task.member?.profile_id !== profileId) return false;
     return true;
   }, [isAdmin, task, profileId]);
@@ -172,7 +171,7 @@ function DraggableCard({
     (absX: number) => {
       onDropToColumn(task.id, absX);
     },
-    [task.id, onDropToColumn]
+    [task.id, onDropToColumn],
   );
 
   const longPressGesture = Gesture.LongPress()
@@ -222,7 +221,7 @@ function DraggableCard({
 
   return (
     <GestureDetector gesture={composed}>
-      <Animated.View style={[animStyle, { marginBottom: spacing.sm }]}>
+      <Animated.View style={[animStyle, { marginBottom: spacing.md }]}>
         <TouchableOpacity
           activeOpacity={0.85}
           onPress={onPress}
@@ -236,50 +235,64 @@ function DraggableCard({
             },
           ]}
         >
-          {/* Header: code + priority */}
           <View style={styles.cardHeader}>
             <AppText
               variant="caption"
               weight="700"
               color={colors.textSecondary}
-              style={{ fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace" }}
+              style={{
+                fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+              }}
             >
-              {task.task_code}
+              {task.project?.project_name}
             </AppText>
-            <View style={[styles.priorityBadge, { backgroundColor: `${getPriorityColor(task.priority, "#EF4444", "#F59E0B", "#22C55E", "#64748B")}15` }]}>
+            <View
+              style={[
+                styles.priorityBadge,
+                {
+                  backgroundColor: `${getPriorityColor(task.priority, "#EF4444", "#F59E0B", "#22C55E", "#64748B")}15`,
+                },
+              ]}
+            >
               <AppText variant="caption" weight="700">
                 {getPriorityIcon(task.priority)} {task.priority}
               </AppText>
             </View>
           </View>
 
-          {/* Title */}
           <AppText
             weight="700"
             color={colors.text}
             numberOfLines={2}
-            style={{ marginTop: spacing.xs, lineHeight: 18, fontSize: 13 }}
+            style={{ marginTop: spacing.sm, lineHeight: 18, fontSize: 13 }}
           >
             {task.title}
           </AppText>
 
-          {/* Description snippet */}
           {task.description ? (
             <AppText
               variant="caption"
               color={colors.textSecondary}
               numberOfLines={1}
-              style={{ marginTop: 2, lineHeight: 16 }}
+              style={{ marginTop: spacing.xs, lineHeight: 16 }}
             >
               {task.description}
             </AppText>
           ) : null}
 
           {/* Progress bar */}
-          <View style={{ marginTop: spacing.sm }}>
+          <View style={{ marginTop: spacing.md }}>
             <View style={styles.progressHeader}>
-              <AppText variant="caption" color={colors.textSecondary}>Progress</AppText>
-              <AppText variant="caption" weight="700" color={colors.textSecondary}>{progress}%</AppText>
+              <AppText variant="caption" color={colors.textSecondary}>
+                Progress
+              </AppText>
+              <AppText
+                variant="caption"
+                weight="700"
+                color={colors.textSecondary}
+              >
+                {progress}%
+              </AppText>
             </View>
             <View style={styles.progressTrack}>
               <View
@@ -291,8 +304,8 @@ function DraggableCard({
                       task.status === TASK_STATUS.COMPLETED
                         ? "#22C55E"
                         : task.status === TASK_STATUS.IN_PROGRESS
-                        ? "#2563EB"
-                        : "#CBD5E1",
+                          ? "#2563EB"
+                          : "#CBD5E1",
                   },
                 ]}
               />
@@ -300,9 +313,16 @@ function DraggableCard({
           </View>
 
           {/* Assignee */}
-          <View style={[styles.assigneePill, { backgroundColor: colors.surface }]}>
+          <View
+            style={[styles.assigneePill, { backgroundColor: colors.surface }]}
+          >
             <AppText variant="caption">👤</AppText>
-            <AppText variant="caption" weight="600" color={colors.text} numberOfLines={1}>
+            <AppText
+              variant="caption"
+              weight="600"
+              color={colors.text}
+              numberOfLines={1}
+            >
               {assigneeName}
             </AppText>
           </View>
@@ -331,7 +351,11 @@ function DraggableCard({
             {task.estimated_hours ? (
               <View style={styles.hoursChip}>
                 <Feather name="clock" size={10} color={colors.textSecondary} />
-                <AppText variant="caption" weight="700" color={colors.textSecondary}>
+                <AppText
+                  variant="caption"
+                  weight="700"
+                  color={colors.textSecondary}
+                >
                   {task.status === TASK_STATUS.COMPLETED
                     ? `${task.actual_hours ?? task.estimated_hours}h`
                     : `${task.estimated_hours}h`}
@@ -345,7 +369,7 @@ function DraggableCard({
   );
 }
 
-// ─── Column Component ─────────────────────────────────────────────────────────
+//  Column Component 
 
 interface ColumnProps {
   col: (typeof COLUMNS)[number];
@@ -394,10 +418,19 @@ function Column({
       <View style={styles.columnHeader}>
         <View style={styles.columnTitleRow}>
           <AppText style={{ fontSize: 15 }}>{col.emoji}</AppText>
-          <AppText weight="700" color={col.accentColor} style={{ fontSize: 13 }}>
+          <AppText
+            weight="700"
+            color={col.accentColor}
+            style={{ fontSize: 13 }}
+          >
             {col.title}
           </AppText>
-          <View style={[styles.countBadge, { backgroundColor: `${col.accentColor}20` }]}>
+          <View
+            style={[
+              styles.countBadge,
+              { backgroundColor: `${col.accentColor}20` },
+            ]}
+          >
             <AppText variant="caption" weight="700" color={col.accentColor}>
               {tasks.length}
             </AppText>
@@ -423,7 +456,9 @@ function Column({
       >
         {tasks.length === 0 ? (
           <View style={styles.emptyColumn}>
-            <AppText style={{ fontSize: 24, marginBottom: spacing.xs }}>🎉</AppText>
+            <AppText style={{ fontSize: 24, marginBottom: spacing.xs }}>
+              🎉
+            </AppText>
             <AppText
               variant="caption"
               weight="700"
@@ -450,18 +485,20 @@ function Column({
                 onPress={() => onCardPress(task)}
                 onDropToColumn={onDropToColumn}
               />
-              {/* Admin-only delete button on completed tasks */}
-              {isAdmin && task.status === TASK_STATUS.COMPLETED && onDeleteTask && (
-                <TouchableOpacity
-                  onPress={() => onDeleteTask(task)}
-                  style={[styles.deleteBtn, { marginBottom: spacing.sm }]}
-                >
-                  <Feather name="trash-2" size={11} color="#EF4444" />
-                  <AppText variant="caption" weight="700" color="#EF4444">
-                    Delete
-                  </AppText>
-                </TouchableOpacity>
-              )}
+        
+              {isAdmin &&
+                task.status === TASK_STATUS.COMPLETED &&
+                onDeleteTask && (
+                  <TouchableOpacity
+                    onPress={() => onDeleteTask(task)}
+                    style={[styles.deleteBtn, { marginBottom: spacing.sm }]}
+                  >
+                    <Feather name="trash-2" size={11} color="#EF4444" />
+                    <AppText variant="caption" weight="700" color="#EF4444">
+                      Delete
+                    </AppText>
+                  </TouchableOpacity>
+                )}
             </View>
           ))
         )}
@@ -470,8 +507,7 @@ function Column({
   );
 }
 
-
-// ─── Main KanbanBoard ─────────────────────────────────────────────────────────
+//  KanbanBoard 
 
 export default function KanbanBoard({
   tasks,
@@ -493,24 +529,28 @@ export default function KanbanBoard({
   const [actualHoursInput, setActualHoursInput] = useState<string>("0");
 
   // Delete confirm state
-  const [deleteConfirm, setDeleteConfirm] = useState<TaskWithProject | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<TaskWithProject | null>(
+    null,
+  );
   const [deleting, setDeleting] = useState(false);
 
   // Create task modal
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // Column layout tracking for DnD hit detection
-  const columnPositions = useRef<Record<string, { x: number; width: number }>>({});
+  const columnPositions = useRef<Record<string, { x: number; width: number }>>(
+    {},
+  );
   const scrollOffsetRef = useRef<number>(0);
 
   const handleColumnLayout = useCallback(
     (colId: string, x: number, width: number) => {
       columnPositions.current[colId] = { x, width };
     },
-    []
+    [],
   );
 
-  // ── Quick filter logic (mirrors web exactly) ──────────────────────────────
+
   const filteredTasks = useMemo(() => {
     const today = new Date();
     return tasks.filter((task) => {
@@ -523,7 +563,8 @@ export default function KanbanBoard({
         )
           return false;
       } else if (quickFilter === "Overdue") {
-        if (task.status === TASK_STATUS.COMPLETED || !task.due_date) return false;
+        if (task.status === TASK_STATUS.COMPLETED || !task.due_date)
+          return false;
         if (new Date(task.due_date) >= today) return false;
       } else if (quickFilter === "Completed") {
         if (task.status !== TASK_STATUS.COMPLETED) return false;
@@ -532,11 +573,11 @@ export default function KanbanBoard({
     });
   }, [tasks, quickFilter, profileId]);
 
-  // ── Status change executor (declared first so it can be referenced below) ──
+
   const executeStatusChange = async (
     taskId: string,
     status: string,
-    hours?: number
+    hours?: number,
   ) => {
     const response = await onStatusChange(taskId, status, hours);
     if (response.success) {
@@ -546,7 +587,7 @@ export default function KanbanBoard({
     }
   };
 
-  // ── Drop handler — mirrors web exactly ───────────────────────────────────
+  //  drop handler 
   const handleDropToColumn = useCallback(
     async (taskId: string, absX: number) => {
       const scrollOffset = scrollOffsetRef.current;
@@ -565,13 +606,15 @@ export default function KanbanBoard({
       if (!task) return;
       if (task.status === targetStatus) return;
 
-      // ── Employee permission checks (identical to web) ──────────────────
+     
       if (!isAdmin) {
         if (
           task.project?.status === "Completed" ||
           task.project?.status === "Cancelled"
         ) {
-          toast.error("This project is completed/cancelled. Tasks are read-only.");
+          toast.error(
+            "This project is completed/cancelled. Tasks are read-only.",
+          );
           return;
         }
         if (!profileId || task.member?.profile_id !== profileId) {
@@ -598,9 +641,11 @@ export default function KanbanBoard({
         }
       }
 
-      // ── Completion confirmation (same as web) ─────────────────────────
+    
       if (targetStatus === TASK_STATUS.COMPLETED) {
-        setActualHoursInput(String(task.actual_hours ?? task.estimated_hours ?? 0));
+        setActualHoursInput(
+          String(task.actual_hours ?? task.estimated_hours ?? 0),
+        );
         setCompletionConfirm({ task, targetStatus });
         return;
       }
@@ -608,9 +653,8 @@ export default function KanbanBoard({
       await executeStatusChange(taskId, targetStatus);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tasks, isAdmin, profileId, onStatusChange]
+    [tasks, isAdmin, profileId, onStatusChange],
   );
-
 
   const handleConfirmCompletion = async () => {
     if (!completionConfirm) return;
@@ -619,7 +663,7 @@ export default function KanbanBoard({
     await executeStatusChange(
       task.id,
       targetStatus,
-      parseFloat(actualHoursInput) || 0
+      parseFloat(actualHoursInput) || 0,
     );
   };
 
@@ -640,7 +684,7 @@ export default function KanbanBoard({
     }
   };
 
-  // ── Quick filter tabs ────────────────────────────────────────────────────
+  //  Quick filter tabs 
   const QUICK_FILTERS: { id: QuickFilter; label: string }[] = [
     { id: "All", label: "All" },
     { id: "Mine", label: "My Tasks" },
@@ -652,7 +696,7 @@ export default function KanbanBoard({
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <View style={{ flex: 1 }}>
-        {/* ── Quick Filters ─────────────────────────────────────────────── */}
+       
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -668,8 +712,12 @@ export default function KanbanBoard({
                 style={[
                   styles.filterPill,
                   {
-                    backgroundColor: active ? adminColors.primary : adminColors.surface,
-                    borderColor: active ? adminColors.primary : adminColors.border,
+                    backgroundColor: active
+                      ? adminColors.primary
+                      : adminColors.surface,
+                    borderColor: active
+                      ? adminColors.primary
+                      : adminColors.border,
                   },
                 ]}
               >
@@ -705,7 +753,7 @@ export default function KanbanBoard({
           )}
         </ScrollView>
 
-        {/* ── Kanban Columns ────────────────────────────────────────────── */}
+      
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -741,7 +789,7 @@ export default function KanbanBoard({
           })}
         </ScrollView>
 
-        {/* ── Completion Confirmation Modal ─────────────────────────────── */}
+   
         <Modal
           visible={!!completionConfirm}
           transparent
@@ -769,7 +817,9 @@ export default function KanbanBoard({
               >
                 Marking{" "}
                 <AppText weight="700" color={adminColors.text}>
-                  {'"'}{completionConfirm?.task.title}{'"'}
+                  {'"'}
+                  {completionConfirm?.task.title}
+                  {'"'}
                 </AppText>{" "}
                 as finished.
               </AppText>
@@ -778,14 +828,21 @@ export default function KanbanBoard({
               <View
                 style={[
                   styles.hoursInputContainer,
-                  { backgroundColor: adminColors.surface, borderColor: adminColors.border },
+                  {
+                    backgroundColor: adminColors.surface,
+                    borderColor: adminColors.border,
+                  },
                 ]}
               >
                 <AppText
                   variant="caption"
                   weight="700"
                   color={adminColors.textSecondary}
-                  style={{ marginBottom: spacing.xs, textTransform: "uppercase", letterSpacing: 0.5 }}
+                  style={{
+                    marginBottom: spacing.xs,
+                    textTransform: "uppercase",
+                    letterSpacing: 0.5,
+                  }}
                 >
                   Log Actual Hours Worked
                 </AppText>
@@ -795,7 +852,11 @@ export default function KanbanBoard({
                   keyboardType="decimal-pad"
                   style={[
                     styles.hoursInput,
-                    { backgroundColor: "#FFFFFF", borderColor: adminColors.border, color: adminColors.text },
+                    {
+                      backgroundColor: "#FFFFFF",
+                      borderColor: adminColors.border,
+                      color: adminColors.text,
+                    },
                   ]}
                 />
               </View>
@@ -804,7 +865,14 @@ export default function KanbanBoard({
               <View style={styles.modalActions}>
                 <TouchableOpacity
                   onPress={() => setCompletionConfirm(null)}
-                  style={[styles.modalBtn, { backgroundColor: adminColors.surface, borderColor: adminColors.border, borderWidth: 1 }]}
+                  style={[
+                    styles.modalBtn,
+                    {
+                      backgroundColor: adminColors.surface,
+                      borderColor: adminColors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
                 >
                   <AppText weight="600" color={adminColors.textSecondary}>
                     Cancel
@@ -824,7 +892,7 @@ export default function KanbanBoard({
           </View>
         </Modal>
 
-        {/* ── Delete Confirmation Modal ──────────────────────────────────── */}
+        {/*  Delete Confirmation Modal  */}
         <Modal
           visible={!!deleteConfirm}
           transparent
@@ -856,7 +924,14 @@ export default function KanbanBoard({
                 <TouchableOpacity
                   onPress={() => setDeleteConfirm(null)}
                   disabled={deleting}
-                  style={[styles.modalBtn, { backgroundColor: adminColors.surface, borderColor: adminColors.border, borderWidth: 1 }]}
+                  style={[
+                    styles.modalBtn,
+                    {
+                      backgroundColor: adminColors.surface,
+                      borderColor: adminColors.border,
+                      borderWidth: 1,
+                    },
+                  ]}
                 >
                   <AppText weight="600" color={adminColors.textSecondary}>
                     Cancel
@@ -865,7 +940,10 @@ export default function KanbanBoard({
                 <TouchableOpacity
                   onPress={handleConfirmDelete}
                   disabled={deleting}
-                  style={[styles.modalBtn, { backgroundColor: "#EF4444", opacity: deleting ? 0.6 : 1 }]}
+                  style={[
+                    styles.modalBtn,
+                    { backgroundColor: "#EF4444", opacity: deleting ? 0.6 : 1 },
+                  ]}
                 >
                   <AppText weight="700" color="#FFFFFF">
                     {deleting ? "Deleting..." : "Delete"}
@@ -896,9 +974,9 @@ export default function KanbanBoard({
 const styles = StyleSheet.create({
   filterRow: {
     flexDirection: "row",
-    gap: spacing.xs,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: spacing.xs, // Reduced vertical padding from sm (8) to xs (4)
+    gap: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     alignItems: "center",
   },
   filterPill: {
@@ -913,19 +991,20 @@ const styles = StyleSheet.create({
   columnsContainer: {
     flexDirection: "row",
     gap: COLUMN_GAP,
-    paddingHorizontal: spacing.sm, // Reduced horizontal padding from md (12) to sm (8)
-    paddingBottom: spacing.md, // Reduced bottom spacing from xl (20) to md (12)
-    alignItems: "stretch", // Stretches columns to full vertical height of scrollview
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
+    alignItems: "stretch",
   },
   column: {
-    borderRadius: radius.lg, // Cleaner radius for tighter layout
-    padding: spacing.sm, // Reduced internal column padding from md (12) to sm (8)
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
   columnHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.sm, // Reduced header margin from md (12) to sm (8)
+    marginBottom: spacing.md,
   },
   columnTitleRow: {
     flexDirection: "row",
@@ -955,9 +1034,9 @@ const styles = StyleSheet.create({
     marginTop: spacing.xs,
   },
   card: {
-    borderRadius: radius.md, // Clean border radius
-    padding: spacing.sm, // Reduced card padding from md (12) to sm (8) to save vertical space
-    borderWidth: 1,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    borderWidth: 1.5,
     ...shadows.sm,
   },
   cardHeader: {
@@ -994,7 +1073,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: "#E2E8F0",
-    marginTop: spacing.sm,
+    marginTop: spacing.md,
     alignSelf: "flex-start",
     maxWidth: "100%",
   },
@@ -1002,8 +1081,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginTop: spacing.sm,
-    paddingTop: spacing.sm,
+    marginTop: spacing.md,
+    paddingTop: spacing.md,
     borderTopWidth: 1,
     borderTopColor: "#F1F5F9",
   },
@@ -1036,7 +1115,7 @@ const styles = StyleSheet.create({
   // Modals
   modalBackdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    backgroundColor: "transparent",
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.xl,

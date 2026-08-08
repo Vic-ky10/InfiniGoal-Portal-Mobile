@@ -1,11 +1,13 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState, ConfirmModal } from "@/components/common";
 import { adminColors, spacing, radius, shadows } from "@/theme";
 import { useCustomers, useDeleteCustomer, useSalesAreas } from "@/features/sales/hooks/useSales";
+import { useEmployees } from "@/features/employee/hooks/useEmployees";
 import { Customer } from "@/features/sales/sales.types";
 import { CustomerModal } from "@/features/sales/components";
 import { toast } from "@/store/toast.store";
@@ -15,7 +17,10 @@ const STATUS_FILTERS = ["All", "Active", "Inactive", "Blocked"];
 export default function CustomersScreen() {
   const { data: customers = [], isLoading, isError, refetch, isRefetching } = useCustomers();
   const { data: salesAreas = [] } = useSalesAreas();
+  const { employees } = useEmployees();
   const deleteMutation = useDeleteCustomer();
+
+  const params = useLocalSearchParams<{ customerId?: string; followupId?: string }>();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
@@ -23,10 +28,31 @@ export default function CustomersScreen() {
   // Modals state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [modalTab, setModalTab] = useState<"info" | "purchases" | "followups">("info");
+  const [highlightFollowupId, setHighlightFollowupId] = useState<string | null>(null);
   
   // Delete confirm state
   const [confirmDeleteVisible, setConfirmDeleteVisible] = useState(false);
   const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+
+  // Automatically open CustomerModal when deep-link customerId/followupId params are present
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (params.customerId && customers.length > 0) {
+      const customer = customers.find((c) => c.id === params.customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+        setModalTab("followups");
+        if (params.followupId) {
+          setHighlightFollowupId(params.followupId);
+        } else {
+          setHighlightFollowupId(null);
+        }
+        setModalVisible(true);
+      }
+    }
+  }, [params.customerId, params.followupId, customers]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Filtered List
   const filteredCustomers = useMemo(() => {
@@ -45,11 +71,13 @@ export default function CustomersScreen() {
 
   const handleCreate = () => {
     setSelectedCustomer(null);
+    setModalTab("info");
     setModalVisible(true);
   };
 
   const handleEdit = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setModalTab("info");
     setModalVisible(true);
   };
 
@@ -89,17 +117,26 @@ export default function CustomersScreen() {
     const area = salesAreas.find((a) => a.id === item.sales_area_id);
 
     return (
-      <Card
-        style={{
-          borderWidth: 1,
-          borderColor: adminColors.border,
-          borderRadius: radius.lg,
-          ...shadows.sm,
-          padding: spacing.md,
-          backgroundColor: adminColors.background,
-          marginBottom: spacing.md,
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={() => {
+          setSelectedCustomer(item);
+          setModalTab("followups");
+          setHighlightFollowupId(null);
+          setModalVisible(true);
         }}
       >
+        <Card
+          style={{
+            borderWidth: 1,
+            borderColor: adminColors.border,
+            borderRadius: radius.lg,
+            ...shadows.sm,
+            padding: spacing.md,
+            backgroundColor: adminColors.background,
+            marginBottom: spacing.md,
+          }}
+        >
         {/* HEADER */}
         <View
           style={{
@@ -149,10 +186,29 @@ export default function CustomersScreen() {
             </View>
           )}
 
-          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
-            <Feather name="map-pin" size={12} color={adminColors.textSecondary} />
-            <AppText variant="caption" color={adminColors.textSecondary}>
-              Area: {area?.area_name || "No Area Assigned"}
+          {/* Representative */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <Feather name="user" size={12} color={adminColors.textSecondary} />
+              <AppText variant="caption" color={adminColors.textSecondary}>
+                Representative
+              </AppText>
+            </View>
+            <AppText variant="body" weight="700" color={adminColors.text} style={{ fontSize: 14 }}>
+              {employees.find((e) => e.id === item.assigned_employee_id)?.full_name || "—"}
+            </AppText>
+          </View>
+
+          {/* Sales Area */}
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <Feather name="map-pin" size={12} color={adminColors.textSecondary} />
+              <AppText variant="caption" color={adminColors.textSecondary}>
+                Sales Area
+              </AppText>
+            </View>
+            <AppText variant="body" weight="700" color={adminColors.text} style={{ fontSize: 14 }}>
+              {area?.area_name || "—"}
             </AppText>
           </View>
 
@@ -186,8 +242,9 @@ export default function CustomersScreen() {
               <Feather name="trash-2" size={14} color={adminColors.danger} />
             </TouchableOpacity>
           </View>
-        </View>
-      </Card>
+          </View>
+        </Card>
+      </TouchableOpacity>
     );
   };
 
@@ -260,6 +317,8 @@ export default function CustomersScreen() {
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
           customerToEdit={selectedCustomer}
+          initialTab={modalTab}
+          highlightFollowupId={highlightFollowupId}
         />
 
         {/* Confirmation Modal */}

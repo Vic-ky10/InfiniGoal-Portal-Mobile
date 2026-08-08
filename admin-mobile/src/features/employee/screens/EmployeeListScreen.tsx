@@ -122,7 +122,7 @@ export default function EmployeeListScreen() {
   );
 
   const expandedContent = (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <DropdownField
           label="Department"

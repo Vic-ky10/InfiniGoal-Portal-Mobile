@@ -110,13 +110,41 @@ export function getNotificationRoute(notification: any, isAdmin: boolean): strin
     type.includes("purchase") ||
     title.includes("purchase") ||
     message.includes("purchase") ||
-    actionUrl.includes("sales") ||
+    (actionUrl.includes("sales") && !actionUrl.includes("customerid")) ||
     title.includes("incentive eligibility")
   ) {
     if (refId) {
       return `${prefix}/sales/purchases?purchaseId=${refId}`;
     }
     return `${prefix}/sales/purchases`;
+  }
+
+  // 3b. Customer Followups
+  if (
+    type.includes("followup") ||
+    type.includes("follow-up") ||
+    title.includes("follow-up") ||
+    title.includes("followup") ||
+    message.includes("follow-up") ||
+    message.includes("followup") ||
+    actionUrl.includes("customerid=")
+  ) {
+    let customerId = "";
+    let followupId = "";
+    if (notification.action_url) {
+      const matchCust = notification.action_url.match(/customerId=([^&]+)/i);
+      const matchFollow = notification.action_url.match(/followupId=([^&]+)/i);
+      if (matchCust) customerId = matchCust[1];
+      if (matchFollow) followupId = matchFollow[1];
+    }
+    if (!customerId && refId) {
+      customerId = refId;
+    }
+    const queryParams = [];
+    if (customerId) queryParams.push(`customerId=${customerId}`);
+    if (followupId) queryParams.push(`followupId=${followupId}`);
+    const queryStr = queryParams.length > 0 ? `?${queryParams.join("&")}` : "";
+    return `${prefix}/sales/customers${queryStr}`;
   }
 
   // 4. Expense

@@ -474,7 +474,7 @@ export default function SettingsScreen() {
             <AppText variant="body" weight="500">{profile?.experience_years ? `${profile.experience_years} Years` : "--"}</AppText>
           </View>
 
-          {/* Emergency Contact */}
+         
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Feather name="phone-call" size={16} color={adminColors.primary} style={{ marginRight: spacing.md }} />
@@ -484,13 +484,13 @@ export default function SettingsScreen() {
           </View>
         </Card>
 
-        {/* Section 4: Account Information */}
+       
         <Card style={{ gap: spacing.md, borderWidth: 1, borderColor: adminColors.border, ...shadows.sm }}>
           <AppText variant="h3" weight="700" style={{ marginBottom: spacing.xs }}>
             Account Information
           </AppText>
 
-          {/* Role */}
+        
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Feather name="shield" size={16} color={adminColors.primary} style={{ marginRight: spacing.md }} />
@@ -501,7 +501,7 @@ export default function SettingsScreen() {
             <Badge label={profile?.role ?? "Admin"} color={adminColors.primary} variant="subtle" />
           </View>
 
-          {/* Status */}
+        
           <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between" }}>
             <View style={{ flexDirection: "row", alignItems: "center" }}>
               <Feather name="activity" size={16} color={adminColors.primary} style={{ marginRight: spacing.md }} />
@@ -535,7 +535,7 @@ export default function SettingsScreen() {
           </View> */}
         </Card>
 
-        {/* Sign Out Section */}
+      
         <TouchableOpacity
           disabled={loggingOut}
           onPress={handleLogout}
@@ -567,7 +567,7 @@ export default function SettingsScreen() {
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              backgroundColor: "transparent",
               justifyContent: "flex-end",
             }}
           >
@@ -621,7 +621,7 @@ export default function SettingsScreen() {
                   mode="date"
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: adminColors.primary }}>Address</AppText>
+                <AppText variant="h3" weight="700" style={{  color: adminColors.primary }}>Address</AppText>
                 <Input
                   label="Current Address"
                   value={editAddress}
@@ -629,7 +629,7 @@ export default function SettingsScreen() {
                   placeholder="Your full address.."
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: adminColors.primary }}>Education</AppText>
+                <AppText variant="h3" weight="700" style={{  color: adminColors.primary }}>Education</AppText>
                 <Input
                   label="Qualification"
                   value={editQualification}
@@ -653,7 +653,7 @@ export default function SettingsScreen() {
                   keyboardType="numeric"
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: adminColors.primary }}>Emergency Contact</AppText>
+                <AppText variant="h3" weight="700" style={{  color: adminColors.primary }}>Emergency Contact</AppText>
                 <Input
                   label="Emergency Contact Number"
                   value={editEmergencyContact}

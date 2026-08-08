@@ -106,7 +106,7 @@ export default function AttendanceFilterBar({
   );
 
   const expandedContent = (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: spacing.md }}>
       {isAdmin ? (
         <View style={{ flexDirection: "row", gap: spacing.md }}>
           <DropdownField
@@ -124,7 +124,7 @@ export default function AttendanceFilterBar({
             mode="date"
             onChange={(val) => onFiltersChange({ ...filters, date: val })}
             onClear={() => onFiltersChange({ ...filters, date: undefined })}
-            style={{ flex: 1 }}
+            style={{ flex: 1, marginBottom: 0 }}
           />
         </View>
       ) : (
@@ -136,7 +136,7 @@ export default function AttendanceFilterBar({
             mode="date"
             onChange={(val) => onFiltersChange({ ...filters, date: val })}
             onClear={() => onFiltersChange({ ...filters, date: undefined })}
-            style={{ flex: 1 }}
+            style={{ flex: 1, marginBottom: 0 }}
           />
           <View style={{ flex: 1 }} />
         </View>

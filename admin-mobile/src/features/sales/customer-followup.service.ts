@@ -43,7 +43,7 @@ export async function createCustomerFollowup(
     .from("customer_followups")
     .insert({
       customer_id: followup.customer_id,
-      followup_date: followup.followup_date,
+      followup_date: followup.followup_date || new Date().toISOString(),
       followup_type: followup.followup_type,
       remarks: followup.remarks || null,
       next_followup_date: followup.next_followup_date || null,
@@ -74,7 +74,7 @@ export async function updateCustomerFollowup(
     .from("customer_followups")
     .update({
       customer_id: followup.customer_id,
-      followup_date: followup.followup_date,
+      followup_date: followup.followup_date || new Date().toISOString(),
       followup_type: followup.followup_type,
       remarks: followup.remarks || null,
       next_followup_date: followup.next_followup_date || null,

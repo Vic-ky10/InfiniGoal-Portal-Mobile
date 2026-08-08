@@ -97,7 +97,7 @@ export default function ProjectFilterBar({
   );
 
   const expandedContent = (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <DropdownField
           label="Priority"
@@ -114,7 +114,7 @@ export default function ProjectFilterBar({
           mode="date"
           onChange={(val) => onFiltersChange({ ...filters, date: val })}
           onClear={() => onFiltersChange({ ...filters, date: undefined })}
-          style={{ flex: 1 }}
+          style={{ flex: 1, marginBottom: 0 }}
         />
       </View>
     </View>

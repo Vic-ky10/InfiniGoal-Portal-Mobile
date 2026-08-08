@@ -127,9 +127,11 @@ export default function AnnouncementCard({
       subtitle: "Are you sure you want to delete this announcement?",
       options: [
         {
-          label: "Delete",
+          
+          label: " Are You sure about Delete then touch",
+         
           isDestructive: true,
-          icon: "trash-2",
+        
           onPress: () => onDelete(announcement.id),
         },
       ],

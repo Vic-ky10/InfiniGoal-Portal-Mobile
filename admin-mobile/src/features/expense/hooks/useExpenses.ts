@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase/client";
 import {
   ExpenseFilters,
@@ -17,6 +17,9 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Unique channel name per hook instance prevents "callbacks after subscribe()"
+  // when multiple screens mount this hook or React re-runs effects.
+  const channelName = useRef(`expenses-hook-${Math.random().toString(36).substring(2, 9)}`);
 
   const fetchExpenses = useCallback(async (showRefresh = false) => {
     try {
@@ -38,7 +41,7 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
     fetchExpenses();
 
     const channel = supabase
-      .channel("realtime-expenses")
+      .channel(channelName.current)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "expenses" },

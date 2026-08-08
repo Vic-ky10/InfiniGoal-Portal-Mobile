@@ -69,7 +69,7 @@ export default function NotificationDetailModal({
         onPress={onClose}
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.45)",
+          backgroundColor: "transparent",
           justifyContent: "center",
           padding: spacing.lg,
           ...Platform.select({

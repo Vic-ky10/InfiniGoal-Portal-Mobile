@@ -118,7 +118,7 @@ export default function IncentiveFilterBar({
   );
 
   const expandedContent = (
-    <View style={{ gap: spacing.sm }}>
+    <View style={{ gap: spacing.md }}>
       <View style={{ flexDirection: "row", gap: spacing.md }}>
         <DropdownField
           label="Incentive Type"
@@ -145,7 +145,7 @@ export default function IncentiveFilterBar({
           mode="date"
           onChange={(val) => onFiltersChange({ ...filters, date: val })}
           onClear={() => onFiltersChange({ ...filters, date: undefined })}
-          style={{ flex: 1 }}
+          style={{ flex: 1, marginBottom: 0 }}
         />
         <View style={{ flex: 1 }} />
       </View>

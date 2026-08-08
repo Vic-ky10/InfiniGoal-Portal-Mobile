@@ -172,7 +172,7 @@ export default function ActionSheet({
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.45)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   sheet: {

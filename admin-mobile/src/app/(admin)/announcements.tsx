@@ -98,10 +98,10 @@ export default function AnnouncementsScreen() {
           }
         />
 
-        {/* Enhanced Announcement Filter Bar */}
+      
         <AnnouncementFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
-        {/* Announcements List */}
+       
         <FlatList
           data={filteredAnnouncements}
           keyExtractor={(item) => item.id}

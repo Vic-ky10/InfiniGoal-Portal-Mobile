@@ -337,7 +337,7 @@ export default function PurchaseModal({ visible, onClose, purchaseToEdit, showAd
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   content: {

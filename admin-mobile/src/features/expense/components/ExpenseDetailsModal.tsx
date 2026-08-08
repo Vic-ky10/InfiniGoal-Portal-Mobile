@@ -8,11 +8,10 @@ import {
   StyleSheet,
   Image,
   Linking,
-  Platform,
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Badge, Button, Input, Avatar } from "@/components/ui";
+import { AppText, Badge, Button, Input } from "@/components/ui";
 import { useThemeColors, radius, spacing, shadows } from "@/theme";
 import { ExpenseWithEmployee, ExpenseStatus } from "../expense.types";
 import { getCategoryIconName, formatSmartExpenseTitle } from "../utils/expenseCategoryIcon";
@@ -45,7 +44,6 @@ export default function ExpenseDetailsModal({
 
   const iconName = getCategoryIconName(expense.expense_type);
   const smartTitle = formatSmartExpenseTitle(expense.expense_type, expense.expense_date);
-  const employeeName = expense.employee?.full_name || "Employee";
 
   const isPdf =
     expense.receipt_type?.includes("pdf") ||
@@ -468,7 +466,7 @@ export default function ExpenseDetailsModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   modalCard: {

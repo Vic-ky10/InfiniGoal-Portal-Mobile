@@ -300,6 +300,7 @@ export default function EmployeeExpensesScreen() {
             refreshing={refreshing}
             onRefresh={() => loadData(true)}
             showsVerticalScrollIndicator={false}
+
             ListEmptyComponent={
               <ExpenseEmptyState
                 onCreatePress={openCreateModal}
@@ -313,7 +314,7 @@ export default function EmployeeExpensesScreen() {
 
         {/* Create / Edit Expense Modal */}
         <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={() => setModalVisible(false)}>
-          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.5)", justifyContent: "flex-end" }}>
+          <View style={{ flex: 1, backgroundColor: "transparent", justifyContent: "flex-end" }}>
             <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.lg, maxHeight: "90%" }}>
               <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.md }}>
                 <AppText variant="h2" weight="700">

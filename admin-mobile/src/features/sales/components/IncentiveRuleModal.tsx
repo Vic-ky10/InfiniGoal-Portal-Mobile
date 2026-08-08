@@ -212,7 +212,7 @@ export default function IncentiveRuleModal({ visible, onClose, ruleToEdit }: Pro
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   content: {

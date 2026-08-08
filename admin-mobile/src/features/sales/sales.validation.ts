@@ -22,8 +22,8 @@ export const salesAreaSchema = z.object({
 
 export const customerSchema = z.object({
   full_name: z.string().min(2, "Full name must be at least 2 characters").max(100),
-  phone: z.string().min(10, "Phone number must be at least 10 digits").max(15),
-  alternate_phone: z.string().optional().nullable(),
+  phone: z.string().regex(/^\d{10}$/, "Phone number must be exactly 10 digits"),
+  alternate_phone: z.string().optional().nullable().refine(val => !val || /^\d{10}$/.test(val), "Alternate phone number must be exactly 10 digits"),
   email: z.string().email("Invalid email address").optional().or(z.literal("")).nullable(),
   address: z.string().optional().nullable(),
   sales_area_id: z.string().uuid("Please select a sales area"),
@@ -45,7 +45,7 @@ export const customerPurchaseSchema = z.object({
 
 export const customerFollowupSchema = z.object({
   customer_id: z.string().uuid("Please select a customer"),
-  followup_date: z.string().min(1, "Please select a date"),
+  followup_date: z.string().optional(),
   followup_type: z.enum([
     "Call",
     "Visit",

@@ -692,3 +692,67 @@ export async function getEmployeeExpenseSummary(profileId?: string): Promise<Emp
     recentExpenses,
   };
 }
+
+export interface ExpenseCashOut {
+  id: string;
+  profile_id: string;
+  amount: number;
+  description: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export async function getEmployeeCashOuts(profileId: string): Promise<ExpenseCashOut[]> {
+  const { data, error } = await supabase
+    .from("expense_cash_outs")
+    .select("*")
+    .eq("profile_id", profileId)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching employee cash outs:", error);
+    return [];
+  }
+  return data as ExpenseCashOut[];
+}
+
+export async function getAllCashOuts(): Promise<ExpenseCashOut[]> {
+  const { data, error } = await supabase
+    .from("expense_cash_outs")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Error fetching all cash outs:", error);
+    return [];
+  }
+  return data as ExpenseCashOut[];
+}
+
+export async function createCashOut(
+  profileId: string,
+  amount: number,
+  description?: string
+): Promise<{ success: boolean; error?: string; data?: ExpenseCashOut }> {
+  const { data, error } = await supabase
+    .from("expense_cash_outs")
+    .insert({
+      profile_id: profileId,
+      amount,
+      description: description || null,
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    return {
+      success: false,
+      error: error.message,
+    };
+  }
+
+  return {
+    success: true,
+    data: data as ExpenseCashOut,
+  };
+}

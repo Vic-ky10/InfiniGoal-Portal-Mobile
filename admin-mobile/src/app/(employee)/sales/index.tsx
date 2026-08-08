@@ -3,13 +3,16 @@ import { View, ScrollView, TouchableOpacity, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Card } from "@/components/ui";
+import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader } from "@/components/common";
 import { adminColors, spacing, radius, shadows } from "@/theme";
 import { useAuthStore } from "@/store";
-import { useEmployeeSalesDashboardData } from "@/features/sales/hooks/useEmployeeSales";
+import { useEmployeeSalesDashboardData, useMyCustomerPurchases, useMyCustomers } from "@/features/sales/hooks/useEmployeeSales";
+import { useCustomerFollowups } from "@/features/sales/hooks/useSales";
+import { MonthlyRevenueChart } from "@/features/sales/components";
 import StatCard from "@/features/dashboard/components/StatCard";
 import QuickActionCard from "@/features/dashboard/components/QuickActionCard";
+import { CustomerFollowup } from "@/features/sales/sales.types";
 
 export default function EmployeeSalesDashboardScreen() {
   const router = useRouter();
@@ -23,24 +26,82 @@ export default function EmployeeSalesDashboardScreen() {
     isRefetching,
   } = useEmployeeSalesDashboardData(user?.id || "");
 
-  const handleRefresh = async () => {
-    await refetch();
-  };
-
   const employeeColor = "#22C55E"; // Green accent for employee portal
 
-  const chartData = useMemo(() => {
-    return dashboard?.monthlyTrend || [];
-  }, [dashboard]);
+  const { data: purchases = [], isLoading: isPurchasesLoading } = useMyCustomerPurchases(user?.id || "");
+  const { data: customers = [] } = useMyCustomers(user?.id || "");
+  const { data: followups = [], refetch: refetchFollowups } = useCustomerFollowups();
 
-  const maxChartAmount = useMemo(() => {
-    const amounts = chartData.map((d) => d.amount);
-    return Math.max(...amounts, 10000);
-  }, [chartData]);
+  const handleRefresh = async () => {
+    await Promise.all([refetch(), refetchFollowups()]);
+  };
+
+  const todayStr = new Date().toISOString().substring(0, 10);
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const tomorrowStr = tomorrow.toISOString().substring(0, 10);
+
+  // CRM Followup Calculations (Filtered by employee's own actions if not already scoped by RLS)
+  const myFollowups = useMemo(() => {
+    return followups.filter((f: CustomerFollowup) => f.created_by === user?.id);
+  }, [followups, user]);
+
+  const followupStats = useMemo(() => {
+    let todayCount = 0;
+    let tomorrowCount = 0;
+    let overdueCount = 0;
+    let completedTodayCount = 0;
+
+    myFollowups.forEach((f: CustomerFollowup) => {
+      if (!f.next_followup_date) {
+        if (f.followup_date && f.followup_date.startsWith(todayStr)) {
+          completedTodayCount++;
+        }
+      } else {
+        const nextStr = new Date(f.next_followup_date).toISOString().substring(0, 10);
+        if (nextStr === todayStr) {
+          todayCount++;
+        } else if (nextStr === tomorrowStr) {
+          tomorrowCount++;
+        } else if (nextStr < todayStr) {
+          overdueCount++;
+        }
+      }
+    });
+
+    return {
+      todayCount,
+      tomorrowCount,
+      overdueCount,
+      completedTodayCount,
+      pendingCount: todayCount + tomorrowCount + overdueCount,
+    };
+  }, [myFollowups, todayStr, tomorrowStr]);
+
+  // Next 5 upcoming followups
+  const upcomingFollowups = useMemo(() => {
+    return myFollowups
+      .filter((f: CustomerFollowup) => f.next_followup_date && new Date(f.next_followup_date).getTime() >= new Date().getTime())
+      .sort((a: CustomerFollowup, b: CustomerFollowup) => new Date(a.next_followup_date!).getTime() - new Date(b.next_followup_date!).getTime())
+      .slice(0, 5)
+      .map((f: CustomerFollowup) => {
+        const cust = customers.find((c) => c.id === f.customer_id);
+        
+        const now = new Date().getTime();
+        const daysLeft = Math.ceil((new Date(f.next_followup_date!).getTime() - now) / (1000 * 60 * 60 * 24));
+        const priority = daysLeft <= 2 ? "High" : daysLeft <= 5 ? "Medium" : "Low";
+
+        return {
+          ...f,
+          customerName: cust?.full_name || "Unknown Customer",
+          priority,
+        };
+      });
+  }, [myFollowups, customers]);
 
   return (
     <Screen
-      isLoading={isLoading}
+      isLoading={isLoading || isPurchasesLoading}
       isError={isError}
       errorMessage="Unable to load your sales metrics. Please try again."
       onRetry={handleRefresh}
@@ -48,7 +109,7 @@ export default function EmployeeSalesDashboardScreen() {
       refreshing={isRefetching}
     >
       <AppHeader
-        title="My Sales Portal"
+        title={`My Sales Portal ${followupStats.pendingCount > 0 ? `🔔 ${followupStats.pendingCount}` : ""}`}
         subtitle="Sales logs, assigned clients & incentives"
         showMenuButton={true}
       />
@@ -101,6 +162,12 @@ export default function EmployeeSalesDashboardScreen() {
           onPress={() => router.push("/(employee)/sales/customers")}
         />
         <QuickActionCard
+          title="My Follow-Ups"
+          subtitle="View and manage scheduled actions & logs"
+          icon="phone"
+          onPress={() => router.push("/(employee)/sales/followups")}
+        />
+        <QuickActionCard
           title="Record New Invoices"
           subtitle="Log purchases and review incentive payout status"
           icon="shopping-cart"
@@ -109,63 +176,75 @@ export default function EmployeeSalesDashboardScreen() {
       </View>
 
       {/* Revenue Trend Chart */}
-      <AppText variant="h3" weight="700" style={[styles.sectionTitle, { marginTop: spacing.lg }]}>
-        Monthly Sales Revenue
-      </AppText>
-      <Card style={styles.chartCard}>
-        <AppText variant="caption" color={adminColors.textSecondary} style={{ marginBottom: spacing.md }}>
-          Approved client purchases revenue generated over the last 6 months
-        </AppText>
+      <View style={{ marginTop: spacing.lg }}>
+        <MonthlyRevenueChart
+          purchases={purchases}
+          isLoading={isLoading || isPurchasesLoading}
+          isError={isError}
+          theme="employee"
+        />
+      </View>
 
-        <View style={styles.chartContainer}>
-          {chartData.length === 0 ? (
-            <AppText style={styles.emptyText}>No monthly sales trends recorded.</AppText>
-          ) : (
-            chartData.map((data, idx) => {
-              const heightPercent = (data.amount / maxChartAmount) * 100;
-              return (
-                <View key={idx} style={styles.barWrapper}>
-                  {/* Tooltip value */}
-                  <View style={styles.tooltip}>
-                    <AppText style={{ fontSize: 9, fontWeight: "700", color: "#FFFFFF" }}>
-                      ₹{Math.round(data.amount / 1000)}k
-                    </AppText>
-                  </View>
-                  <View
-                    style={[
-                      styles.chartBar,
-                      {
-                        height: `${Math.max(heightPercent, 5)}%`,
-                        backgroundColor: employeeColor,
-                      },
-                    ]}
-                  />
-                  <AppText variant="caption" style={styles.barLabel}>
-                    {data.label}
-                  </AppText>
-                </View>
-              );
-            })
-          )}
+      {/* CRM Followups Overview Grid */}
+      <AppText variant="h3" weight="700" style={[styles.sectionTitle, { marginTop: spacing.lg }]}>
+        CRM Follow-up Overview
+      </AppText>
+      <View style={styles.grid}>
+        <View style={styles.row}>
+          <StatCard
+            title="Today's Follow-ups"
+            value={followupStats.todayCount.toString()}
+            icon="phone"
+            color={employeeColor}
+          />
+          <StatCard
+            title="Tomorrow's Follow-ups"
+            value={followupStats.tomorrowCount.toString()}
+            icon="calendar"
+            color={adminColors.info}
+          />
         </View>
-      </Card>
+        <View style={styles.row}>
+          <StatCard
+            title="Overdue Follow-ups"
+            value={followupStats.overdueCount.toString()}
+            icon="alert-circle"
+            color={adminColors.danger}
+          />
+          <StatCard
+            title="Completed Today"
+            value={followupStats.completedTodayCount.toString()}
+            icon="check-circle"
+            color={adminColors.success}
+          />
+        </View>
+      </View>
 
       {/* Upcoming Followups */}
       <AppText variant="h3" weight="700" style={[styles.sectionTitle, { marginTop: spacing.lg }]}>
-        Upcoming Follow-ups
+        Upcoming Follow-ups (CRM)
       </AppText>
       <Card style={styles.listCard}>
-        {dashboard?.upcomingFollowups?.length === 0 ? (
+        {upcomingFollowups.length === 0 ? (
           <AppText style={styles.emptyText}>No upcoming follow-ups scheduled.</AppText>
         ) : (
-          dashboard?.upcomingFollowups?.map((followup: any) => (
-            <View key={followup.id} style={styles.listItem}>
+          upcomingFollowups.map((followup: any) => (
+            <TouchableOpacity
+              key={followup.id}
+              style={styles.listItem}
+              onPress={() => {
+                router.push({
+                  pathname: "/(employee)/sales/customers",
+                  params: { customerId: followup.customer_id, followupId: followup.id },
+                });
+              }}
+            >
               <View style={{ flex: 1 }}>
                 <AppText weight="700" color={adminColors.text}>
                   {followup.customerName}
                 </AppText>
                 <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
-                  Type: {followup.type} • Target: {followup.date}
+                  Type: {followup.followup_type} • Date: {new Date(followup.next_followup_date!).toLocaleDateString("en-IN")}
                 </AppText>
               </View>
               <View
@@ -196,7 +275,7 @@ export default function EmployeeSalesDashboardScreen() {
                   {followup.priority}
                 </AppText>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </Card>

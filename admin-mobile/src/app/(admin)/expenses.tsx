@@ -109,6 +109,8 @@ export default function ExpensesScreen() {
             keyExtractor={(item) => item.id}
             refreshing={refreshing}
             onRefresh={refresh}
+            showsVerticalScrollIndicator={false}
+
             contentContainerStyle={{
               gap: spacing.md,
               paddingBottom: spacing.xl,

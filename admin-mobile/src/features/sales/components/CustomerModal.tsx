@@ -1,14 +1,23 @@
-import React, { useEffect, useState, useCallback } from "react";
-import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform } from "react-native";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { Modal, View, ScrollView, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, Alert } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import { AppText, Button, Input } from "@/components/ui";
-import { adminColors, radius, spacing } from "@/theme";
-import { Customer } from "../sales.types";
+import { AppText, Button, Input, DatePickerField } from "@/components/ui";
+import { adminColors, radius, spacing, shadows } from "@/theme";
+import { Customer, CustomerFollowup } from "../sales.types";
 import { customerSchema, CustomerForm } from "../sales.validation";
-import { useCreateCustomer, useUpdateCustomer, useSalesAreas } from "../hooks/useSales";
+import {
+  useCreateCustomer,
+  useUpdateCustomer,
+  useSalesAreas,
+  useCustomerPurchases,
+  useCustomerFollowups,
+  useCreateCustomerFollowup,
+  useUpdateCustomerFollowup,
+  useDeleteCustomerFollowup
+} from "../hooks/useSales";
 import { getEmployees } from "@/features/employee/employee.service";
 import { Employee } from "@/features/employee/employee.types";
 import { toast } from "@/store/toast.store";
@@ -18,15 +27,34 @@ interface Props {
   visible: boolean;
   onClose: () => void;
   customerToEdit?: Customer | null;
+  initialTab?: "info" | "purchases" | "followups";
+  highlightFollowupId?: string | null;
 }
 
-export default function CustomerModal({ visible, onClose, customerToEdit }: Props) {
+export default function CustomerModal({ visible, onClose, customerToEdit, initialTab = "info", highlightFollowupId }: Props) {
+  const [activeTab, setActiveTab] = useState<"info" | "purchases" | "followups">("info");
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loadingEmployees, setLoadingEmployees] = useState(false);
 
   const { data: salesAreas = [], isLoading: loadingAreas } = useSalesAreas();
   const createMutation = useCreateCustomer();
   const updateMutation = useUpdateCustomer();
+
+  // Followups and Purchases queries
+  const { data: allPurchases = [] } = useCustomerPurchases();
+  const { data: allFollowups = [] } = useCustomerFollowups();
+
+  const createFollowupMutation = useCreateCustomerFollowup();
+  const updateFollowupMutation = useUpdateCustomerFollowup();
+  const deleteFollowupMutation = useDeleteCustomerFollowup();
+
+  // Followup form overlay state
+  const [showFollowupForm, setShowFollowupForm] = useState(false);
+  const [editingFollowup, setEditingFollowup] = useState<CustomerFollowup | null>(null);
+  const [fDate, setFDate] = useState("");
+  const [fType, setFType] = useState<"Call" | "Visit" | "WhatsApp" | "Meeting" | "Other">("Call");
+  const [fRemarks, setFRemarks] = useState("");
+  const [fNextDate, setFNextDate] = useState("");
 
   const {
     control,
@@ -49,7 +77,6 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
   });
 
   const loadEmployees = useCallback(async () => {
-    await Promise.resolve();
     setLoadingEmployees(true);
     try {
       const data = await getEmployees();
@@ -61,44 +88,55 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
     }
   }, []);
 
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (visible) {
-      Promise.resolve().then(() => {
-        loadEmployees();
-        if (customerToEdit) {
-          reset({
-            full_name: customerToEdit.full_name,
-            phone: customerToEdit.phone,
-            alternate_phone: customerToEdit.alternate_phone || "",
-            email: customerToEdit.email || "",
-            address: customerToEdit.address || "",
-            sales_area_id: customerToEdit.sales_area_id,
-            assigned_employee_id: customerToEdit.assigned_employee_id,
-            status: customerToEdit.status,
-            notes: customerToEdit.notes || "",
-          });
-        } else {
-          reset({
-            full_name: "",
-            phone: "",
-            alternate_phone: "",
-            email: "",
-            address: "",
-            sales_area_id: "",
-            assigned_employee_id: "",
-            status: "Active",
-            notes: "",
-          });
-        }
-      });
+      loadEmployees();
+      setActiveTab(customerToEdit ? initialTab : "info");
+      if (customerToEdit) {
+        reset({
+          full_name: customerToEdit.full_name,
+          phone: customerToEdit.phone,
+          alternate_phone: customerToEdit.alternate_phone || "",
+          email: customerToEdit.email || "",
+          address: customerToEdit.address || "",
+          sales_area_id: customerToEdit.sales_area_id,
+          assigned_employee_id: customerToEdit.assigned_employee_id,
+          status: customerToEdit.status,
+          notes: customerToEdit.notes || "",
+        });
+      } else {
+        reset({
+          full_name: "",
+          phone: "",
+          alternate_phone: "",
+          email: "",
+          address: "",
+          sales_area_id: "",
+          assigned_employee_id: "",
+          status: "Active",
+          notes: "",
+        });
+      }
     }
-  }, [visible, customerToEdit, reset, loadEmployees]);
+  }, [visible, customerToEdit, initialTab, reset, loadEmployees]);
+  /* eslint-enable react-hooks/set-state-in-effect */
+
+  const customerPurchases = useMemo(() => {
+    if (!customerToEdit) return [];
+    return allPurchases
+      .filter((p) => p.customer_id === customerToEdit.id)
+      .sort((a, b) => new Date(b.purchase_date).getTime() - new Date(a.purchase_date).getTime());
+  }, [allPurchases, customerToEdit]);
+
+  const customerFollowups = useMemo(() => {
+    if (!customerToEdit) return [];
+    return allFollowups
+      .filter((f) => f.customer_id === customerToEdit.id)
+      .sort((a, b) => new Date(b.followup_date).getTime() - new Date(a.followup_date).getTime());
+  }, [allFollowups, customerToEdit]);
 
   const onSubmit = async (data: CustomerForm) => {
-    // Instead of raw supabase, let's use the mutation
-    // We can fetch the authenticated user id inside the mutation or pass it.
-    // Let's see: createCustomer service takes (customer, createdBy).
-    // Let's get the user ID using standard supabase.auth
     const { data: authData } = await supabase.auth.getUser();
     const currentUserId = authData.user?.id;
 
@@ -144,121 +182,352 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
     }
   };
 
+  // Followup Actions
+  const handleOpenFollowupForm = (followup: CustomerFollowup | null = null) => {
+    if (followup) {
+      setEditingFollowup(followup);
+      setFDate(followup.followup_date ? new Date(followup.followup_date).toISOString().split("T")[0] : "");
+      setFType(followup.followup_type);
+      setFRemarks(followup.remarks || "");
+      setFNextDate(followup.next_followup_date ? new Date(followup.next_followup_date).toISOString().split("T")[0] : "");
+    } else {
+      setEditingFollowup(null);
+      setFDate(new Date().toISOString().split("T")[0]);
+      setFType("Call");
+      setFRemarks("");
+      setFNextDate("");
+    }
+    setShowFollowupForm(true);
+  };
+
+  const handleFollowupSubmit = async () => {
+    if (!customerToEdit) return;
+    if (!fDate) {
+      toast.error("Please select an interaction date.");
+      return;
+    }
+
+    const { data: authData } = await supabase.auth.getUser();
+    const currentUserId = authData.user?.id;
+    if (!currentUserId) {
+      toast.error("User not authenticated.");
+      return;
+    }
+
+    const payload = {
+      customer_id: customerToEdit.id,
+      followup_date: new Date(fDate).toISOString(),
+      followup_type: fType,
+      remarks: fRemarks || null,
+      next_followup_date: fNextDate ? new Date(fNextDate).toISOString() : null,
+    };
+
+    if (editingFollowup) {
+      updateFollowupMutation.mutate(
+        { id: editingFollowup.id, data: payload },
+        {
+          onSuccess: (res) => {
+            if (res.success) {
+              toast.success("Follow-up updated successfully.");
+              setShowFollowupForm(false);
+            } else {
+              toast.error(res.error || "Failed to update follow-up.");
+            }
+          },
+        }
+      );
+    } else {
+      createFollowupMutation.mutate(
+        { data: payload, createdBy: currentUserId },
+        {
+          onSuccess: (res) => {
+            if (res.success) {
+              toast.success("Follow-up logged successfully.");
+              setShowFollowupForm(false);
+            } else {
+              toast.error(res.error || "Failed to log follow-up.");
+            }
+          },
+        }
+      );
+    }
+  };
+
+  const handleMarkCompleted = (followup: CustomerFollowup) => {
+    const payload = {
+      customer_id: followup.customer_id,
+      followup_date: followup.followup_date,
+      followup_type: followup.followup_type,
+      remarks: followup.remarks,
+      next_followup_date: null, // Setting next date to null marks it as completed
+    };
+
+    updateFollowupMutation.mutate(
+      { id: followup.id, data: payload },
+      {
+        onSuccess: (res) => {
+          if (res.success) {
+            toast.success("Follow-up marked as completed.");
+          } else {
+            toast.error(res.error || "Failed to complete follow-up.");
+          }
+        },
+      }
+    );
+  };
+
+  const handleFollowupDelete = (id: string) => {
+    Alert.alert("Delete Follow-up", "Are you sure you want to delete this follow-up record?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          deleteFollowupMutation.mutate(id, {
+            onSuccess: (res) => {
+              if (res.success) {
+                toast.success("Follow-up deleted successfully.");
+              } else {
+                toast.error(res.error || "Failed to delete follow-up.");
+              }
+            },
+          });
+        },
+      },
+    ]);
+  };
+
   const submitting = createMutation.isPending || updateMutation.isPending;
 
   return (
     <Modal visible={visible} animationType="slide" transparent>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={{ flex: 1 }}
-      >
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
         <View style={styles.backdrop}>
           <View style={styles.content}>
             <View style={styles.header}>
               <AppText variant="h2" weight="700">
-                {customerToEdit ? "Edit Customer" : "Add Customer"}
+                {customerToEdit ? customerToEdit.full_name : "Add Customer"}
               </AppText>
               <TouchableOpacity onPress={onClose}>
                 <Feather name="x" size={24} color={adminColors.textSecondary} />
               </TouchableOpacity>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
-            <Controller
-              control={control}
-              name="full_name"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Full Name"
-                  placeholder="Enter full name"
-                  value={value}
-                  onChangeText={onChange}
-                  error={errors.full_name?.message}
-                />
-              )}
-            />
+            {/* Segmented Tab Bar if editing an existing customer */}
+            {customerToEdit && (
+              <View style={styles.tabContainer}>
+                <TouchableOpacity
+                  onPress={() => setActiveTab("info")}
+                  style={[styles.tabButton, activeTab === "info" && styles.tabButtonActive]}
+                >
+                  <AppText variant="caption" weight="700" color={activeTab === "info" ? adminColors.primary : adminColors.textSecondary}>
+                    Profile Info
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setActiveTab("purchases")}
+                  style={[styles.tabButton, activeTab === "purchases" && styles.tabButtonActive]}
+                >
+                  <AppText variant="caption" weight="700" color={activeTab === "purchases" ? adminColors.primary : adminColors.textSecondary}>
+                    Purchases ({customerPurchases.length})
+                  </AppText>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setActiveTab("followups")}
+                  style={[styles.tabButton, activeTab === "followups" && styles.tabButtonActive]}
+                >
+                  <AppText variant="caption" weight="700" color={activeTab === "followups" ? adminColors.primary : adminColors.textSecondary}>
+                    Follow-ups ({customerFollowups.length})
+                  </AppText>
+                </TouchableOpacity>
+              </View>
+            )}
 
-            <Controller
-              control={control}
-              name="phone"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Phone Number"
-                  placeholder="Enter phone number"
-                  keyboardType="phone-pad"
-                  value={value}
-                  onChangeText={onChange}
-                  error={errors.phone?.message}
+            {activeTab === "info" && (
+              <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={styles.form}>
+                <Controller
+                  control={control}
+                  name="full_name"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Full Name"
+                      placeholder="Enter full name"
+                      value={value}
+                      onChangeText={onChange}
+                      error={errors.full_name?.message}
+                    />
+                  )}
                 />
-              )}
-            />
 
-            <Controller
-              control={control}
-              name="alternate_phone"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Alternate Phone (Optional)"
-                  placeholder="Enter alternate phone"
-                  keyboardType="phone-pad"
-                  value={value || ""}
-                  onChangeText={onChange}
-                  error={errors.alternate_phone?.message}
+                 <Controller
+                  control={control}
+                  name="phone"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Phone Number"
+                      placeholder="Enter phone number"
+                      keyboardType="numeric"
+                      maxLength={10}
+                      value={value}
+                      onChangeText={(text) => onChange(text.replace(/\D/g, ""))}
+                      error={errors.phone?.message}
+                    />
+                  )}
                 />
-              )}
-            />
 
-            <Controller
-              control={control}
-              name="email"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Email (Optional)"
-                  placeholder="Enter email address"
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  value={value || ""}
-                  onChangeText={onChange}
-                  error={errors.email?.message}
+                <Controller
+                  control={control}
+                  name="alternate_phone"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Alternate Phone (Optional)"
+                      placeholder="Enter alternate phone"
+                      keyboardType="numeric"
+                      maxLength={10}
+                      value={value || ""}
+                      onChangeText={(text) => onChange(text.replace(/\D/g, ""))}
+                      error={errors.alternate_phone?.message}
+                    />
+                  )}
                 />
-              )}
-            />
 
-            <Controller
-              control={control}
-              name="address"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Address (Optional)"
-                  placeholder="Enter address"
-                  multiline
-                  numberOfLines={2}
-                  value={value || ""}
-                  onChangeText={onChange}
-                  error={errors.address?.message}
+                <Controller
+                  control={control}
+                  name="email"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Email (Optional)"
+                      placeholder="Enter email address"
+                      keyboardType="email-address"
+                      autoCapitalize="none"
+                      value={value || ""}
+                      onChangeText={onChange}
+                      error={errors.email?.message}
+                    />
+                  )}
                 />
-              )}
-            />
 
-            {/* Sales Area Selection */}
-            <AppText weight="600" style={styles.fieldLabel}>
-              Sales Area
-            </AppText>
-            {loadingAreas ? (
-              <ActivityIndicator size="small" color={adminColors.primary} style={{ alignSelf: "flex-start", marginBottom: spacing.md }} />
-            ) : (
-              <Controller
-                control={control}
-                name="sales_area_id"
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ marginBottom: spacing.md }}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
-                      {(salesAreas || []).map((area) => {
-                        const isSelected = value === area.id;
+                <Controller
+                  control={control}
+                  name="address"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Address (Optional)"
+                      placeholder="Enter address"
+                      multiline
+                      numberOfLines={2}
+                      value={value || ""}
+                      onChangeText={onChange}
+                      error={errors.address?.message}
+                    />
+                  )}
+                />
+
+                {/* Sales Area Selection */}
+                <AppText weight="600" style={styles.fieldLabel}>
+                  Sales Area
+                </AppText>
+                {loadingAreas ? (
+                  <ActivityIndicator size="small" color={adminColors.primary} style={{ alignSelf: "flex-start", marginBottom: spacing.md }} />
+                ) : (
+                  <Controller
+                    control={control}
+                    name="sales_area_id"
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ marginBottom: spacing.md }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
+                          {(salesAreas || []).map((area) => {
+                            const isSelected = value === area.id;
+                            return (
+                              <TouchableOpacity
+                                key={area.id}
+                                onPress={() => onChange(area.id)}
+                                style={[
+                                  styles.selectItem,
+                                  isSelected && styles.selectItemActive,
+                                ]}
+                              >
+                                <AppText
+                                  variant="caption"
+                                  weight="600"
+                                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
+                                >
+                                  {area.area_name} ({area.area_code})
+                                </AppText>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </ScrollView>
+                        {errors.sales_area_id && (
+                          <AppText variant="caption" color={adminColors.danger} style={{ marginTop: spacing.xs }}>
+                            {errors.sales_area_id.message}
+                          </AppText>
+                        )}
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Assigned Staff Selection */}
+                <AppText weight="600" style={styles.fieldLabel}>
+                  Assigned Staff
+                </AppText>
+                {loadingEmployees ? (
+                  <ActivityIndicator size="small" color={adminColors.primary} style={{ alignSelf: "flex-start", marginBottom: spacing.md }} />
+                ) : (
+                  <Controller
+                    control={control}
+                    name="assigned_employee_id"
+                    render={({ field: { onChange, value } }) => (
+                      <View style={{ marginBottom: spacing.md }}>
+                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
+                          {employees.map((emp) => {
+                            const isSelected = value === emp.id;
+                            return (
+                              <TouchableOpacity
+                                key={emp.id}
+                                onPress={() => onChange(emp.id)}
+                                style={[
+                                  styles.selectItem,
+                                  isSelected && styles.selectItemActive,
+                                ]}
+                              >
+                                <AppText
+                                  variant="caption"
+                                  weight="600"
+                                  color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
+                                >
+                                  {emp.full_name}
+                                </AppText>
+                              </TouchableOpacity>
+                            );
+                          })}
+                        </ScrollView>
+                        {errors.assigned_employee_id && (
+                          <AppText variant="caption" color={adminColors.danger} style={{ marginTop: spacing.xs }}>
+                            {errors.assigned_employee_id.message}
+                          </AppText>
+                        )}
+                      </View>
+                    )}
+                  />
+                )}
+
+                {/* Status selector */}
+                <AppText weight="600" style={styles.fieldLabel}>
+                  Status
+                </AppText>
+                <Controller
+                  control={control}
+                  name="status"
+                  render={({ field: { onChange, value } }) => (
+                    <View style={{ flexDirection: "row", gap: spacing.sm, marginBottom: spacing.lg }}>
+                      {["Active", "Inactive", "Blocked"].map((s) => {
+                        const isSelected = value === s;
                         return (
                           <TouchableOpacity
-                            key={area.id}
-                            onPress={() => onChange(area.id)}
+                            key={s}
+                            onPress={() => onChange(s)}
                             style={[
                               styles.selectItem,
                               isSelected && styles.selectItemActive,
@@ -269,201 +538,421 @@ export default function CustomerModal({ visible, onClose, customerToEdit }: Prop
                               weight="600"
                               color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
                             >
-                              {area.area_name} ({area.area_code})
+                              {s}
                             </AppText>
                           </TouchableOpacity>
                         );
                       })}
-                    </ScrollView>
-                    {errors.sales_area_id && (
-                      <AppText variant="caption" color={adminColors.danger} style={{ marginTop: spacing.xs }}>
-                        {errors.sales_area_id.message}
-                      </AppText>
-                    )}
-                  </View>
-                )}
-              />
-            )}
+                    </View>
+                  )}
+                />
 
-            {/* Assigned Staff Selection */}
-            <AppText weight="600" style={styles.fieldLabel}>
-              Assigned Staff
-            </AppText>
-            {loadingEmployees ? (
-              <ActivityIndicator size="small" color={adminColors.primary} style={{ alignSelf: "flex-start", marginBottom: spacing.md }} />
-            ) : (
-              <Controller
-                control={control}
-                name="assigned_employee_id"
-                render={({ field: { onChange, value } }) => (
-                  <View style={{ marginBottom: spacing.md }}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.selectorScroll}>
-                      {(employees || []).map((emp) => {
-                        const isSelected = value === emp.id;
-                        return (
-                          <TouchableOpacity
-                            key={emp.id}
-                            onPress={() => onChange(emp.id)}
-                            style={[
-                              styles.selectItem,
-                              isSelected && styles.selectItemActive,
-                            ]}
-                          >
-                            <AppText
-                              variant="caption"
-                              weight="600"
-                              color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                            >
-                              {emp.full_name} ({emp.employee_id})
-                            </AppText>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
-                    {errors.assigned_employee_id && (
-                      <AppText variant="caption" color={adminColors.danger} style={{ marginTop: spacing.xs }}>
-                        {errors.assigned_employee_id.message}
-                      </AppText>
-                    )}
-                  </View>
-                )}
-              />
-            )}
+                <Controller
+                  control={control}
+                  name="notes"
+                  render={({ field: { onChange, value } }) => (
+                    <Input
+                      label="Customer Notes"
+                      placeholder="Add profile details or customer descriptions..."
+                      multiline
+                      numberOfLines={3}
+                      value={value || ""}
+                      onChangeText={onChange}
+                      error={errors.notes?.message}
+                    />
+                  )}
+                />
 
-            {/* Status Selector */}
-            <AppText weight="600" style={styles.fieldLabel}>
-              Status
-            </AppText>
-            <Controller
-              control={control}
-              name="status"
-              render={({ field: { onChange, value } }) => (
-                <View style={styles.statusRow}>
-                  {["Active", "Inactive", "Blocked"].map((statusOption) => {
-                    const isSelected = value === statusOption;
-                    return (
-                      <TouchableOpacity
-                        key={statusOption}
-                        onPress={() => onChange(statusOption)}
-                        style={[
-                          styles.statusItem,
-                          isSelected && {
-                            backgroundColor:
-                              statusOption === "Active"
-                                ? adminColors.success
-                                : statusOption === "Inactive"
-                                ? adminColors.textSecondary
-                                : adminColors.danger,
-                            borderColor: "transparent",
-                          },
-                        ]}
-                      >
-                        <AppText
-                          variant="caption"
-                          weight="600"
-                          color={isSelected ? "#FFFFFF" : adminColors.textSecondary}
-                        >
-                          {statusOption}
-                        </AppText>
-                      </TouchableOpacity>
-                    );
-                  })}
+                <View style={styles.footer}>
+                  <View style={{ flex: 1 }}>
+                    <Button variant="outline" title="Cancel" onPress={onClose} />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Button
+                      title={customerToEdit ? "Save Changes" : "Create Customer"}
+                      onPress={handleSubmit(onSubmit)}
+                      loading={submitting}
+                    />
+                  </View>
                 </View>
-              )}
-            />
+              </ScrollView>
+            )}
 
-            <Controller
-              control={control}
-              name="notes"
-              render={({ field: { onChange, value } }) => (
-                <Input
-                  label="Notes (Optional)"
-                  placeholder="Enter remarks or notes"
-                  multiline
-                  numberOfLines={3}
-                  value={value || ""}
-                  onChangeText={onChange}
-                  error={errors.notes?.message}
-                />
-              )}
-            />
+            {activeTab === "purchases" && (
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.timelineContainer}>
+                {customerPurchases.length === 0 ? (
+                  <View style={styles.emptyContainer}>
+                    <AppText variant="body" color={adminColors.textSecondary}>
+                      No transactions recorded for this client.
+                    </AppText>
+                  </View>
+                ) : (
+                  customerPurchases.map((p) => (
+                    <Card key={p.id} style={styles.timelineCard}>
+                      <View style={styles.timelineCardHeader}>
+                        <AppText variant="body" weight="700">{p.purchase_code}</AppText>
+                        <AppText variant="body" weight="700" color={adminColors.primary}>
+                          ₹{p.amount.toLocaleString("en-IN")}
+                        </AppText>
+                      </View>
+                      <View style={{ flexDirection: "row", justifyContent: "space-between", marginTop: spacing.xs }}>
+                        <AppText variant="caption" color={adminColors.textSecondary}>
+                          {new Date(p.purchase_date).toLocaleDateString("en-IN")}
+                        </AppText>
+                        <AppText variant="caption" weight="600" color={p.status === "Approved" ? adminColors.success : adminColors.danger}>
+                          {p.status}
+                        </AppText>
+                      </View>
+                    </Card>
+                  ))
+                )}
+              </ScrollView>
+            )}
 
-            <View style={styles.submitBtn}>
-              <Button
-                title={customerToEdit ? "Update Customer" : "Add Customer"}
-                loading={submitting}
-                onPress={handleSubmit(onSubmit)}
-              />
-            </View>
-            <View style={{ height: spacing.xxl }} />
-          </ScrollView>
+            {activeTab === "followups" && (
+              <View style={{ flex: 1 }}>
+                <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.timelineContainer}>
+                  <View style={{ marginBottom: spacing.md }}>
+                    <Button
+                      title="+ Log Customer Follow-up"
+                      onPress={() => handleOpenFollowupForm()}
+                    />
+                  </View>
+
+                  {customerFollowups.length === 0 ? (
+                    <View style={styles.emptyContainer}>
+                      <AppText variant="body" color={adminColors.textSecondary}>
+                        No follow-up actions logged yet.
+                      </AppText>
+                    </View>
+                  ) : (
+                    <View style={{ gap: spacing.lg }}>
+                      {/* Upcoming scheduled section */}
+                      {(() => {
+                        const upcoming = customerFollowups.filter((f) => f.next_followup_date);
+                        if (upcoming.length === 0) return null;
+                        return (
+                          <View style={{ gap: spacing.sm }}>
+                            <AppText variant="caption" weight="700" color={adminColors.text} style={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                              📅 Upcoming Scheduled Actions
+                            </AppText>
+                            {upcoming.map((f) => {
+                              const isHighlighted = highlightFollowupId === f.id;
+                              const today = new Date().toISOString().substring(0, 10);
+                              const formattedNext = new Date(f.next_followup_date!).toISOString().substring(0, 10);
+                              let label = "Upcoming";
+                              let color = "#3B82F6";
+                              if (formattedNext === today) {
+                                label = "Due Today";
+                                color = "#F59E0B";
+                              } else if (formattedNext < today) {
+                                label = "Overdue";
+                                color = adminColors.danger;
+                              }
+
+                              return (
+                                <Card key={`up-${f.id}`} style={[styles.timelineCard, isHighlighted && styles.highlightedCard]}>
+                                  <View style={styles.timelineCardHeader}>
+                                    <AppText variant="body" weight="700">
+                                      Next Date: {new Date(f.next_followup_date!).toLocaleDateString("en-IN")}
+                                    </AppText>
+                                    <Badge label={label} color={color} />
+                                  </View>
+                                  <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: 2 }}>
+                                    Scheduled from {f.followup_type} on {new Date(f.followup_date).toLocaleDateString("en-IN")}
+                                  </AppText>
+                                  <View style={styles.cardActions}>
+                                    <TouchableOpacity onPress={() => handleMarkCompleted(f)} style={styles.actionBtn}>
+                                      <Feather name="check-circle" size={13} color={adminColors.success} />
+                                      <AppText variant="caption" color={adminColors.success} weight="700">Complete</AppText>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleOpenFollowupForm(f)} style={styles.actionBtn}>
+                                      <Feather name="edit-2" size={13} color="#F59E0B" />
+                                      <AppText variant="caption" color="#F59E0B" weight="700">Edit</AppText>
+                                    </TouchableOpacity>
+                                    <TouchableOpacity onPress={() => handleFollowupDelete(f.id)} style={styles.actionBtn}>
+                                      <Feather name="trash-2" size={13} color={adminColors.danger} />
+                                      <AppText variant="caption" color={adminColors.danger} weight="700">Delete</AppText>
+                                    </TouchableOpacity>
+                                  </View>
+                                </Card>
+                              );
+                            })}
+                          </View>
+                        );
+                      })()}
+
+                      {/* Completed Interactions section */}
+                      <View style={{ gap: spacing.sm }}>
+                        <AppText variant="caption" weight="700" color={adminColors.text} style={{ textTransform: "uppercase", letterSpacing: 1 }}>
+                          📞 Completed Interactions
+                        </AppText>
+                        {customerFollowups.map((f) => {
+                          const isHighlighted = highlightFollowupId === f.id;
+                          return (
+                            <Card key={`comp-${f.id}`} style={[styles.timelineCard, isHighlighted && styles.highlightedCard]}>
+                              <View style={styles.timelineCardHeader}>
+                                <View style={{ flexDirection: "row", gap: spacing.xs, alignItems: "center" }}>
+                                  <AppText variant="body" weight="700">
+                                    Interaction: {new Date(f.followup_date).toLocaleDateString("en-IN")}
+                                  </AppText>
+                                  <Badge label={f.followup_type} color={adminColors.primary} />
+                                </View>
+                                <Badge label="Completed" color={adminColors.success} />
+                              </View>
+                              {!!f.remarks && (
+                                <AppText variant="caption" color={adminColors.textSecondary} style={styles.remarksBox}>
+                                  &quot;{f.remarks}&quot;
+                                </AppText>
+                              )}
+                              <View style={styles.cardActions}>
+                                <TouchableOpacity onPress={() => handleOpenFollowupForm(f)} style={styles.actionBtn}>
+                                  <Feather name="edit-2" size={13} color="#F59E0B" />
+                                  <AppText variant="caption" color="#F59E0B" weight="700">Edit</AppText>
+                                </TouchableOpacity>
+                                <TouchableOpacity onPress={() => handleFollowupDelete(f.id)} style={styles.actionBtn}>
+                                  <Feather name="trash-2" size={13} color={adminColors.danger} />
+                                  <AppText variant="caption" color={adminColors.danger} weight="700">Delete</AppText>
+                                </TouchableOpacity>
+                              </View>
+                            </Card>
+                          );
+                        })}
+                      </View>
+                    </View>
+                  )}
+                </ScrollView>
+              </View>
+            )}
+          </View>
         </View>
-      </View>
-    </KeyboardAvoidingView>
-  </Modal>
-);
+      </KeyboardAvoidingView>
+
+      {/* Followup Log Form Modal Overlay */}
+      <Modal visible={showFollowupForm} animationType="fade" transparent>
+        <View style={styles.subBackdrop}>
+          <View style={styles.subContent}>
+            <View style={styles.header}>
+              <AppText variant="h2" weight="700">
+                {editingFollowup ? "Edit Follow-up" : "Log CRM Follow-up"}
+              </AppText>
+              <TouchableOpacity onPress={() => setShowFollowupForm(false)}>
+                <Feather name="x" size={20} color={adminColors.textSecondary} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: spacing.md }}>
+
+              <AppText weight="600" style={styles.fieldLabel}>
+                Interaction Type
+              </AppText>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                {["Call", "Visit", "WhatsApp", "Meeting", "Other"].map((t) => {
+                  const isSelected = fType === t;
+                  return (
+                    <TouchableOpacity
+                      key={t}
+                      onPress={() => setFType(t as any)}
+                      style={[styles.selectItem, isSelected && styles.selectItemActive]}
+                    >
+                      <AppText variant="caption" weight="600" color={isSelected ? "#FFFFFF" : adminColors.textSecondary}>
+                        {t}
+                      </AppText>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <DatePickerField
+                label="Next Scheduled Follow-up"
+                value={fNextDate}
+                onChange={setFNextDate}
+                placeholder="Select date (Optional)"
+                onClear={() => setFNextDate("")}
+              />
+              <AppText variant="caption" color={adminColors.textSecondary} style={{ marginTop: -spacing.md, marginBottom: spacing.xs }}>
+                When should you contact this customer again?
+              </AppText>
+
+              <Input
+                label="Remarks / Details"
+                placeholder="Enter client conversation notes..."
+                multiline
+                numberOfLines={3}
+                value={fRemarks}
+                onChangeText={setFRemarks}
+              />
+
+              <View style={{ flexDirection: "row", gap: spacing.md, marginTop: spacing.md }}>
+                <View style={{ flex: 1 }}>
+                  <Button variant="outline" title="Cancel" onPress={() => setShowFollowupForm(false)} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Button title="Save" onPress={handleFollowupSubmit} />
+                </View>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    </Modal>
+  );
 }
 
+const Badge = ({ label, color }: { label: string; color?: string }) => (
+  <View style={{ backgroundColor: `${color || adminColors.primary}15`, borderRadius: radius.md, paddingHorizontal: 8, paddingVertical: 2 }}>
+    <AppText variant="caption" weight="700" color={color || adminColors.primary} style={{ fontSize: 10 }}>
+      {label}
+    </AppText>
+  </View>
+);
+
+const Card = ({ children, style }: { children: React.ReactNode; style?: any }) => (
+  <View style={[styles.card, style]}>
+    {children}
+  </View>
+);
 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "rgba(0, 0, 0, 0.4)",
     justifyContent: "flex-end",
   },
   content: {
-    backgroundColor: adminColors.background,
+    height: "85%",
+    backgroundColor: "#FFFFFF",
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: "85%",
     padding: spacing.lg,
+    gap: spacing.md,
+  },
+  subBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  subContent: {
+    width: "100%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    maxHeight: "80%",
+    ...shadows.md,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.md,
+    paddingBottom: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+    marginBottom: spacing.xs,
+  },
+  tabContainer: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#F1F5F9",
+  },
+  tabButton: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    alignItems: "center",
+    borderBottomWidth: 2,
+    borderBottomColor: "transparent",
+  },
+  tabButtonActive: {
+    borderBottomColor: adminColors.primary,
   },
   form: {
-    gap: spacing.sm,
+    paddingBottom: spacing.xl,
   },
-
+  timelineContainer: {
+    gap: spacing.md,
+    paddingBottom: spacing.xl,
+  },
+  emptyContainer: {
+    padding: spacing.xl,
+    alignItems: "center",
+  },
+  timelineCard: {
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
+  },
+  timelineCardHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  highlightedCard: {
+    borderColor: adminColors.primary,
+    backgroundColor: `${adminColors.primary}05`,
+  },
+  remarksBox: {
+    marginTop: spacing.xs,
+    fontStyle: "italic",
+    backgroundColor: "#F8FAFC",
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: "#F1F5F9",
+  },
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+    paddingTop: spacing.xs,
+  },
+  cardActions: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: "#F1F5F9",
+    paddingTop: spacing.sm,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
   fieldLabel: {
-    fontSize: 13,
+    fontSize: 14,
     color: adminColors.textSecondary,
     marginBottom: spacing.xs,
   },
   selectorScroll: {
-    gap: spacing.xs,
-    paddingBottom: spacing.xs,
+    gap: spacing.sm,
   },
   selectItem: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs,
     borderRadius: radius.md,
-    backgroundColor: adminColors.surface,
     borderWidth: 1,
-    borderColor: adminColors.border,
+    borderColor: "#E2E8F0",
+    backgroundColor: "#FFFFFF",
   },
   selectItemActive: {
     backgroundColor: adminColors.primary,
     borderColor: adminColors.primary,
   },
-  statusRow: {
+  footer: {
     flexDirection: "row",
-    gap: spacing.xs,
-    marginBottom: spacing.md,
+    gap: spacing.md,
+    marginTop: spacing.lg,
   },
-  statusItem: {
-    flex: 1,
-    paddingVertical: spacing.sm,
+  card: {
+    backgroundColor: "#FFFFFF",
     borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: adminColors.border,
-    backgroundColor: adminColors.surface,
-    alignItems: "center",
-  },
-  submitBtn: {
-    marginTop: spacing.md,
+    padding: spacing.sm,
   },
 });

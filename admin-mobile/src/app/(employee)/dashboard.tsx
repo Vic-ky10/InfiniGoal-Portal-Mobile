@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { View, StyleSheet } from "react-native";
-import { useRouter } from "expo-router";
+import { useRouter, useFocusEffect } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 
 import { AppText, Screen } from "@/components/ui";
@@ -85,6 +85,40 @@ export default function EmployeeDashboard() {
       loadProfile();
     });
   }, [loadProfile]);
+
+  // Auto-refresh when user returns to Dashboard screen from another screen
+  useFocusEffect(
+    useCallback(() => {
+      if (userId) {
+        refetch();
+      }
+    }, [userId, refetch])
+  );
+
+  // Auto-refresh when realtime attendance updates are received for this user
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`realtime-dashboard-attendance-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "attendance",
+          filter: `profile_id=eq.${userId}`,
+        },
+        () => {
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [userId, refetch]);
 
   return (
     <Screen
@@ -227,7 +261,7 @@ export default function EmployeeDashboard() {
       <View style={styles.quickActions}>
         <QuickActionCard
           title="Attendance"
-          subtitle="Clock in/out & view log history"
+          subtitle="Log in/out & view log history"
           icon="clock"
           theme="employee"
           onPress={() => router.push("/(employee)/attendance")}

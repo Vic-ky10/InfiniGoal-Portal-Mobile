@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { TextInput, TextInputProps, View } from "react-native";
+import { StyleProp, TextInput, TextInputProps, View, ViewStyle } from "react-native";
 
 import { useThemeColors, radius, spacing } from "@/theme";
 import AppText from "./AppText";
@@ -7,6 +7,7 @@ import AppText from "./AppText";
 interface InputProps extends TextInputProps {
   label?: string;
   error?: string;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export default function Input({
@@ -15,13 +16,14 @@ export default function Input({
   style,
   onFocus,
   onBlur,
+  containerStyle,
   ...props
 }: InputProps) {
   const colors = useThemeColors();
   const [focused, setFocused] = useState(false);
 
   return (
-    <View style={{ marginBottom: spacing.lg }}>
+    <View style={[{ marginBottom: spacing.lg }, containerStyle]}>
       {label && (
         <AppText
           weight="600"

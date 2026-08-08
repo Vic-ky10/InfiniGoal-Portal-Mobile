@@ -41,12 +41,14 @@ export default function BaseFilterBar({
               placeholder={searchPlaceholder}
               value={searchQuery || ""}
               onChangeText={onSearchChange}
+              containerStyle={{ marginBottom: 0 }}
             />
           ) : (
             searchFallback
           )}
         </View>
         <TouchableOpacity
+          activeOpacity={0.7}
           onPress={() => setExpanded(!expanded)}
           style={[
             styles.filterBtn,
@@ -56,7 +58,7 @@ export default function BaseFilterBar({
             },
           ]}
         >
-          <Feather name="sliders" size={18} color={activeFilterCount > 0 ? colors.primary : colors.textSecondary} />
+          <Feather name="sliders" size={20} color={activeFilterCount > 0 ? colors.primary : colors.textSecondary} />
           {activeFilterCount > 0 && (
             <View style={[styles.badgeCount, { backgroundColor: colors.primary }]}>
               <AppText variant="caption" weight="700" color="#fff" style={{ fontSize: 10 }}>
@@ -187,7 +189,7 @@ export function DropdownField({
 }) {
   const colors = useThemeColors();
   return (
-    <View style={StyleSheet.flatten([{ marginBottom: spacing.sm }, style])}>
+    <View style={StyleSheet.flatten([{ marginBottom: 0 }, style])}>
       {label && (
         <AppText
           weight="600"
@@ -236,29 +238,31 @@ export function DropdownField({
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: spacing.md,
-    gap: spacing.xs,
+    marginTop: spacing.sm,
+    marginBottom: spacing.sm,
+    gap: spacing.md,
   },
   searchRow: {
     flexDirection: "row",
-    gap: spacing.xs,
+    gap: spacing.md,
     alignItems: "center",
   },
   filterBtn: {
-    width: 44,
-    height: 44,
+    width: 52,
+    height: 52,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: 1.5,
     alignItems: "center",
     justifyContent: "center",
+    position: "relative",
   },
   badgeCount: {
     position: "absolute",
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
+    top: -6,
+    right: -6,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -283,12 +287,12 @@ const styles = StyleSheet.create({
   },
   expandedBox: {
     position: "absolute",
-    top: 52,
+    top: 60,
     left: 0,
     right: 0,
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderRadius: radius.md,
-    padding: spacing.md,
+    padding: spacing.lg,
     zIndex: 1000,
     maxHeight: 380,
     shadowColor: "#000",

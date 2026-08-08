@@ -72,13 +72,13 @@ export default function ConfirmModal({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
+backdrop: {
+  flex: 1,
+  backgroundColor: "transparent",
+  justifyContent: "center",
+  alignItems: "center",
+  padding: spacing.xl,
+},
   card: {
     width: "100%",
     maxWidth: 340,

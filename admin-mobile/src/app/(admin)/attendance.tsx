@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { View, FlatList, Pressable } from "react-native";
 
 import { AppText, Screen, Card } from "@/components/ui";
@@ -11,7 +11,7 @@ import AttendanceFilterBar from "@/features/attendance/components/AttendanceFilt
 
 export default function AttendanceScreen() {
   const [selectedSummary, setSelectedSummary] = useState<
-    "present" | "shortHours" | "halfDay" | "incomplete" | "absent"
+    "present" | "incomplete" | "absent"
   >("present");
   
   const {
@@ -30,21 +30,20 @@ export default function AttendanceScreen() {
     refresh,
   } = useAttendance();
 
-  // Notice: The manual search filter has been replaced by getTodayAttendanceDashboard's backend-like filtering
-  // which works seamlessly with the AttendanceFilterBar's filters state.
+  // "Present" tab merges full-day present + short hours + half day so that
+  // every employee who logged in today appears in that section.
+  const allPresentRecords = useMemo(
+    () => [...presentRecords, ...shortHoursRecords, ...halfDayRecords],
+    [presentRecords, shortHoursRecords, halfDayRecords],
+  );
+
+  // Combined present count for the summary card.
+  const presentCount = summary.present + summary.shortHours + summary.halfDay;
 
   useEffect(() => {
     switch (selectedSummary) {
       case "present":
-        setRecords(presentRecords);
-        break;
-
-      case "shortHours":
-        setRecords(shortHoursRecords);
-        break;
-
-      case "halfDay":
-        setRecords(halfDayRecords);
+        setRecords(allPresentRecords);
         break;
 
       case "incomplete":
@@ -57,9 +56,7 @@ export default function AttendanceScreen() {
     }
   }, [
     selectedSummary,
-    presentRecords,
-    shortHoursRecords,
-    halfDayRecords,
+    allPresentRecords,
     incompleteRecords,
     absentRecords,
     setRecords,
@@ -102,7 +99,7 @@ export default function AttendanceScreen() {
                 Present
               </AppText>
               <AppText weight="700" variant="h3" color={adminColors.success}>
-                {summary.present}
+                {presentCount}
               </AppText>
             </Card>
           </Pressable>

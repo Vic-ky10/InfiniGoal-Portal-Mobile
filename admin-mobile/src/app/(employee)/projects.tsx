@@ -47,7 +47,7 @@ export default function EmployeeProjectsScreen() {
       loadData();
     });
 
-    // Subscribe to realtime project updates
+   
     const channel = supabase
       .channel("realtime-projects-employee")
       .on(
@@ -124,10 +124,10 @@ export default function EmployeeProjectsScreen() {
           subtitle={`${filteredProjects.length} project${filteredProjects.length !== 1 ? "s" : ""} assigned to you`}
         />
 
-        {/* Enhanced Project Filter Bar */}
+        
         <ProjectFilterBar filters={filters} onFiltersChange={setFilters} />
 
-        {/* Projects List */}
+        {/* projects List */}
         <FlatList
           data={filteredProjects}
           keyExtractor={(item) => item.id}

@@ -19,7 +19,7 @@ interface AppTextProps extends TextProps {
     | "caption";
 
   color?: string;
-  weight?: "400" | "500" | "600" | "700";
+  weight?: "400" | "500" | "600" | "700" | "900";
 }
 
 const fontSizes = {

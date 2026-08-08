@@ -412,61 +412,64 @@ export default function EmployeeTasksScreen() {
   );
 
   return (
-    <Screen isLoading={false} scroll={false} style={{ padding: spacing.sm }}>
-      <View style={{ flex: 1, gap: spacing.md }}>
-        {/* Header with view toggle */}
-        <AppHeader
-          title="My Tasks"
-          subtitle="Tasks assigned to you"
-          rightComponent={
-            <View style={{
-              flexDirection: "row",
-              backgroundColor: `${employeeColors.primary}10`,
-              borderRadius: radius.md,
-              borderWidth: 1,
-              borderColor: `${employeeColors.primary}30`,
-              overflow: "hidden",
-            }}>
-              <TouchableOpacity
-                onPress={() => setViewMode("kanban")}
-                style={{
-                  paddingHorizontal: spacing.sm,
-                  paddingVertical: spacing.xs,
-                  backgroundColor: viewMode === "kanban" ? employeeColors.primary : "transparent",
-                }}
-              >
-                <Feather
-                  name="columns"
-                  size={15}
-                  color={viewMode === "kanban" ? "#FFFFFF" : employeeColors.primary}
-                />
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={() => setViewMode("list")}
-                style={{
-                  paddingHorizontal: spacing.sm,
-                  paddingVertical: spacing.xs,
-                  backgroundColor: viewMode === "list" ? employeeColors.primary : "transparent",
-                }}
-              >
-                <Feather
-                  name="list"
-                  size={15}
-                  color={viewMode === "list" ? "#FFFFFF" : employeeColors.primary}
-                />
-              </TouchableOpacity>
-            </View>
-          }
-        />
+    <Screen isLoading={false} scroll={false} style={{ padding: 0 }}>
+      <View style={{ flex: 1, gap: spacing.md, paddingTop: spacing.md }}>
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          <AppHeader
+            title="My Tasks"
+            subtitle="Tasks assigned to you"
+            rightComponent={
+              <View style={{
+                flexDirection: "row",
+                backgroundColor: `${employeeColors.primary}10`,
+                borderRadius: radius.md,
+                borderWidth: 1,
+                borderColor: `${employeeColors.primary}30`,
+                overflow: "hidden",
+              }}>
+                <TouchableOpacity
+                  onPress={() => setViewMode("kanban")}
+                  style={{
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: spacing.xs,
+                    backgroundColor: viewMode === "kanban" ? employeeColors.primary : "transparent",
+                  }}
+                >
+                  <Feather
+                    name="columns"
+                    size={23}
+                    color={viewMode === "kanban" ? "#FFFFFF" : employeeColors.primary}
+                  />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setViewMode("list")}
+                  style={{
+                    paddingHorizontal: spacing.sm,
+                    paddingVertical: spacing.xs,
+                    backgroundColor: viewMode === "list" ? employeeColors.primary : "transparent",
+                  }}
+                >
+                  <Feather
+                    name="list"
+                    size={23}
+                    color={viewMode === "list" ? "#FFFFFF" : employeeColors.primary}
+                  />
+                </TouchableOpacity>
+              </View>
+            }
+          />
+        </View>
 
-        {/* Enhanced Task Filter Bar */}
-        <TaskFilterBar
-          filters={filters}
-          onFiltersChange={setFilters}
-          projects={projectsOptions}
-        />
+        {/*  Filter Bar */}
+        <View style={{ paddingHorizontal: spacing.lg }}>
+          <TaskFilterBar
+            filters={filters}
+            onFiltersChange={setFilters}
+            projects={projectsOptions}
+          />
+        </View>
 
-        {/* Kanban View */}
+        {/* kanban View */}
         {viewMode === "kanban" ? (
           loading ? (
             <FlatList
@@ -474,7 +477,7 @@ export default function EmployeeTasksScreen() {
               keyExtractor={(i) => String(i)}
               renderItem={renderSkeletonItem}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+              contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl }}
             />
           ) : (
             <KanbanBoard
@@ -487,17 +490,15 @@ export default function EmployeeTasksScreen() {
             />
           )
         ) : (
-          /* List View */
+          
           <>
-
-
             {loading ? (
               <FlatList
                 data={[1, 2, 3, 4]}
                 keyExtractor={(i) => String(i)}
                 renderItem={renderSkeletonItem}
                 showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+                contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl }}
               />
             ) : (
               <FlatList
@@ -508,7 +509,7 @@ export default function EmployeeTasksScreen() {
                 onRefresh={() => loadData(true)}
                 showsVerticalScrollIndicator={false}
                 ListEmptyComponent={<EmptyState title="No Tasks Found" />}
-                contentContainerStyle={{ paddingBottom: spacing.xxxl }}
+                contentContainerStyle={{ paddingHorizontal: spacing.lg, paddingBottom: spacing.xxxl }}
               />
             )}
           </>
@@ -523,7 +524,7 @@ export default function EmployeeTasksScreen() {
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              backgroundColor: "transparent",
               justifyContent: "flex-end",
             }}
           >

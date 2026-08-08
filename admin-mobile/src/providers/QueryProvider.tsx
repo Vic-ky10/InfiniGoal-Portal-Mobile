@@ -31,6 +31,8 @@ export default function QueryProvider({ children }: Props) {
         { event: "*", schema: "public", table: "customer_followups" },
         () => {
           queryClient.invalidateQueries({ queryKey: ["sales"] });
+          queryClient.invalidateQueries({ queryKey: ["my-customers"] });
+          queryClient.invalidateQueries({ queryKey: ["my-sales-dashboard"] });
         }
       )
       .subscribe();

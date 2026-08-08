@@ -332,7 +332,7 @@ export default function ProjectsScreen() {
         title="Sort Projects"
         options={SORT_OPTIONS.map((opt) => ({
           label: opt.label,
-          icon: sortKey === opt.value ? "✓" : "  ",
+          icon: sortKey === opt.value ? "+" : "*",
           onPress: () => {
             setSortKey(opt.value);
             setSortSheetVisible(false);

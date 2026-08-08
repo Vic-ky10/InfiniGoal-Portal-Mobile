@@ -579,7 +579,7 @@ const handleSelectAvatar = async () => {
           <View
             style={{
               flex: 1,
-              backgroundColor: "rgba(15, 23, 42, 0.4)",
+              backgroundColor: "transparent",
               justifyContent: "flex-end",
             }}
           >
@@ -588,8 +588,8 @@ const handleSelectAvatar = async () => {
                 backgroundColor: "#FFFFFF",
                 borderTopLeftRadius: 24,
                 borderTopRightRadius: 24,
-                padding: 24,
-                paddingBottom: 40,
+                padding:20,
+                paddingBottom:30,
                 marginTop:60, 
               }}
             >
@@ -636,7 +636,7 @@ const handleSelectAvatar = async () => {
                   mode="date"
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Address</AppText>
+                <AppText variant="h3" weight="700" style={{  color: employeeColors.primary }}>Address</AppText>
                 <Input
                   label="Current Address"
                   value={editAddress}
@@ -644,22 +644,22 @@ const handleSelectAvatar = async () => {
                   placeholder="Your full address"
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Education</AppText>
+                <AppText variant="h3" weight="700" style={{  color: employeeColors.primary }}>Education</AppText>
                 <Input
                   label="Qualification"
                   value={editQualification}
                   onChangeText={setEditQualification}
-                  placeholder="e.g. B.Tech, MBA"
+                  placeholder="Enter your Qulification ... "
                 />
                 
                 <Input
                   label="Degree"
                   value={editDegree}
                   onChangeText={setEditDegree}
-                  placeholder="e.g. Computer Science"
+                  placeholder="Enter your Degree.."
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Employment</AppText>
+                <AppText variant="h3" weight="700" style={{  color: employeeColors.primary }}>Employment</AppText>
                 <Input
                   label="Experience (Years)"
                   value={editExperience}
@@ -668,7 +668,7 @@ const handleSelectAvatar = async () => {
                   keyboardType="numeric"
                 />
 
-                <AppText variant="h3" weight="700" style={{ marginTop: spacing.md, color: employeeColors.primary }}>Emergency Contact</AppText>
+                <AppText variant="h3" weight="700" style={{ color: employeeColors.primary }}>Emergency Contact</AppText>
                 <Input
                   label="Emergency Contact Number"
                   value={editEmergencyContact}

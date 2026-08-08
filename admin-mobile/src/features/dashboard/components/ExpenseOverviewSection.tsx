@@ -14,11 +14,13 @@ interface ExpenseOverviewSectionProps {
   mode?: "admin" | "employee";
   userId?: string;
   theme?: "admin" | "employee";
+  showViewAll?: boolean;
 }
 
 export default function ExpenseOverviewSection({
   mode = "admin",
   theme,
+  showViewAll = true,
 }: ExpenseOverviewSectionProps) {
   const router = useRouter();
   const fallbackColors = useThemeColors();
@@ -72,18 +74,20 @@ export default function ExpenseOverviewSection({
           </AppText>
         </View>
 
-        <Pressable
-          onPress={() => router.push(viewAllRoute as any)}
-          android_ripple={{ color: "transparent" }}
-          style={({ pressed }) => [
-            styles.viewAllBtn,
-            { backgroundColor: `${colors.primary}10`, opacity: pressed ? 0.7 : 1 },
-          ]}
-        >
-          <AppText variant="caption" weight="600" color={colors.primary}>
-            View All
-          </AppText>
-        </Pressable>
+        {showViewAll && (
+          <Pressable
+            onPress={() => router.push(viewAllRoute as any)}
+            android_ripple={{ color: "transparent" }}
+            style={({ pressed }) => [
+              styles.viewAllBtn,
+              { backgroundColor: `${colors.primary}10`, opacity: pressed ? 0.7 : 1 },
+            ]}
+          >
+            <AppText variant="caption" weight="600" color={colors.primary}>
+              View All
+            </AppText>
+          </Pressable>
+        )}
       </View>
 
       {/* Summary Pills */}

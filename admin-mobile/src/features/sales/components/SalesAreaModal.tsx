@@ -155,7 +155,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
               )}
             />
 
-            {/* Area Type selection */}
+            {/* area type selection */}
             <AppText weight="600" style={styles.fieldLabel}>
               Area Type
             </AppText>
@@ -214,7 +214,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
                   render={({ field: { onChange, value } }) => (
                     <Input
                       label="City"
-                      placeholder="e.g. Bangalore"
+                      placeholder="Enter City "
                       value={value || ""}
                       onChangeText={onChange}
                       error={errors.city?.message}
@@ -229,7 +229,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
                   render={({ field: { onChange, value } }) => (
                     <Input
                       label="State"
-                      placeholder="e.g. Karnataka"
+                      placeholder="Enter state name ..."
                       value={value || ""}
                       onChangeText={onChange}
                       error={errors.state?.message}
@@ -245,7 +245,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
               render={({ field: { onChange, value } }) => (
                 <Input
                   label="Pincode"
-                  placeholder="e.g. 560001"
+                  placeholder="Enter pincode "
                   keyboardType="numeric"
                   value={value || ""}
                   onChangeText={onChange}
@@ -355,7 +355,7 @@ export default function SalesAreaModal({ visible, onClose, areaToEdit }: Props) 
 const styles = StyleSheet.create({
   backdrop: {
     flex: 1,
-    backgroundColor: "rgba(15, 23, 42, 0.4)",
+    backgroundColor: "transparent",
     justifyContent: "flex-end",
   },
   content: {

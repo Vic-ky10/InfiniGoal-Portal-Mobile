@@ -14,10 +14,12 @@ import {
   logoutAttendance,
 } from "@/features/attendance/attendance.service";
 import { toast } from "@/store/toast.store";
+import { useQueryClient } from "@tanstack/react-query";
 import AttendanceCard from "@/features/attendance/components/AttendanceCard";
 import AttendanceFilterBar from "@/features/attendance/components/AttendanceFilterBar";
 
 export default function EmployeeAttendanceScreen() {
+  const queryClient = useQueryClient();
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
@@ -78,6 +80,7 @@ export default function EmployeeAttendanceScreen() {
       const res = await loginAttendance(profileId);
       if (res.success) {
         toast.success(res.message || "Clocked in successfully.");
+        queryClient.invalidateQueries({ queryKey: ["employee-dashboard", profileId] });
         loadData(true);
       } else {
         toast.error(res.error || "Failed to clock in.");
@@ -94,6 +97,7 @@ export default function EmployeeAttendanceScreen() {
       const res = await logoutAttendance(profileId);
       if (res.success) {
         toast.success(res.message || "Clocked out successfully.");
+        queryClient.invalidateQueries({ queryKey: ["employee-dashboard", profileId] });
         loadData(true);
       } else {
         toast.error(res.error || "Failed to clock out.");
@@ -112,7 +116,7 @@ export default function EmployeeAttendanceScreen() {
       <View style={{ flex: 1, gap: spacing.md }}>
         <AppHeader title="Attendance" subtitle="Track your daily work hours" />
 
-        {/* Today's Clock In / Clock Out Card */}
+     
         <Card
           style={{
             borderColor: employeeColors.border,
@@ -239,7 +243,7 @@ export default function EmployeeAttendanceScreen() {
           </View>
         </Card>
 
-        <AppText variant="h3" weight="700" style={{ marginTop: spacing.sm, marginBottom: spacing.xs }}>
+        <AppText variant="h3" weight="700" style={{ marginTop: spacing.sm,}}>
           Attendance History
         </AppText>
 

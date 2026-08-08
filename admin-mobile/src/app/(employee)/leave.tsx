@@ -9,13 +9,29 @@ import {
 } from "react-native";
 import { Feather } from "@expo/vector-icons";
 
-import { AppText, Screen, Input, Button, DatePickerField } from "@/components/ui";
-import { AppHeader, EmptyState, ActionSheet, ActionSheetOption } from "@/components/common";
+import {
+  AppText,
+  Screen,
+  Input,
+  Button,
+  DatePickerField,
+} from "@/components/ui";
+import {
+  AppHeader,
+  EmptyState,
+  ActionSheet,
+  ActionSheetOption,
+} from "@/components/common";
 import { employeeColors, radius, spacing } from "@/theme";
 import { supabase } from "@/lib/supabase/client";
 import { toast } from "@/store/toast.store";
 
-import { LeaveRequest, LEAVE_TYPE, LEAVE_DURATION, LeaveFilters } from "@/features/leave/leave.types";
+import {
+  LeaveRequest,
+  LEAVE_TYPE,
+  LEAVE_DURATION,
+  LeaveFilters,
+} from "@/features/leave/leave.types";
 import {
   getEmployeeLeaveRequests,
   createLeaveRequest,
@@ -32,7 +48,7 @@ export default function EmployeeLeaveScreen() {
   const [profileId, setProfileId] = useState<string | null>(null);
   const [leaveRequests, setLeaveRequests] = useState<LeaveRequest[]>([]);
   const [filters, setFilters] = useState<LeaveFilters>({});
-  
+
   const [actionSheetConfig, setActionSheetConfig] = useState<{
     visible: boolean;
     title?: string;
@@ -46,20 +62,31 @@ export default function EmployeeLeaveScreen() {
   const filteredLeaveRequests = useMemo(() => {
     return leaveRequests.filter((leave) => {
       if (filters.status && leave.status !== filters.status) return false;
-      if (filters.leaveType && leave.leave_type !== filters.leaveType) return false;
+      if (filters.leaveType && leave.leave_type !== filters.leaveType)
+        return false;
       if (filters.date) {
         const d = filters.date;
-        if (leave.start_date !== d && (leave.start_date > d || leave.end_date < d)) return false;
+        if (
+          leave.start_date !== d &&
+          (leave.start_date > d || leave.end_date < d)
+        )
+          return false;
       }
-      if (filters.month && !leave.start_date.startsWith(filters.month)) return false;
-      if (filters.year && !leave.start_date.startsWith(filters.year)) return false;
+      if (filters.month && !leave.start_date.startsWith(filters.month))
+        return false;
+      if (filters.year && !leave.start_date.startsWith(filters.year))
+        return false;
       return true;
     });
   }, [leaveRequests, filters]);
 
   const [leaveType, setLeaveType] = useState<string>(LEAVE_TYPE.CASUAL);
-  const [startDate, setStartDate] = useState(new Date().toISOString().split("T")[0]);
-  const [endDate, setEndDate] = useState(new Date().toISOString().split("T")[0]);
+  const [startDate, setStartDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
+  const [endDate, setEndDate] = useState(
+    new Date().toISOString().split("T")[0],
+  );
   const [reason, setReason] = useState("");
 
   const loadData = useCallback(async (isRefresh = false) => {
@@ -68,7 +95,9 @@ export default function EmployeeLeaveScreen() {
       if (isRefresh) setRefreshing(true);
       else setLoading(true);
 
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return;
 
       setProfileId(user.id);
@@ -94,15 +123,19 @@ export default function EmployeeLeaveScreen() {
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "leave_requests" },
-        (payload: { new: Record<string, unknown> | null; old: Record<string, unknown> | null }) => {
+        (payload: {
+          new: Record<string, unknown> | null;
+          old: Record<string, unknown> | null;
+        }) => {
           const newRow = payload.new;
           const oldRow = payload.old;
-          const affectedProfileId = (newRow?.profile_id || oldRow?.profile_id) as string | undefined;
+          const affectedProfileId = (newRow?.profile_id ||
+            oldRow?.profile_id) as string | undefined;
 
           if (affectedProfileId === profileId) {
             loadData(true);
           }
-        }
+        },
       )
       .subscribe();
 
@@ -157,9 +190,14 @@ export default function EmployeeLeaveScreen() {
           icon: "❌",
           onPress: async () => {
             try {
-              const res = await cancelPendingLeaveRequest(profileId || "", requestId);
+              const res = await cancelPendingLeaveRequest(
+                profileId || "",
+                requestId,
+              );
               if (res.success) {
-                toast.success(res.message || "Leave request cancelled successfully.");
+                toast.success(
+                  res.message || "Leave request cancelled successfully.",
+                );
                 loadData(true);
               } else {
                 toast.error(res.error || "Failed to cancel leave request.");
@@ -178,7 +216,11 @@ export default function EmployeeLeaveScreen() {
       leave={item as any}
       showAvatar={false}
       showActions={false}
-      onCancel={item.status === "Pending" ? () => handleCancelRequest(item.id) : undefined}
+      onCancel={
+        item.status === "Pending"
+          ? () => handleCancelRequest(item.id)
+          : undefined
+      }
     />
   );
 
@@ -205,7 +247,11 @@ export default function EmployeeLeaveScreen() {
           }
         />
 
-        <LeaveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin={false} />
+        <LeaveFilterBar
+          filters={filters}
+          onFiltersChange={setFilters}
+          isAdmin={false}
+        />
 
         <FlatList
           data={filteredLeaveRequests}
@@ -220,9 +266,30 @@ export default function EmployeeLeaveScreen() {
 
         {/* apply Leave Modal */}
         <Modal visible={modalVisible} animationType="slide" transparent>
-          <View style={{ flex: 1, backgroundColor: "rgba(15, 23, 42, 0.4)", justifyContent: "flex-end" }}>
-            <View style={{ backgroundColor: "#FFFFFF", borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl, padding: spacing.xl, maxHeight: "85%" }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: spacing.lg }}>
+          <View
+            style={{
+              flex: 1,
+              backgroundColor: "transparent",
+              justifyContent: "flex-end",
+            }}
+          >
+            <View
+              style={{
+                backgroundColor: "#FFFFFF",
+                borderTopLeftRadius: radius.xl,
+                borderTopRightRadius: radius.xl,
+                padding: spacing.xl,
+                maxHeight: "85%",
+              }}
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  marginBottom: spacing.lg,
+                }}
+              >
                 <AppText variant="h2" weight="700">
                   Apply for Leave
                 </AppText>
@@ -231,12 +298,35 @@ export default function EmployeeLeaveScreen() {
                 </TouchableOpacity>
               </View>
 
-              <ScrollView showsVerticalScrollIndicator={false} style={styles.formScroll} contentContainerStyle={[styles.form, { flexGrow: 1, paddingBottom: spacing.xxxl }]}>
-                <AppText weight="600" style={{ marginBottom: spacing.xs, fontSize: 13 }} color={employeeColors.textSecondary}>
+              <ScrollView
+                showsVerticalScrollIndicator={false}
+                style={styles.formScroll}
+                contentContainerStyle={[
+                  styles.form,
+                  { flexGrow: 1, paddingBottom: spacing.xxxl },
+                ]}
+              >
+                <AppText
+                  weight="600"
+                  style={{ marginBottom: spacing.xs, fontSize: 13 }}
+                  color={employeeColors.textSecondary}
+                >
                   Leave Type
                 </AppText>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.xs, marginBottom: spacing.lg }}>
-                  {[LEAVE_TYPE.CASUAL, LEAVE_TYPE.SICK, LEAVE_TYPE.WORK_FROM_HOME, LEAVE_TYPE.OTHER].map((type) => (
+                <View
+                  style={{
+                    flexDirection: "row",
+                    flexWrap: "wrap",
+                    gap: spacing.xs,
+                    marginBottom: spacing.lg,
+                  }}
+                >
+                  {[
+                    LEAVE_TYPE.CASUAL,
+                    LEAVE_TYPE.SICK,
+                    LEAVE_TYPE.WORK_FROM_HOME,
+                    LEAVE_TYPE.OTHER,
+                  ].map((type) => (
                     <TouchableOpacity
                       key={type}
                       onPress={() => setLeaveType(type)}
@@ -245,11 +335,24 @@ export default function EmployeeLeaveScreen() {
                         paddingVertical: spacing.sm,
                         borderRadius: radius.md,
                         borderWidth: 1.5,
-                        borderColor: leaveType === type ? employeeColors.primary : employeeColors.border,
-                        backgroundColor: leaveType === type ? `${employeeColors.primary}10` : "#FFFFFF",
+                        borderColor:
+                          leaveType === type
+                            ? employeeColors.primary
+                            : employeeColors.border,
+                        backgroundColor:
+                          leaveType === type
+                            ? `${employeeColors.primary}10`
+                            : "#FFFFFF",
                       }}
                     >
-                      <AppText weight={leaveType === type ? "700" : "500"} color={leaveType === type ? employeeColors.primary : employeeColors.text}>
+                      <AppText
+                        weight={leaveType === type ? "700" : "500"}
+                        color={
+                          leaveType === type
+                            ? employeeColors.primary
+                            : employeeColors.text
+                        }
+                      >
                         {type}
                       </AppText>
                     </TouchableOpacity>
@@ -293,7 +396,9 @@ export default function EmployeeLeaveScreen() {
 
       <ActionSheet
         visible={actionSheetConfig.visible}
-        onClose={() => setActionSheetConfig((prev) => ({ ...prev, visible: false }))}
+        onClose={() =>
+          setActionSheetConfig((prev) => ({ ...prev, visible: false }))
+        }
         title={actionSheetConfig.title}
         subtitle={actionSheetConfig.subtitle}
         options={actionSheetConfig.options}

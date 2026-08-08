@@ -1,6 +1,7 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
+import { useLocalSearchParams } from "expo-router";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
@@ -34,12 +35,35 @@ export default function EmployeeCustomersScreen() {
     isLoading: loadingAreas,
   } = useActiveSalesAreas();
 
+  const params = useLocalSearchParams<{ customerId?: string; followupId?: string }>();
+
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("All");
 
   // Modal state
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [modalTab, setModalTab] = useState<"info" | "purchases" | "followups">("info");
+  const [highlightFollowupId, setHighlightFollowupId] = useState<string | null>(null);
+
+  // Automatically open EmployeeCustomerModal when deep-link customerId/followupId params are present
+  /* eslint-disable react-hooks/set-state-in-effect */
+  useEffect(() => {
+    if (params.customerId && customers.length > 0) {
+      const customer = customers.find((c) => c.id === params.customerId);
+      if (customer) {
+        setSelectedCustomer(customer);
+        setModalTab("followups");
+        if (params.followupId) {
+          setHighlightFollowupId(params.followupId);
+        } else {
+          setHighlightFollowupId(null);
+        }
+        setModalVisible(true);
+      }
+    }
+  }, [params.customerId, params.followupId, customers]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   // Filtered list
   const filteredCustomers = useMemo(() => {
@@ -57,11 +81,13 @@ export default function EmployeeCustomersScreen() {
 
   const handleCreate = () => {
     setSelectedCustomer(null);
+    setModalTab("info");
     setModalVisible(true);
   };
 
   const handleEdit = (customer: Customer) => {
     setSelectedCustomer(customer);
+    setModalTab("info");
     setModalVisible(true);
   };
 
@@ -81,17 +107,26 @@ export default function EmployeeCustomersScreen() {
         : adminColors.textSecondary;
 
     return (
-      <Card
-        style={{
-          borderWidth: 1,
-          borderColor: adminColors.border,
-          borderRadius: radius.lg,
-          ...shadows.sm,
-          padding: spacing.md,
-          backgroundColor: adminColors.background,
-          marginBottom: spacing.md,
+      <TouchableOpacity
+        activeOpacity={0.95}
+        onPress={() => {
+          setSelectedCustomer(item);
+          setModalTab("followups");
+          setHighlightFollowupId(null);
+          setModalVisible(true);
         }}
       >
+        <Card
+          style={{
+            borderWidth: 1,
+            borderColor: adminColors.border,
+            borderRadius: radius.lg,
+            ...shadows.sm,
+            padding: spacing.md,
+            backgroundColor: adminColors.background,
+            marginBottom: spacing.md,
+          }}
+        >
         {/* HEADER */}
         <View
           style={{
@@ -174,7 +209,8 @@ export default function EmployeeCustomersScreen() {
             <Feather name="edit-2" size={14} color={EMPLOYEE_COLOR} />
           </TouchableOpacity>
         </View>
-      </Card>
+        </Card>
+      </TouchableOpacity>
     );
   };
 
@@ -260,6 +296,8 @@ export default function EmployeeCustomersScreen() {
           employeeId={employeeId}
           salesAreas={activeSalesAreas}
           loadingAreas={loadingAreas}
+          initialTab={modalTab}
+          highlightFollowupId={highlightFollowupId}
         />
       </View>
     </Screen>
