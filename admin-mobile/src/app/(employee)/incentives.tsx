@@ -62,7 +62,6 @@ export default function EmployeeIncentivesScreen() {
       // Payment Status
       if (filters.paymentStatus && inc.payment_status !== filters.paymentStatus) return false;
 
-      // Date / Month / Year
       if (filters.date) {
         const [y, m] = filters.date.split("-").map(Number);
         if (inc.year !== y || inc.month !== m) return false;
@@ -90,10 +89,10 @@ export default function EmployeeIncentivesScreen() {
 
   return (
     <Screen isLoading={loading} scroll={false}>
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader title="My Incentives" subtitle="Earned performance rewards and bonuses" />
 
-        {/* Standardized Incentive Filter Bar */}
+        
         <IncentiveFilterBar filters={filters} onFiltersChange={setFilters} />
 
         <FlatList

@@ -177,6 +177,7 @@ export interface EmployeeExpenseSummary {
   rejectedCount: number;
   monthlyTotal: number;
   averageExpense: number;
+  walletBalance?: number | null;
   categorySummary: CategorySummary[];
   monthlySummary: MonthlySummary[];
   recentExpenses: Expense[];

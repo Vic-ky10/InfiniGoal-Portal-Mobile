@@ -176,15 +176,15 @@ export default function TasksScreen() {
       onRefresh={refresh}
       style={{ padding: 0 }}
     >
-      <View style={{ flex: 1, gap: spacing.md, paddingTop: spacing.md }}>
-        {/* Header */}
+      <View style={{ flex: 1,}}>
+      
         <View style={{ paddingHorizontal: spacing.lg }}>
           <AppHeader
             title="Task Board"
             subtitle={`${tasks.length} tasks across projects`}
             rightComponent={
               <View style={{ flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
-                {/* View Toggle */}
+             
                 <View style={{
                   flexDirection: "row",
                   backgroundColor: adminColors.surface,
@@ -260,7 +260,7 @@ export default function TasksScreen() {
           />
         </View>
 
-        {/* Kanban View */}
+     
         {viewMode === "kanban" ? (
           <KanbanBoard
             tasks={filteredTasks}
@@ -274,7 +274,7 @@ export default function TasksScreen() {
             onCardPress={handleTaskCardPress}
           />
         ) : (
-          /* List View */
+         
           <>
             {/* Tasks List */}
             <FlatList

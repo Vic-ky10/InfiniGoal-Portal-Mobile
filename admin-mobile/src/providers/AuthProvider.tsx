@@ -18,6 +18,8 @@ export default function AuthProvider({ children }: Props) {
   const isInitializing = useAuthStore((state) => state.isInitializing);
   const setUser = useAuthStore((state) => state.setUser);
   const setRole = useAuthStore((state) => state.setRole);
+  const department = useAuthStore((state) => state.department);
+  const setDepartment = useAuthStore((state) => state.setDepartment);
 
   const setIsInitializing = useAuthStore((state) => state.setIsInitializing);
 
@@ -33,26 +35,30 @@ export default function AuthProvider({ children }: Props) {
         if (session?.user) {
           const { data: profile } = await supabase
             .from("profiles")
-            .select("role")
+            .select("role, department")
             .eq("id", session.user.id)
             .single();
 
           if (mounted && profile?.role) {
             setUser(session.user);
             setRole(profile.role);
-            console.log("AUTH PROVIDER ROLE:", profile.role);
+            setDepartment(profile.department || null);
+            console.log("AUTH PROVIDER ROLE:", profile.role, "DEPT:", profile.department);
           } else if (mounted) {
             setUser(null);
             setRole(null);
+            setDepartment(null);
           }
         } else if (mounted) {
           setUser(null);
           setRole(null);
+          setDepartment(null);
         }
       } catch {
         if (mounted) {
           setUser(null);
           setRole(null);
+          setDepartment(null);
         }
       } finally {
         if (mounted) {
@@ -75,20 +81,23 @@ export default function AuthProvider({ children }: Props) {
 
         const { data: profile } = await supabase
           .from("profiles")
-          .select("role")
+          .select("role, department")
           .eq("id", session.user.id)
           .single();
 
         if (mounted && profile?.role) {
           setUser(session.user);
           setRole(profile.role);
+          setDepartment(profile.department || null);
         } else if (mounted) {
           setUser(null);
           setRole(null);
+          setDepartment(null);
         }
       } else if (mounted) {
         setUser(null);
         setRole(null);
+        setDepartment(null);
       }
     });
 
@@ -96,7 +105,7 @@ export default function AuthProvider({ children }: Props) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [setIsInitializing, setRole, setUser]);
+  }, [setIsInitializing, setRole, setDepartment, setUser]);
 
   useEffect(() => {
     if (isInitializing) return;
@@ -114,16 +123,18 @@ export default function AuthProvider({ children }: Props) {
       return;
     }
 
-    if (role === "Admin") {
+    const isAdmin = (role === "Admin" || role === "Super Admin") && department === "Administration";
+
+    if (isAdmin) {
       if (inEmployeeGroup || inAuthGroup || isHome) {
         router.replace("/(admin)/dashboard");
       }
-    } else if (role === "Employee") {
+    } else {
       if (inAdminGroup || inAuthGroup || isHome) {
         router.replace("/(employee)/dashboard");
       }
     }
-  }, [user, role, isInitializing, segments, router]);
+  }, [user, role, department, isInitializing, segments, router]);
 
   if (isInitializing) {
     return (

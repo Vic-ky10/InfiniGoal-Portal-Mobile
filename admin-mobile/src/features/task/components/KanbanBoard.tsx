@@ -507,7 +507,6 @@ function Column({
   );
 }
 
-//  KanbanBoard 
 
 export default function KanbanBoard({
   tasks,
@@ -552,7 +551,7 @@ export default function KanbanBoard({
 
 
   const filteredTasks = useMemo(() => {
-    const today = new Date();
+    const today = new Date()
     return tasks.filter((task) => {
       if (quickFilter === "Mine") {
         if (!profileId || task.member?.profile_id !== profileId) return false;
@@ -824,7 +823,7 @@ export default function KanbanBoard({
                 as finished.
               </AppText>
 
-              {/* Actual hours input */}
+             
               <View
                 style={[
                   styles.hoursInputContainer,
@@ -892,7 +891,7 @@ export default function KanbanBoard({
           </View>
         </Modal>
 
-        {/*  Delete Confirmation Modal  */}
+      
         <Modal
           visible={!!deleteConfirm}
           transparent
@@ -954,7 +953,7 @@ export default function KanbanBoard({
           </View>
         </Modal>
 
-        {/* ── Create/Edit Task Modal ─────────────────────────────────────── */}
+      
         <TaskModal
           visible={isCreateOpen}
           onClose={() => setIsCreateOpen(false)}
@@ -969,7 +968,7 @@ export default function KanbanBoard({
   );
 }
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+// ─── Styles 
 
 const styles = StyleSheet.create({
   filterRow: {
@@ -1103,7 +1102,7 @@ const styles = StyleSheet.create({
   deleteBtn: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "flex-end",
+   justifyContent: "center",
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: 4,

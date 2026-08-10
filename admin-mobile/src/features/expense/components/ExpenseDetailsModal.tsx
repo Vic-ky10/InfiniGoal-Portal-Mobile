@@ -254,16 +254,6 @@ export default function ExpenseDetailsModal({
                           {isPdf ? "Open PDF" : "Preview"}
                         </AppText>
                       </TouchableOpacity>
-
-                      <TouchableOpacity
-                        onPress={() => Linking.openURL(expense.receipt_url!)}
-                        style={[styles.receiptBtn, { backgroundColor: `${colors.textSecondary}15` }]}
-                      >
-                        <Feather name="download" size={14} color={colors.textSecondary} />
-                        <AppText variant="caption" weight="600" color={colors.textSecondary}>
-                          Download
-                        </AppText>
-                      </TouchableOpacity>
                     </View>
                   </View>
                 ) : (

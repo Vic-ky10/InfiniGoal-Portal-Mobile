@@ -30,6 +30,7 @@ import {
   LeaveRequest,
   LEAVE_TYPE,
   LEAVE_DURATION,
+  HALF_DAY_SESSION,
   LeaveFilters,
 } from "@/features/leave/leave.types";
 import {
@@ -76,11 +77,24 @@ export default function EmployeeLeaveScreen() {
         return false;
       if (filters.year && !leave.start_date.startsWith(filters.year))
         return false;
+      
+      if (filters.search?.trim()) {
+        const q = filters.search.toLowerCase().trim();
+        const type = leave.leave_type.toLowerCase();
+        const reason = (leave.reason || "").toLowerCase();
+        const status = leave.status.toLowerCase();
+        if (!type.includes(q) && !reason.includes(q) && !status.includes(q)) {
+          return false;
+        }
+      }
+      
       return true;
     });
   }, [leaveRequests, filters]);
 
   const [leaveType, setLeaveType] = useState<string>(LEAVE_TYPE.CASUAL);
+  const [leaveDuration, setLeaveDuration] = useState<string>(LEAVE_DURATION.FULL_DAY);
+  const [halfDaySession, setHalfDaySession] = useState<string>(HALF_DAY_SESSION.MORNING);
   const [startDate, setStartDate] = useState(
     new Date().toISOString().split("T")[0],
   );
@@ -145,7 +159,7 @@ export default function EmployeeLeaveScreen() {
   }, [loadData, profileId]);
 
   const handleApplyLeave = async () => {
-    if (!startDate.trim() || !endDate.trim()) {
+    if (!startDate.trim() || (leaveDuration === LEAVE_DURATION.FULL_DAY && !endDate.trim())) {
       toast.error("Please select start and end dates.");
       return;
     }
@@ -159,9 +173,10 @@ export default function EmployeeLeaveScreen() {
       if (!profileId) return;
       const res = await createLeaveRequest(profileId, {
         leave_type: leaveType as any,
-        leave_duration: LEAVE_DURATION.FULL_DAY,
+        leave_duration: leaveDuration as any,
+        half_day_session: leaveDuration === LEAVE_DURATION.HALF_DAY ? (halfDaySession as any) : null,
         start_date: startDate,
-        end_date: endDate,
+        end_date: leaveDuration === LEAVE_DURATION.HALF_DAY ? startDate : endDate,
         reason: reason.trim(),
       });
 
@@ -226,7 +241,7 @@ export default function EmployeeLeaveScreen() {
 
   return (
     <Screen isLoading={loading} scroll={false}>
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader
           title="Leave Requests"
           subtitle="Apply and track your leaves"
@@ -359,19 +374,121 @@ export default function EmployeeLeaveScreen() {
                   ))}
                 </View>
 
+                <AppText
+                  weight="600"
+                  style={{ marginBottom: spacing.xs, fontSize: 13 }}
+                  color={employeeColors.textSecondary}
+                >
+                  Duration
+                </AppText>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    gap: spacing.xs,
+                    marginBottom: leaveDuration === LEAVE_DURATION.HALF_DAY ? spacing.sm : spacing.lg,
+                  }}
+                >
+                  {[LEAVE_DURATION.FULL_DAY, LEAVE_DURATION.HALF_DAY].map((duration) => (
+                    <TouchableOpacity
+                      key={duration}
+                      onPress={() => setLeaveDuration(duration)}
+                      style={{
+                        flex: 1,
+                        alignItems: "center",
+                        paddingVertical: spacing.sm,
+                        borderRadius: radius.md,
+                        borderWidth: 1.5,
+                        borderColor:
+                          leaveDuration === duration
+                            ? employeeColors.primary
+                            : employeeColors.border,
+                        backgroundColor:
+                          leaveDuration === duration
+                            ? `${employeeColors.primary}10`
+                            : "#FFFFFF",
+                      }}
+                    >
+                      <AppText
+                        weight={leaveDuration === duration ? "700" : "500"}
+                        color={
+                          leaveDuration === duration
+                            ? employeeColors.primary
+                            : employeeColors.text
+                        }
+                      >
+                        {duration}
+                      </AppText>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+
+                {leaveDuration === LEAVE_DURATION.HALF_DAY && (
+                  <>
+                    <AppText
+                      weight="600"
+                      style={{ marginBottom: spacing.xs, fontSize: 13 }}
+                      color={employeeColors.textSecondary}
+                    >
+                      Session
+                    </AppText>
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        gap: spacing.xs,
+                        marginBottom: spacing.lg,
+                      }}
+                    >
+                      {[HALF_DAY_SESSION.MORNING, HALF_DAY_SESSION.AFTERNOON].map((session) => (
+                        <TouchableOpacity
+                          key={session}
+                          onPress={() => setHalfDaySession(session)}
+                          style={{
+                            flex: 1,
+                            alignItems: "center",
+                            paddingVertical: spacing.sm,
+                            borderRadius: radius.md,
+                            borderWidth: 1.5,
+                            borderColor:
+                              halfDaySession === session
+                                ? employeeColors.primary
+                                : employeeColors.border,
+                            backgroundColor:
+                              halfDaySession === session
+                                ? `${employeeColors.primary}10`
+                                : "#FFFFFF",
+                          }}
+                        >
+                          <AppText
+                            weight={halfDaySession === session ? "700" : "500"}
+                            color={
+                              halfDaySession === session
+                                ? employeeColors.primary
+                                : employeeColors.text
+                            }
+                          >
+                            {session}
+                          </AppText>
+                        </TouchableOpacity>
+                      ))}
+                    </View>
+                  </>
+                )}
+
                 <DatePickerField
-                  label="Start Date"
+                  label={leaveDuration === LEAVE_DURATION.HALF_DAY ? "Date" : "Start Date"}
                   value={startDate}
                   onChange={setStartDate}
                   placeholder="YYYY-MM-DD"
                 />
 
-                <DatePickerField
-                  label="End Date"
-                  value={endDate}
-                  onChange={setEndDate}
-                  placeholder="YYYY-MM-DD"
-                />
+                {leaveDuration === LEAVE_DURATION.FULL_DAY && (
+                  <DatePickerField
+                    label="End Date"
+                    value={endDate}
+                    onChange={setEndDate}
+                    placeholder="YYYY-MM-DD"
+                  />
+                )}
 
                 <Input
                   label="Reason"

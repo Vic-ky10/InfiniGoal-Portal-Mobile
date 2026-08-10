@@ -126,7 +126,7 @@ export default function IncentivesScreen() {
       refreshing={refreshing}
       onRefresh={refresh}
     >
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader
           title="Incentives"
           subtitle="Employee performance bonuses & awards"
@@ -151,7 +151,7 @@ export default function IncentivesScreen() {
           }
         />
 
-        {/* Enhanced Incentive Filter Bar */}
+      
         <IncentiveFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
         {/* Incentives List */}

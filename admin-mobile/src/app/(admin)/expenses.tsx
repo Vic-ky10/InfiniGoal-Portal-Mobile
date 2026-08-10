@@ -90,13 +90,12 @@ export default function ExpensesScreen() {
       refreshing={refreshing}
       onRefresh={refresh}
     >
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader title="Expense Claims" subtitle="Review & approve employee reimbursements" />
 
-        {/* Enhanced Filter Bar */}
         <ExpenseFilterBar filters={filters} onFiltersChange={setFilters} />
 
-        {/* Expenses List or Skeleton */}
+      
         {loading ? (
           <View style={{ gap: spacing.sm }}>
             <ExpenseCardSkeleton />
@@ -133,7 +132,7 @@ export default function ExpensesScreen() {
           />
         )}
 
-        {/* Expense Details Screen / Admin Review Panel Modal */}
+        {/* Expense Details Screen*/}
         <ExpenseDetailsModal
           visible={Boolean(selectedExpense)}
           expense={selectedExpense}

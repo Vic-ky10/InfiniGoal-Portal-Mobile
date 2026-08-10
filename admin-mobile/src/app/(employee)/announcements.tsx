@@ -40,7 +40,7 @@ export default function EmployeeAnnouncementsScreen() {
 
   const filteredAnnouncements = useMemo(() => {
     return announcements.filter((item) => {
-      // Search matches Title, Message, Category
+   
       if (filters.search) {
         const s = filters.search.toLowerCase();
         const matchesSearch =
@@ -77,7 +77,7 @@ export default function EmployeeAnnouncementsScreen() {
 
   return (
     <Screen isLoading={loading} scroll={false}>
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader title="Announcements" subtitle="Company news & updates" />
 
         {/* Enhanced Announcement Filter Bar */}

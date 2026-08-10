@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState } from "@/components/common";
@@ -271,10 +271,14 @@ export default function EmployeePurchasesScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Form Modal */}
         <PurchaseModal
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
+          onClose={() => {
+            setModalVisible(false);
+            if (purchaseId) {
+              router.setParams({ purchaseId: "" });
+            }
+          }}
           purchaseToEdit={selectedPurchase}
           showAdminReview={false}
         />

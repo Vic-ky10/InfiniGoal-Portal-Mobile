@@ -209,32 +209,32 @@ export default function EmployeeExpensesScreen() {
   // Filter & Search Logic
   const filteredExpenses = useMemo(() => {
     return expenses.filter((e) => {
-      // Status filter
+     
       if (filters.status && filters.status !== "All") {
         if (e.status.toUpperCase() !== filters.status.toUpperCase()) return false;
       }
 
-      // Category filter
+   
       if (filters.category && filters.category !== "All") {
         if (e.expense_type !== filters.category) return false;
       }
 
-      // Has receipt filter
+     
       if (filters.hasReceipt !== undefined && filters.hasReceipt !== null) {
         const hasRec = Boolean(e.receipt_url);
         if (hasRec !== filters.hasReceipt) return false;
       }
 
-      // Date filter
+     
       if (filters.date && e.expense_date !== filters.date) return false;
 
-      // Month filter
+    
       if (filters.month && !e.expense_date.startsWith(filters.month)) return false;
 
-      // Year filter
+    
       if (filters.year && !e.expense_date.startsWith(filters.year)) return false;
 
-      // Search Query (title, category, description)
+    
       if (filters.searchQuery?.trim()) {
         const q = filters.searchQuery.toLowerCase().trim();
         const cat = e.expense_type.toLowerCase();
@@ -261,7 +261,7 @@ export default function EmployeeExpensesScreen() {
 
   return (
     <Screen scroll={false}>
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1, }}>
         <AppHeader
           title="Expense Claims"
           subtitle="Submit and track your expense reimbursements"

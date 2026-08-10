@@ -35,23 +35,6 @@ export default function ReceiptViewerModal({
     receiptUrl.toLowerCase().endsWith(".pdf") ||
     receiptName?.toLowerCase().endsWith(".pdf");
 
-  const handleDownload = () => {
-    if (Platform.OS === "web") {
-      const a = document.createElement("a");
-      a.href = receiptUrl;
-      a.download = receiptName || (isPdf ? "receipt.pdf" : "receipt.jpg");
-      a.target = "_blank";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      toast.success("Download started.");
-    } else {
-      Linking.openURL(receiptUrl).catch(() => {
-        toast.error("Unable to download or open receipt.");
-      });
-    }
-  };
-
   const handleOpenExternal = () => {
     Linking.openURL(receiptUrl).catch(() => {
       toast.error("Unable to open receipt.");
@@ -71,10 +54,6 @@ export default function ReceiptViewerModal({
           </View>
 
           <View style={styles.headerActions}>
-            <TouchableOpacity onPress={handleDownload} style={styles.iconBtn}>
-              <Feather name="download" size={20} color="#FFFFFF" />
-            </TouchableOpacity>
-
             <TouchableOpacity onPress={handleOpenExternal} style={styles.iconBtn}>
               <Feather name="external-link" size={20} color="#FFFFFF" />
             </TouchableOpacity>

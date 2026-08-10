@@ -65,7 +65,7 @@ export default function ExpenseCardSkeleton() {
 
 const styles = StyleSheet.create({
   skeletonCard: {
-    borderWidth: 1,
+   
     borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,

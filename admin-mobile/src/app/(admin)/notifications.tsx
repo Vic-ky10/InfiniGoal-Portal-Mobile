@@ -283,7 +283,7 @@ export default function NotificationsScreen() {
               }),
             })}
           >
-            <AppText color="#fff" weight="700" variant="caption">
+            <AppText color="#colors.primary" weight="900" variant="caption">
               Mark all as read
             </AppText>
           </Pressable>
@@ -320,9 +320,10 @@ export default function NotificationsScreen() {
                 })}
               >
                 <AppText
-                  weight="700"
+                  weight="900"
+                  
                   variant="caption"
-                  color={active ? "#0082f3ff" : colors.textSecondary}
+                  color={active ?colors.primary  : colors.textSecondary}
                 >
                   {filter}
                 </AppText>

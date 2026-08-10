@@ -81,7 +81,7 @@ export default function AttendanceFilterBar({
     filters.date,
     filters.month,
     filters.year,
-    isAdmin && filters.search,
+    filters.search,
   ].filter(Boolean).length;
 
   const quickChips = (
@@ -147,9 +147,9 @@ export default function AttendanceFilterBar({
   return (
     <>
       <BaseFilterBar
-        searchQuery={isAdmin ? filters.search : undefined}
-        onSearchChange={isAdmin ? handleSearchChange : undefined}
-        searchPlaceholder="Search employee..."
+        searchQuery={filters.search}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder={isAdmin ? "Search employee..." : "Search status..."}
         activeFilterCount={activeFilterCount}
         quickChips={quickChips}
         expandedContent={expandedContent}

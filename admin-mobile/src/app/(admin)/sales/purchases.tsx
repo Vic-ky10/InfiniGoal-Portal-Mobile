@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { View, FlatList, TouchableOpacity, StyleSheet } from "react-native";
 import { Feather } from "@expo/vector-icons";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, router } from "expo-router";
 
 import { AppText, Screen, Card, Badge } from "@/components/ui";
 import { AppHeader, SearchBar, EmptyState, ConfirmModal } from "@/components/common";
@@ -136,7 +136,7 @@ export default function PurchasesScreen() {
             marginBottom: spacing.sm,
           }}
         >
-          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: spacing.sm }}>
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center",}}>
             <View
               style={{
                 width: 36,
@@ -176,7 +176,7 @@ export default function PurchasesScreen() {
             <View style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 }}>
               <Feather name="award" size={12} color={adminColors.success} />
               <AppText variant="caption" color={adminColors.success} weight="600">
-                Payout Amount: ₹{item.incentive_amount.toLocaleString("en-IN")}
+                Incentive : ₹{item.incentive_amount.toLocaleString("en-IN")}
               </AppText>
             </View>
           )}
@@ -287,10 +287,14 @@ export default function PurchasesScreen() {
           showsVerticalScrollIndicator={false}
         />
 
-        {/* Form Modal */}
         <PurchaseModal
           visible={modalVisible}
-          onClose={() => setModalVisible(false)}
+          onClose={() => {
+            setModalVisible(false);
+            if (purchaseId) {
+              router.setParams({ purchaseId: "" });
+            }
+          }}
           purchaseToEdit={selectedPurchase}
         />
 

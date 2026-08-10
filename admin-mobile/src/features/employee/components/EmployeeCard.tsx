@@ -60,10 +60,7 @@ export default function EmployeeCard({
                 <AppText weight="700" variant="body" color={colors.text}>
                   {employee.full_name}
                 </AppText>
-                <Badge
-                  label={employee.status}
-                  color={isActive ? colors.success : colors.disabled}
-                />
+              
               </View>
 
               <AppText variant="caption" color={colors.textSecondary}>

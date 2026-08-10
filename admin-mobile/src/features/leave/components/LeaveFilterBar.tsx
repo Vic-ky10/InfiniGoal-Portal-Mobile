@@ -129,7 +129,7 @@ export default function LeaveFilterBar({
     filters.year,
     isAdmin && filters.department,
     isAdmin && filters.profileId,
-    isAdmin && filters.search,
+    filters.search,
   ].filter(Boolean).length;
 
   const quickChips = (
@@ -222,9 +222,9 @@ export default function LeaveFilterBar({
   return (
     <>
       <BaseFilterBar
-        searchQuery={isAdmin ? filters.search : undefined}
-        onSearchChange={isAdmin ? handleSearchChange : undefined}
-        searchPlaceholder="Search employee name or ID..."
+        searchQuery={filters.search}
+        onSearchChange={handleSearchChange}
+        searchPlaceholder={isAdmin ? "Search employee name or ID..." : "Search reason, type..."}
         activeFilterCount={activeFilterCount}
         quickChips={quickChips}
         expandedContent={expandedContent}

@@ -17,9 +17,7 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Unique channel name per hook instance prevents "callbacks after subscribe()"
-  // when multiple screens mount this hook or React re-runs effects.
-  const channelName = useRef(`expenses-hook-${Math.random().toString(36).substring(2, 9)}`);
+  const [channelName] = useState(() => `expenses-hook-${Math.random().toString(36).substring(2, 9)}`);
 
   const fetchExpenses = useCallback(async (showRefresh = false) => {
     try {
@@ -41,7 +39,7 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
     fetchExpenses();
 
     const channel = supabase
-      .channel(channelName.current)
+      .channel(channelName)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "expenses" },
@@ -54,7 +52,7 @@ export function useExpenses(initialFilters: ExpenseFilters = {}) {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchExpenses]);
+  }, [fetchExpenses, channelName]);
 
   const handleReview = async (
     expenseId: string,

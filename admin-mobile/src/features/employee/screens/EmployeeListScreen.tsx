@@ -100,26 +100,7 @@ export default function EmployeeListScreen() {
     filters.search,
   ].filter(Boolean).length;
 
-  const quickChips = (
-    <>
-      <FilterChip
-        label="All Status"
-        isSelected={!filters.status}
-        onPress={() => setFilters(prev => ({ ...prev, status: "" }))}
-      />
-      {Object.values(EMPLOYEE_STATUS).map((st) => {
-        const isSelected = filters.status === st;
-        return (
-          <FilterChip
-            key={st}
-            label={st}
-            isSelected={isSelected}
-            onPress={() => setFilters(prev => ({ ...prev, status: st }))}
-          />
-        );
-      })}
-    </>
-  );
+  const quickChips = null;
 
   const expandedContent = (
     <View style={{ gap: spacing.md }}>
@@ -159,7 +140,6 @@ export default function EmployeeListScreen() {
           onSearchChange={(text) => setFilters(prev => ({ ...prev, search: text }))}
           searchPlaceholder="Search employees..."
           activeFilterCount={activeFilterCount}
-          quickChips={quickChips}
           expandedContent={expandedContent}
           onReset={handleReset}
         />

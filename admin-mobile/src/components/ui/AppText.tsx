@@ -20,6 +20,7 @@ interface AppTextProps extends TextProps {
 
   color?: string;
   weight?: "400" | "500" | "600" | "700" | "900";
+   height?: "400" | "500" | "600" | "700" | "900";
 }
 
 const fontSizes = {

@@ -35,6 +35,15 @@ export default function EmployeeAttendanceScreen() {
       if (filters.date && record.attendance_date !== filters.date) return false;
       if (filters.month && !record.attendance_date.startsWith(filters.month)) return false;
       if (filters.year && !record.attendance_date.startsWith(filters.year)) return false;
+
+      if (filters.search?.trim()) {
+        const q = filters.search.toLowerCase().trim();
+        const status = record.status.toLowerCase();
+        if (!status.includes(q)) {
+          return false;
+        }
+      }
+
       return true;
     });
   }, [history, filters]);

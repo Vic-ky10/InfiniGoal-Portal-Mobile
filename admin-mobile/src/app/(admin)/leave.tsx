@@ -63,16 +63,16 @@ export default function LeaveScreen() {
       refreshing={refreshing}
       onRefresh={refresh}
     >
-      <View style={{ flex: 1, gap: spacing.md }}>
+      <View style={{ flex: 1}}>
         <AppHeader
           title="Leave Requests"
           subtitle="Review employee leave applications"
         />
 
-        {/* Enhanced Filter Bar */}
+      
         <LeaveFilterBar filters={filters} onFiltersChange={setFilters} leaves={leaveRequests} isAdmin />
 
-        {/* leave requests list data */}
+      
 
         <FlatList
           data={filteredLeaveRequests}

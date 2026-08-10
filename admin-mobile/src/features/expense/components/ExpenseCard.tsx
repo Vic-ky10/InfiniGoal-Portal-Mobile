@@ -84,7 +84,7 @@ export default function ExpenseCard({
   return (
     <>
       <TouchableOpacity
-        activeOpacity={onPressDetails ? 0.85 : 1}
+        activeOpacity={1}
         onPress={() => onPressDetails?.(expense)}
       >
         <Card

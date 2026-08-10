@@ -244,7 +244,7 @@ export default function ProjectsScreen() {
           }
         />
 
-        {/* Stats Row */}
+     
         <View style={{ flexDirection: "row", gap: spacing.xs }}>
           <Card style={{ flex: 1, padding: spacing.sm, alignItems: "center" }}>
             <AppText variant="caption" color={adminColors.textSecondary}>
@@ -272,15 +272,15 @@ export default function ProjectsScreen() {
           </Card>
         </View>
 
-        {/* Standardized Project Filter Bar */}
+        
         <ProjectFilterBar filters={filters} onFiltersChange={setFilters} isAdmin />
 
-        {/* Results count */}
+       
         <AppText variant="caption" color={adminColors.textSecondary}>
           {sortedProjects.length} project{sortedProjects.length !== 1 ? "s" : ""} · {currentSortLabel}
         </AppText>
 
-        {/* Projects List */}
+ 
         <FlatList
           data={sortedProjects}
           keyExtractor={(item) => item.id}

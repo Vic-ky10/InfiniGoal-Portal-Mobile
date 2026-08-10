@@ -676,6 +676,10 @@ export async function getEmployeeExpenseSummary(profileId?: string): Promise<Emp
   );
   const recentExpenses = expenses.slice(0, 5);
 
+  const cashOuts = await getEmployeeCashOuts(activeProfileId);
+  const totalPersonalSpend = cashOuts.reduce((sum, c) => sum + c.amount, 0);
+  const walletBalance = approvedAmount - totalPersonalSpend;
+
   return {
     totalExpenses,
     approvedAmount,
@@ -687,6 +691,7 @@ export async function getEmployeeExpenseSummary(profileId?: string): Promise<Emp
     rejectedCount,
     monthlyTotal,
     averageExpense,
+    walletBalance,
     categorySummary,
     monthlySummary,
     recentExpenses,
@@ -734,6 +739,14 @@ export async function createCashOut(
   amount: number,
   description?: string
 ): Promise<{ success: boolean; error?: string; data?: ExpenseCashOut }> {
+  const summary = await getEmployeeExpenseSummary(profileId);
+  if (typeof summary.walletBalance === 'number' && amount > summary.walletBalance) {
+    return {
+      success: false,
+      error: `Cash out amount (₹${amount}) cannot exceed available balance (₹${summary.walletBalance}).`,
+    };
+  }
+
   const { data, error } = await supabase
     .from("expense_cash_outs")
     .insert({

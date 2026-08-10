@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   accentFill: {
-    width: "40%",
+    width: "100%",
     height: "100%",
     borderRadius: 2,
   },
